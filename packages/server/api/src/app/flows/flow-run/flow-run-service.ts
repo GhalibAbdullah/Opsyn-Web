@@ -7,6 +7,9 @@ import {
     EngineHttpResponse,
     ErrorCode,
     ExecutionType,
+    FAILED_STATES,
+    FlowAnalytics,
+    FlowAnalyticsRunsOverTimeItem,
     FlowId,
     FlowRetryStrategy,
     FlowRun,
@@ -26,6 +29,7 @@ import {
     UploadLogsBehavior,
     WorkerJobType,
 } from '@activepieces/shared'
+import dayjs from 'dayjs'
 import { context, propagation, trace } from '@opentelemetry/api'
 import { FastifyBaseLogger } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
@@ -396,6 +400,96 @@ export const flowRunService = (log: FastifyBaseLogger) => ({
             headers: {},
         })
     },
+    async getAnalytics({ flowId, projectId, startDate, endDate }: GetAnalyticsParams): Promise<FlowAnalytics> {
+        const start = startDate ? dayjs(startDate).toDate() : dayjs().subtract(30, 'days').toDate()
+        // If endDate is today, use current time to include latest runs
+        // Otherwise use the provided endDate
+        const endDateParsed = endDate ? dayjs(endDate).toDate() : new Date()
+        const now = new Date()
+        const isEndDateToday = endDate && dayjs(endDateParsed).isSame(dayjs(now), 'day')
+        const end = isEndDateToday ? now : endDateParsed
+
+        // Build base query for runs over time
+        let runsOverTimeQuery = flowRunRepo()
+            .createQueryBuilder('flow_run')
+            .select('DATE(flow_run.created)', 'day')
+            .addSelect('COUNT(*)', 'totalRuns')
+            .addSelect('SUM(CASE WHEN flow_run.status = :succeededStatus THEN 1 ELSE 0 END)', 'successfulRuns')
+            .addSelect('SUM(CASE WHEN flow_run.status IN (:...failedStates) THEN 1 ELSE 0 END)', 'failedRuns')
+            .addSelect('AVG(flow_run.duration)', 'averageExecutionTime')
+            .where('flow_run.flowId = :flowId', { flowId })
+            .andWhere('flow_run.projectId = :projectId', { projectId })
+            .andWhere('flow_run.environment = :environment', { environment: RunEnvironment.PRODUCTION })
+            .andWhere('flow_run.created >= :start', { start })
+            .andWhere('flow_run.created <= :end', { end })
+            .setParameter('succeededStatus', FlowRunStatus.SUCCEEDED)
+            .setParameter('failedStates', FAILED_STATES)
+            .groupBy('DATE(flow_run.created)')
+            .orderBy('DATE(flow_run.created)', 'ASC')
+
+        const runsOverTimeData = await runsOverTimeQuery.getRawMany()
+
+        // Build query for total statistics
+        let totalStatsQuery = flowRunRepo()
+            .createQueryBuilder('flow_run')
+            .select('COUNT(*)', 'totalRuns')
+            .addSelect('SUM(CASE WHEN flow_run.status = :succeededStatus THEN 1 ELSE 0 END)', 'successfulRuns')
+            .addSelect('SUM(CASE WHEN flow_run.status IN (:...failedStates) THEN 1 ELSE 0 END)', 'failedRuns')
+            .addSelect('AVG(flow_run.duration)', 'averageExecutionTime')
+            .where('flow_run.flowId = :flowId', { flowId })
+            .andWhere('flow_run.projectId = :projectId', { projectId })
+            .andWhere('flow_run.environment = :environment', { environment: RunEnvironment.PRODUCTION })
+            .andWhere('flow_run.created >= :start', { start })
+            .andWhere('flow_run.created <= :end', { end })
+            .setParameter('succeededStatus', FlowRunStatus.SUCCEEDED)
+            .setParameter('failedStates', FAILED_STATES)
+
+        const totalStats = await totalStatsQuery.getRawOne()
+
+        const totalRuns = parseInt(totalStats?.totalRuns || '0', 10)
+        const successfulRuns = parseInt(totalStats?.successfulRuns || '0', 10)
+        const failedRuns = parseInt(totalStats?.failedRuns || '0', 10)
+        const averageExecutionTime = totalStats?.averageExecutionTime ? parseFloat(totalStats.averageExecutionTime) : undefined
+
+        const successRate = totalRuns > 0 ? (successfulRuns / totalRuns) * 100 : 0
+        const failureRate = totalRuns > 0 ? (failedRuns / totalRuns) * 100 : 0
+
+        const runsOverTime: FlowAnalyticsRunsOverTimeItem[] = runsOverTimeData.map((row) => ({
+            day: row.day,
+            totalRuns: parseInt(row.totalRuns || '0', 10),
+            successfulRuns: parseInt(row.successfulRuns || '0', 10),
+            failedRuns: parseInt(row.failedRuns || '0', 10),
+            averageExecutionTime: row.averageExecutionTime ? parseFloat(row.averageExecutionTime) : undefined,
+        }))
+
+        // Get latest run for the flow
+        const latestRun = await flowRunRepo()
+            .findOne({
+                where: {
+                    flowId,
+                    projectId,
+                    environment: RunEnvironment.PRODUCTION,
+                },
+                order: {
+                    created: 'DESC',
+                },
+            })
+
+        return {
+            flowId,
+            totalRuns,
+            successfulRuns,
+            failedRuns,
+            successRate: Math.round(successRate * 100) / 100,
+            failureRate: Math.round(failureRate * 100) / 100,
+            averageExecutionTime,
+            runsOverTime,
+            latestRun: latestRun ? await this.getOnePopulatedOrThrow({
+                projectId,
+                id: latestRun.id,
+            }) : undefined,
+        }
+    },
 })
 
 async function filterFlowRunsAndApplyFilters(params: BulkArchiveActionParams): Promise<FlowRunId[]> {
@@ -648,4 +742,11 @@ type ResumeWebhookParams = {
     payload?: unknown
     executionType: ExecutionType
     checkRequestId: boolean
+}
+
+type GetAnalyticsParams = {
+    flowId: FlowId
+    projectId: ProjectId
+    startDate?: string
+    endDate?: string
 }

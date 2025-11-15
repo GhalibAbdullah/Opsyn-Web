@@ -9,8 +9,10 @@ import {
   Share2,
   Trash2,
   UploadCloud,
+  BarChart3,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { PermissionNeededTooltip } from '@/components/custom/permission-needed-tooltip';
 import { ConfirmationDeleteDialog } from '@/components/delete-dialog';
@@ -70,6 +72,7 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
 }) => {
   const { platform } = platformHooks.useCurrentPlatform();
   const openNewWindow = useNewWindow();
+  const navigate = useNavigate();
   const { gitSync } = gitSyncHooks.useGitSync(
     authenticationSession.getProjectId()!,
     platform.plan.environmentsEnabled,
@@ -80,6 +83,7 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
   const userHasPermissionToPushToGit = checkAccess(
     Permission.WRITE_PROJECT_RELEASE,
   );
+  const userHasPermissionToReadRun = checkAccess(Permission.READ_RUN);
 
   const { embedState } = useEmbedding();
   const isDevelopmentBranch =
@@ -269,6 +273,26 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
               </div>
             </DropdownMenuItem>
           </ShareTemplateDialog>
+        )}
+        {userHasPermissionToReadRun && (
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setOpen(false);
+              const route = authenticationSession.appendProjectRoutePrefix(
+                `/flows/${flow.id}/analytics`,
+              );
+              // Use window.location.href for reliable navigation in all contexts
+              // This works both in builder and in sidebar contexts
+              window.location.href = route;
+            }}
+          >
+            <div className="flex cursor-pointer flex-row gap-2 items-center">
+              <BarChart3 className="h-4 w-4" />
+              <span>Analytics</span>
+            </div>
+          </DropdownMenuItem>
         )}
         {!readonly &&
           (!embedState.isEmbedded ||

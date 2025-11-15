@@ -17,3 +17,12 @@ export const ListFlowRunsRequestQuery = Type.Object({
 })
 
 export type ListFlowRunsRequestQuery = Static<typeof ListFlowRunsRequestQuery>
+
+export const GetFlowAnalyticsRequestQuery = Type.Object({
+    flowId: ApId,
+    projectId: ApId,
+    startDate: Type.Optional(Type.String({})),
+    endDate: Type.Optional(Type.String({})),
+})
+
+export type GetFlowAnalyticsRequestQuery = Static<typeof GetFlowAnalyticsRequestQuery>

@@ -39,6 +39,7 @@ import { EmbeddedConnectionDialog } from '../routes/embed/embedded-connection-di
 import { ExplorePage } from '../routes/explore';
 import { FlowsPage } from '../routes/flows';
 import { FlowBuilderPage } from '../routes/flows/id';
+import { FlowAnalyticsPage } from '../routes/flows/id/analytics';
 import { ResetPasswordPage } from '../routes/forget-password';
 import { FormPage } from '../routes/forms';
 import McpServersPage from '../routes/mcp-servers';
@@ -131,6 +132,18 @@ const routes = [
           </BuilderNavigationSidebar>
         </PageTitle>
       </RoutePermissionGuard>
+    ),
+  }),
+  ...ProjectRouterWrapper({
+    path: '/flows/:flowId/analytics',
+    element: (
+      <ProjectDashboardLayout>
+        <RoutePermissionGuard permission={Permission.READ_RUN}>
+          <PageTitle title="Flow Analytics">
+            <FlowAnalyticsPage />
+          </PageTitle>
+        </RoutePermissionGuard>
+      </ProjectDashboardLayout>
     ),
   }),
   ...ProjectRouterWrapper({

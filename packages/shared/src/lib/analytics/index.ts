@@ -49,3 +49,28 @@ export const PlatformAnalyticsReport = Type.Object({
     platformId: Type.String(),
 })
 export type PlatformAnalyticsReport = Static<typeof PlatformAnalyticsReport>
+
+export const FlowAnalyticsRunsOverTimeItem = Type.Object({
+    day: Type.String(),
+    totalRuns: Type.Number(),
+    successfulRuns: Type.Number(),
+    failedRuns: Type.Number(),
+    averageExecutionTime: Type.Optional(Type.Number()),
+})
+export type FlowAnalyticsRunsOverTimeItem = Static<typeof FlowAnalyticsRunsOverTimeItem>
+
+export const FlowAnalyticsRunsOverTime = Type.Array(FlowAnalyticsRunsOverTimeItem)
+export type FlowAnalyticsRunsOverTime = Static<typeof FlowAnalyticsRunsOverTime>
+
+export const FlowAnalytics = Type.Object({
+    flowId: Type.String(),
+    totalRuns: Type.Number(),
+    successfulRuns: Type.Number(),
+    failedRuns: Type.Number(),
+    successRate: Type.Number(),
+    failureRate: Type.Number(),
+    averageExecutionTime: Type.Optional(Type.Number()),
+    runsOverTime: FlowAnalyticsRunsOverTime,
+    latestRun: Type.Optional(Type.Any()), // FlowRun type - using Any to avoid circular dependency
+})
+export type FlowAnalytics = Static<typeof FlowAnalytics>

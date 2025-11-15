@@ -2,7 +2,9 @@ import { Socket } from 'socket.io-client';
 
 import { api } from '@/lib/api';
 import {
+  FlowAnalytics,
   FlowRun,
+  GetFlowAnalyticsRequestQuery,
   ListFlowRunsRequestQuery,
   RetryFlowRequestBody,
   TestFlowRunRequestBody,
@@ -44,6 +46,9 @@ export const flowRunsApi = {
   },
   retry(flowRunId: string, request: RetryFlowRequestBody): Promise<FlowRun> {
     return api.post<FlowRun>(`/v1/flow-runs/${flowRunId}/retry`, request);
+  },
+  getAnalytics(request: GetFlowAnalyticsRequestQuery): Promise<FlowAnalytics> {
+    return api.get<FlowAnalytics>('/v1/flow-runs/analytics', request);
   },
   async testFlow(
     socket: Socket,

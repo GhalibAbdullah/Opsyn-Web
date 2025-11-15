@@ -34,11 +34,19 @@ export const askAssistant = createAction({
           });
           const assistants = await openai.beta.assistants.list();
 
+          if (!assistants.data || assistants.data.length === 0) {
+            return {
+              disabled: true,
+              options: [],
+              placeholder: 'No assistants found. Create an assistant in OpenAI first.',
+            };
+          }
+
           return {
             disabled: false,
             options: assistants.data.map((assistant: any) => {
               return {
-                label: assistant.name,
+                label: assistant.name || assistant.id,
                 value: assistant.id,
               };
             }),

@@ -6,7 +6,9 @@ import {
     BulkArchiveActionOnRunsRequestBody,
     ErrorCode,
     ExecutionType,
+    FlowAnalytics,
     FlowRun,
+    GetFlowAnalyticsRequestQuery,
     isNil,
     ListFlowRunsRequestQuery,
     Permission,
@@ -133,6 +135,15 @@ export const flowRunController: FastifyPluginAsyncTypebox = async (app) => {
         })
     })
 
+    app.get('/analytics', GetFlowAnalyticsRequest, async (req) => {
+        return flowRunService(req.log).getAnalytics({
+            flowId: req.query.flowId,
+            projectId: req.query.projectId,
+            startDate: req.query.startDate,
+            endDate: req.query.endDate,
+        })
+    })
+
 }
 
 const FlowRunFiltered = Type.Omit(FlowRun, ['pauseMetadata'])
@@ -214,5 +225,21 @@ const BulkRetryFlowRequest = {
     },
     schema: {
         body: BulkActionOnRunsRequestBody,
+    },
+}
+
+const GetFlowAnalyticsRequest = {
+    config: {
+        permission: Permission.READ_RUN,
+        allowedPrincipals: [PrincipalType.USER, PrincipalType.SERVICE],
+    },
+    schema: {
+        tags: ['flow-runs'],
+        description: 'Get Flow Analytics',
+        security: [SERVICE_KEY_SECURITY_OPENAPI],
+        querystring: GetFlowAnalyticsRequestQuery,
+        response: {
+            [StatusCodes.OK]: FlowAnalytics,
+        },
     },
 }
