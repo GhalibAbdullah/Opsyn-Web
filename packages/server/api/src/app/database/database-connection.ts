@@ -34,6 +34,7 @@ import { SigningKeyEntity } from '../ee/signing-key/signing-key-entity'
 import { FileEntity } from '../file/file.entity'
 import { FlagEntity } from '../flags/flag.entity'
 import { FlowEntity } from '../flows/flow/flow.entity'
+import { FlowActivityEntity } from '../flows/flow-activity/flow-activity.entity'
 import { FlowRunEntity } from '../flows/flow-run/flow-run-entity'
 import { FlowVersionEntity } from '../flows/flow-version/flow-version-entity'
 import { FolderEntity } from '../flows/folder/folder.entity'
@@ -74,6 +75,7 @@ function getEntities(): EntitySchema<unknown>[] {
         FileEntity,
         FlagEntity,
         FlowEntity,
+        FlowActivityEntity,
         FlowVersionEntity,
         FlowRunEntity,
         ProjectEntity,

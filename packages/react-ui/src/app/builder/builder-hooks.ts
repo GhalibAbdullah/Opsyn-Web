@@ -78,6 +78,7 @@ export enum LeftSideBarType {
   RUNS = 'runs',
   VERSIONS = 'versions',
   RUN_DETAILS = 'run-details',
+  ACTIVITY = 'activity',
   NONE = 'none',
 }
 
@@ -487,18 +488,14 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
           set({ saving: true });
           const updateRequest = async () => {
             try {
-              const updatedFlowVersion = await flowsApi.update(
+              const updatedFlow = await flowsApi.update(
                 state.flow.id,
                 operation,
                 true,
               );
               set((state) => {
                 return {
-                  flowVersion: {
-                    ...state.flowVersion,
-                    id: updatedFlowVersion.version.id,
-                    state: updatedFlowVersion.version.state,
-                  },
+                  flowVersion: updatedFlow.version,
                   saving: flowUpdatesQueue.size() !== 0,
                 };
               });
