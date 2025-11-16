@@ -35,8 +35,12 @@ import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/author
 import { assertUserHasPermissionToFlow } from '../../ee/authentication/project-role/rbac-middleware'
 import { platformPlanService } from '../../ee/platform/platform-plan/platform-plan.service'
 import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
+import { rejectedPromiseHandler } from '@activepieces/server-shared'
 import { eventsHooks } from '../../helper/application-events'
 import { flowMigrations } from '../flow-version/migrations'
+import { flowActivityService } from '../flow-activity/flow-activity.service'
+import { mapFlowOperationToAction, generateActivityMessage } from '../flow-activity/flow-activity-utils'
+import { FlowActivityAction } from '@activepieces/shared'
 import { flowService } from './flow.service'
 
 const DEFAULT_PAGE_SIZE = 10
@@ -55,6 +59,22 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 flow: newFlow,
             },
         })
+
+        // Log activity
+        const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        rejectedPromiseHandler(
+            flowActivityService(request.log).create({
+                flowId: newFlow.id,
+                projectId: request.principal.projectId,
+                userId: userId ?? null,
+                action: FlowActivityAction.CREATED,
+                message: generateActivityMessage(FlowActivityAction.CREATED),
+                details: {
+                    displayName: newFlow.version.displayName,
+                },
+            }),
+            request.log,
+        )
 
         return reply.status(StatusCodes.CREATED).send(newFlow)
     })
@@ -140,6 +160,33 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
             operation: cleanOperation(request.body),
         })
 
+        // Log activity
+        const activityAction = mapFlowOperationToAction(request.body.type)
+        const activityDetails: Record<string, unknown> = {}
+        if (request.body.type === FlowOperationType.CHANGE_STATUS) {
+            activityDetails.status = request.body.request.status
+        } else if (request.body.type === FlowOperationType.CHANGE_NAME) {
+            activityDetails.displayName = request.body.request.displayName
+        } else if (
+            request.body.type === FlowOperationType.ADD_ACTION ||
+            request.body.type === FlowOperationType.UPDATE_ACTION ||
+            request.body.type === FlowOperationType.DELETE_ACTION
+        ) {
+            activityDetails.actionName = (request.body.request as { name?: string }).name
+        }
+        rejectedPromiseHandler(
+            flowActivityService(request.log).create({
+                flowId: request.params.id,
+                projectId: request.principal.projectId,
+                userId: userId ?? null,
+                action: activityAction,
+                operationType: request.body.type,
+                message: generateActivityMessage(activityAction, request.body.type, activityDetails),
+                details: activityDetails,
+            }),
+            request.log,
+        )
+
         // Broadcast the change to all users editing this flow (only for draft flows to allow concurrent editing)
         if (updatedFlow.version.state === FlowVersionState.DRAFT && request.principal.type === PrincipalType.USER) {
             const { broadcastFlowOperation } = await import('./flow-websocket-handlers')
@@ -208,6 +255,23 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 flowVersion: flow.version,
             },
         })
+        
+        // Log activity before deletion
+        const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        rejectedPromiseHandler(
+            flowActivityService(request.log).create({
+                flowId: request.params.id,
+                projectId: request.principal.projectId,
+                userId: userId ?? null,
+                action: FlowActivityAction.DELETED,
+                message: generateActivityMessage(FlowActivityAction.DELETED),
+                details: {
+                    displayName: flow.version.displayName,
+                },
+            }),
+            request.log,
+        )
+        
         await gitRepoService(request.log).onDeleted({
             type: GitPushOperationType.DELETE_FLOW,
             externalId: flow.externalId,

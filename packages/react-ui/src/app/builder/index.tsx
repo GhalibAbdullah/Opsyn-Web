@@ -40,6 +40,7 @@ import { BuilderHeader } from './builder-header/builder-header';
 import { FlowCanvas } from './flow-canvas';
 import { LEFT_SIDEBAR_ID } from './flow-canvas/utils/consts';
 import { FlowVersionsList } from './flow-versions';
+import { FlowActivityList } from './flow-activity';
 import { FlowRunDetails } from './run-details';
 import { RunsList } from './run-list';
 import { StepSettingsContainer } from './step-settings';
@@ -194,6 +195,7 @@ const BuilderPage = () => {
             {leftSidebar === LeftSideBarType.RUNS && <RunsList />}
             {leftSidebar === LeftSideBarType.RUN_DETAILS && <FlowRunDetails />}
             {leftSidebar === LeftSideBarType.VERSIONS && <FlowVersionsList />}
+            {leftSidebar === LeftSideBarType.ACTIVITY && <FlowActivityList />}
           </div>
         </ResizablePanel>
 
