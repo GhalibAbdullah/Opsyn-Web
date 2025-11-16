@@ -10,6 +10,8 @@ export enum WebsocketClientEvent {
     TODO_CHANGED = 'TODO_CHANGED',
     TODO_ACTIVITY_CHANGED = 'TODO_ACTIVITY_CHANGED',
     TODO_ACTIVITY_CREATED = 'TODO_ACTIVITY_CREATED',
+    FLOW_OPERATION_BROADCAST = 'FLOW_OPERATION_BROADCAST',
+    FLOW_EDITORS_CHANGED = 'FLOW_EDITORS_CHANGED',
 }
 
 export const TodoChanged = Type.Object({
@@ -36,6 +38,43 @@ export type TodoActivityCreated = Static<typeof TodoActivityCreated>
 
 export type EmitTestStepProgressRequest = StepRunResponse & { projectId: string }
 
+export const FlowEditorJoined = Type.Object({
+    flowId: Type.String(),
+})
+
+export type FlowEditorJoined = Static<typeof FlowEditorJoined>
+
+export const FlowEditorLeft = Type.Object({
+    flowId: Type.String(),
+})
+
+export type FlowEditorLeft = Static<typeof FlowEditorLeft>
+
+export const FlowOperationBroadcast = Type.Object({
+    flowId: Type.String(),
+    operation: Type.Any(), // FlowOperationRequest - using Any to avoid circular dependency
+    flowVersionId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+})
+
+export type FlowOperationBroadcast = Static<typeof FlowOperationBroadcast>
+
+export const FlowEditorInfo = Type.Object({
+    userId: Type.String(),
+    userName: Type.String(),
+    userEmail: Type.String(),
+})
+
+export type FlowEditorInfo = Static<typeof FlowEditorInfo>
+
+export const FlowEditorsChanged = Type.Object({
+    flowId: Type.String(),
+    editors: Type.Array(FlowEditorInfo),
+})
+
+export type FlowEditorsChanged = Static<typeof FlowEditorsChanged>
+
 export enum WebsocketServerEvent {
     TEST_FLOW_RUN = 'TEST_FLOW_RUN',
     CONNECT = 'CONNECT',
@@ -44,6 +83,8 @@ export enum WebsocketServerEvent {
     WORKER_HEALTHCHECK = 'WORKER_HEALTHCHECK',
     EMIT_TEST_STEP_PROGRESS = 'EMIT_TEST_STEP_PROGRESS',
     EMIT_TEST_STEP_FINISHED = 'EMIT_TEST_STEP_FINISHED',
+    FLOW_EDITOR_JOINED = 'FLOW_EDITOR_JOINED',
+    FLOW_EDITOR_LEFT = 'FLOW_EDITOR_LEFT',
 }
 
 export * from './socket-utils'

@@ -43,6 +43,7 @@ import {
 
 import FlowActionMenu from '../../components/flow-actions-menu';
 import { BuilderFlowStatusSection } from '../builder-flow-status-section';
+import { ActiveEditorsBadge } from './active-editors-badge';
 
 export const BuilderHeader = () => {
   const [queryParams] = useSearchParams();
@@ -147,6 +148,7 @@ export const BuilderHeader = () => {
                 tooltipContent={isLatestVersion ? t('Edit') : ''}
               />
             )}
+            <ActiveEditorsBadge flowId={flow.id} />
           </div>
           {!embedState.hideFlowNameInBuilder && (
             <FlowActionMenu

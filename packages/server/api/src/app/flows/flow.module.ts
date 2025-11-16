@@ -1,9 +1,10 @@
-import { EmitTestStepProgressRequest, PrincipalType, TestFlowRunRequestBody, UserPrincipal, WebsocketClientEvent, WebsocketServerEvent, WorkerPrincipal } from '@activepieces/shared'
+import { EmitTestStepProgressRequest, FlowEditorJoined, FlowEditorLeft, PrincipalType, TestFlowRunRequestBody, UserPrincipal, WebsocketClientEvent, WebsocketServerEvent, WorkerPrincipal } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { websocketService } from '../core/websockets.service'
 import { flowWorkerController } from '../workers/worker-controller'
 import { flowVersionController } from './flow/flow-version.controller'
 import { flowController } from './flow/flow.controller'
+import { flowWebsocketHandlers } from './flow/flow-websocket-handlers'
 import { flowRunService } from './flow-run/flow-run-service'
 import { sampleDataController } from './step-run/sample-data.controller'
 
@@ -32,6 +33,15 @@ export const flowModule: FastifyPluginAsyncTypebox = async (app) => {
             socket.to(data.projectId).emit(WebsocketClientEvent.TEST_STEP_FINISHED, data)
             callback?.()
         }
+    })
+
+    // Register flow collaboration handlers
+    const flowHandlers = flowWebsocketHandlers(app.log)
+    websocketService.addListener(PrincipalType.USER, WebsocketServerEvent.FLOW_EDITOR_JOINED, (socket) => {
+        return flowHandlers.handleEditorJoined(socket)
+    })
+    websocketService.addListener(PrincipalType.USER, WebsocketServerEvent.FLOW_EDITOR_LEFT, (socket) => {
+        return flowHandlers.handleEditorLeft(socket)
     })
 
 }

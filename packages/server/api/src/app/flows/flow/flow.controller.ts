@@ -121,7 +121,10 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 PlatformUsageMetric.ACTIVE_FLOWS,
             )
         }
-        await assertThatFlowIsNotBeingUsed(flow, userId)
+        // Only check if flow is being used for published flows (allow concurrent editing of drafts)
+        if (flow.version.state !== FlowVersionState.DRAFT) {
+            await assertThatFlowIsNotBeingUsed(flow, userId)
+        }
         eventsHooks.get(request.log).sendUserEventFromRequest(request, {
             action: ApplicationEventName.FLOW_UPDATED,
             data: {
@@ -136,6 +139,21 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
             projectId: request.principal.projectId,
             operation: cleanOperation(request.body),
         })
+
+        // Broadcast the change to all users editing this flow (only for draft flows to allow concurrent editing)
+        if (updatedFlow.version.state === FlowVersionState.DRAFT && request.principal.type === PrincipalType.USER) {
+            const { broadcastFlowOperation } = await import('./flow-websocket-handlers')
+            await broadcastFlowOperation(
+                request.params.id,
+                request.body,
+                updatedFlow.version.id,
+                userId,
+                request.log,
+            ).catch((error) => {
+                // Don't fail the request if broadcast fails
+                request.log.warn({ error, flowId: request.params.id }, 'Failed to broadcast flow operation')
+            })
+        }
 
         return updatedFlow
     })
