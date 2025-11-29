@@ -1,7 +1,7 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronDown, History, Logs, Activity } from 'lucide-react';
+import { ChevronDown, History, Logs } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   createSearchParams,
@@ -203,17 +203,6 @@ export const BuilderHeader = () => {
             >
               <History className="w-4 h-4" />
               {t('Versions')}
-            </Button>
-          )}
-
-          {!isInRunsPage && (
-            <Button
-              variant="ghost"
-              className="gap-2 px-2"
-              onClick={() => setLeftSidebar(LeftSideBarType.ACTIVITY)}
-            >
-              <Activity className="w-4 h-4" />
-              {t('Activity')}
             </Button>
           )}
 

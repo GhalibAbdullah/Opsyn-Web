@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactFlow } from '@xyflow/react';
 import dayjs from 'dayjs';
 import { t } from 'i18next';
@@ -79,6 +79,7 @@ export enum LeftSideBarType {
   VERSIONS = 'versions',
   RUN_DETAILS = 'run-details',
   ACTIVITY = 'activity',
+  COMMENTS = 'comments',
   NONE = 'none',
 }
 
@@ -488,14 +489,18 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
           set({ saving: true });
           const updateRequest = async () => {
             try {
-              const updatedFlow = await flowsApi.update(
+              const updatedFlowVersion = await flowsApi.update(
                 state.flow.id,
                 operation,
                 true,
               );
               set((state) => {
                 return {
-                  flowVersion: updatedFlow.version,
+                  flowVersion: {
+                    ...state.flowVersion,
+                    id: updatedFlowVersion.version.id,
+                    state: updatedFlowVersion.version.state,
+                  },
                   saving: flowUpdatesQueue.size() !== 0,
                 };
               });

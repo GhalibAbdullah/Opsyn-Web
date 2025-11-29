@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
+import { useEffect, useRef } from 'react';
 
 import {
   LeftSideBarType,
@@ -18,11 +19,13 @@ const FlowVersionsList = () => {
   const [flow, setLeftSidebar, selectedFlowVersion] = useBuilderStateContext(
     (state) => [state.flow, state.setLeftSidebar, state.flowVersion],
   );
+  const queryClient = useQueryClient();
 
   const {
     data: flowVersionPage,
     isLoading,
     isError,
+    refetch,
   } = useQuery<SeekPage<FlowVersionMetadata>, Error>({
     queryKey: ['flow-versions', flow.id],
     queryFn: () =>
@@ -32,6 +35,28 @@ const FlowVersionsList = () => {
       }),
     staleTime: 0,
   });
+
+  // Refetch version history when flow version is updated (e.g., after adding nodes)
+  // Track the updated timestamp to detect when the draft version changes
+  const previousVersionKeyRef = useRef<string | null>(null);
+  const currentVersionKey = selectedFlowVersion
+    ? `${selectedFlowVersion.id}-${selectedFlowVersion.updated}`
+    : null;
+  
+  useEffect(() => {
+    // Only invalidate if the version key actually changed (not on initial mount)
+    if (
+      currentVersionKey &&
+      previousVersionKeyRef.current !== null &&
+      previousVersionKeyRef.current !== currentVersionKey
+    ) {
+      // Invalidate and refetch when the current version is updated
+      queryClient.invalidateQueries({
+        queryKey: ['flow-versions', flow.id],
+      });
+    }
+    previousVersionKeyRef.current = currentVersionKey;
+  }, [currentVersionKey, flow.id, queryClient]);
 
   return (
     <>

@@ -115,6 +115,12 @@ const StepSettingsContainer = () => {
       modifiedStep.type as FlowActionType,
     ) && !isNil(stepMetadata);
 
+  // Early return if flowVersion or project is not loaded yet (e.g., on page refresh)
+  // Must be after all hooks are called to avoid "Rendered more hooks" error
+  if (!flowVersion || !project) {
+    return null;
+  }
+
   return (
     <Form {...form}>
       <form
@@ -221,7 +227,7 @@ const StepSettingsContainer = () => {
                         type={modifiedStep.type}
                         flowId={flowVersion.flowId}
                         flowVersionId={flowVersion.id}
-                        projectId={project?.id}
+                        projectId={project!.id}
                         isSaving={saving}
                       ></TestStepContainer>
                     )}

@@ -1,8 +1,8 @@
 import { typeboxResolver } from '@hookform/resolvers/typebox';
 import { Type } from '@sinclair/typebox';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { projectApi } from '@/lib/project-api';
 import { CreatePlatformProjectRequest } from '@activepieces/ee-shared';
+import { ProjectWithLimits } from '@activepieces/shared';
 
 type NewProjectDialogProps = {
   children: React.ReactNode;
-  onCreate: () => void;
+  onCreate?: (project?: ProjectWithLimits) => void;
 };
 
 export const NewProjectDialog = ({
@@ -30,6 +31,7 @@ export const NewProjectDialog = ({
   onCreate,
 }: NewProjectDialogProps) => {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
   const form = useForm<CreatePlatformProjectRequest>({
     resolver: typeboxResolver(
       Type.Object({
@@ -39,14 +41,45 @@ export const NewProjectDialog = ({
         }),
       }),
     ),
+    defaultValues: {
+      displayName: '',
+    },
   });
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      form.reset({ displayName: '' });
+    }
+  }, [open, form]);
 
   const { mutate, isPending } = useMutation({
     mutationKey: ['create-project'],
     mutationFn: () => projectApi.create(form.getValues()),
-    onSuccess: () => {
-      onCreate();
-      setOpen(false);
+    onSuccess: async (createdProject) => {
+      try {
+        // Invalidate all project-related queries to ensure the new project appears
+        // Using exact: false (default) to invalidate all queries that start with these keys
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['projects'] }),
+          queryClient.invalidateQueries({ queryKey: ['projects-for-platforms'] }),
+        ]);
+        setOpen(false);
+        form.reset({ displayName: '' });
+        onCreate?.(createdProject);
+      } catch (error) {
+        console.error('Error invalidating queries:', error);
+        // Still close dialog and call onCreate even if invalidation fails
+        setOpen(false);
+        form.reset({ displayName: '' });
+        onCreate?.(createdProject);
+      }
+    },
+    onError: (error) => {
+      console.error('Error creating project:', error);
+      form.setError('root.serverError', {
+        message: t('Failed to create project. Please try again.'),
+      });
     },
   });
 

@@ -6,7 +6,6 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { DashboardPageHeader } from '@/app/components/dashboard-page-header';
-import LockedFeatureGuard from '@/app/components/locked-feature-guard';
 import { ConfirmationDeleteDialog } from '@/components/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -361,65 +360,67 @@ export default function ProjectsPage() {
     },
   ];
 
+  // Allow all users to access projects - no feature lock
   return (
-    <LockedFeatureGuard
-      featureKey="PROJECTS"
-      locked={!isEnabled}
-      lockTitle={t('Unlock Projects')}
-      lockDescription={t(
-        'Orchestrate your automation teams across projects with their own flows, connections and usage quotas',
-      )}
-      lockVideoUrl="https://cdn.activepieces.com/videos/showcase/projects.mp4"
-    >
-      <div className="flex flex-col w-full">
-        <DashboardPageHeader
-          title={t('Projects')}
-          description={t('Manage your automation projects')}
-        >
-          <NewProjectDialog onCreate={() => refetch()}>
-            <Button
-              size="sm"
-              className="flex items-center justify-center gap-2"
-            >
-              <Plus className="size-4" />
-              {t('New Project')}
-            </Button>
-          </NewProjectDialog>
-        </DashboardPageHeader>
-        <DataTable
-          emptyStateTextTitle={t('No projects found')}
-          emptyStateTextDescription={t(
-            'Start by creating projects to manage your automation teams',
-          )}
-          emptyStateIcon={<Package className="size-14" />}
-          onRowClick={async (project) => {
-            await setCurrentProject(queryClient, project);
-            navigate('/');
-          }}
-          filters={[
-            {
-              type: 'input',
-              title: t('Name'),
-              accessorKey: 'displayName',
-              icon: CheckIcon,
-            },
-          ]}
-          columns={columnsWithCheckbox}
-          page={data}
-          isLoading={isLoading}
-          bulkActions={bulkActions}
-          actions={actions}
-        />
-        <EditProjectDialog
-          open={editDialogOpen}
-          onClose={() => {
-            setEditDialogOpen(false);
+    <div className="flex flex-col w-full">
+      <DashboardPageHeader
+        title={t('Projects')}
+        description={t('Manage your automation projects')}
+      >
+        <NewProjectDialog
+          onCreate={async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ['projects'],
+              exact: false,
+            });
+            await queryClient.invalidateQueries({
+              queryKey: ['projects-for-platforms'],
+            });
             refetch();
           }}
-          initialValues={editDialogInitialValues}
-          projectId={editDialogProjectId}
-        />
-      </div>
-    </LockedFeatureGuard>
+        >
+          <Button
+            size="sm"
+            className="flex items-center justify-center gap-2"
+          >
+            <Plus className="size-4" />
+            {t('New Project')}
+          </Button>
+        </NewProjectDialog>
+      </DashboardPageHeader>
+      <DataTable
+        emptyStateTextTitle={t('No projects found')}
+        emptyStateTextDescription={t(
+          'Start by creating projects to manage your automation teams',
+        )}
+        emptyStateIcon={<Package className="size-14" />}
+        onRowClick={async (project) => {
+          await setCurrentProject(queryClient, project);
+          navigate('/');
+        }}
+        filters={[
+          {
+            type: 'input',
+            title: t('Name'),
+            accessorKey: 'displayName',
+            icon: CheckIcon,
+          },
+        ]}
+        columns={columnsWithCheckbox}
+        page={data}
+        isLoading={isLoading}
+        bulkActions={bulkActions}
+        actions={actions}
+      />
+      <EditProjectDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          refetch();
+        }}
+        initialValues={editDialogInitialValues}
+        projectId={editDialogProjectId}
+      />
+    </div>
   );
 }

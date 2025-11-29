@@ -125,10 +125,18 @@ export const FlowCanvas = React.memo(
       },
       [setSelectedNodes, selectedStep],
     );
-    const graphKey = createGraphKey(flowVersion);
+    const graphKey = useMemo(() => {
+      if (!flowVersion?.trigger) {
+        return '';
+      }
+      return createGraphKey(flowVersion);
+    }, [flowVersion]);
     const graph = useMemo(() => {
+      if (!flowVersion?.trigger) {
+        return { nodes: [], edges: [] };
+      }
       return flowCanvasUtils.convertFlowVersionToGraph(flowVersion);
-    }, [graphKey]);
+    }, [flowVersion, graphKey]);
     const [contextMenuType, setContextMenuType] = useState<ContextMenuType>(
       ContextMenuType.CANVAS,
     );
@@ -208,6 +216,7 @@ export const FlowCanvas = React.memo(
         <FlowDragLayer cursorPosition={cursorPosition}>
           <CanvasContextMenu contextMenuType={contextMenuType}>
             <ReactFlow
+              key={graphKey || 'empty-graph'}
               onContextMenu={onContextMenu}
               onPaneClick={() => {
                 storeApi.getState().unselectNodesAndEdges();

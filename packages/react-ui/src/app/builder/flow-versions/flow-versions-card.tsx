@@ -161,10 +161,13 @@ const FlowVersionDetailsCard = React.memo(
         )}
         <div className="grid gap-2">
           <p className="text-sm font-medium leading-none select-none pointer-events-none">
-            {formatUtils.formatDate(new Date(flowVersion.created))}
+            {formatUtils.formatDate(new Date(flowVersion.updated))}
           </p>
           <p className="flex gap-1 text-xs text-muted-foreground">
             {t('Version')} {flowVersionNumber}
+            {flowVersion.created !== flowVersion.updated && (
+              <span className="ml-1">• {t('Updated')}</span>
+            )}
           </p>
         </div>
         <div className="flex-grow"></div>

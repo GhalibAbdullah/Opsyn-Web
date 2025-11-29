@@ -147,13 +147,37 @@ const buildGraph: (step: FlowAction | FlowTrigger | undefined) => ApGraph = (
 
   const graphWithChild = childGraph ? mergeGraph(graph, childGraph) : graph;
   const nextStepGraph = buildGraph(step.nextAction);
-  return mergeGraph(
-    graphWithChild,
-    offsetGraph(nextStepGraph, {
-      x: 0,
-      y: calculateGraphBoundingBox(graphWithChild).height,
-    }),
-  );
+  const offsetNextStepGraph = offsetGraph(nextStepGraph, {
+    x: 0,
+    y: calculateGraphBoundingBox(graphWithChild).height,
+  });
+  
+  const mergedGraph = mergeGraph(graphWithChild, offsetNextStepGraph);
+  
+  // Update the edge from step to subgraph-end to target the next step if nextAction exists
+  // This ensures proper connection between steps
+  if (!isNil(step.nextAction) && nextStepGraph.nodes.length > 0) {
+    // Find the edge that goes from this step to its subgraph-end
+    const stepToSubgraphEndEdgeIndex = mergedGraph.edges.findIndex(
+      (edge) => edge.source === step.name && edge.target.includes('subgraph-end')
+    );
+    
+    if (stepToSubgraphEndEdgeIndex !== -1) {
+      // Update the edge to target the next step instead of subgraph-end
+      const existingEdge = mergedGraph.edges[stepToSubgraphEndEdgeIndex] as ApStraightLineEdge;
+      mergedGraph.edges[stepToSubgraphEndEdgeIndex] = {
+        ...existingEdge,
+        id: `${step.name}-${step.nextAction.name}-edge`,
+        target: step.nextAction.name,
+        data: {
+          ...existingEdge.data,
+          drawArrowHead: true,
+        },
+      } as ApStraightLineEdge;
+    }
+  }
+  
+  return mergedGraph;
 };
 
 function offsetGraph(

@@ -145,7 +145,14 @@ export const projectService = {
     async getAllForUser(params: GetAllForUserParams): Promise<Project[]> {
         assertNotNullOrUndefined(params.platformId, 'platformId is undefined')
         const filters = await getUsersFilters(params)
-        return projectRepo().findBy(filters)
+        // findBy expects a single filter object, not an array
+        // We always return an array with one filter, so use the first element
+        const filter = filters[0]
+        if (!filter) {
+            system.globalLogger().warn('No filter returned for getAllForUser')
+            return []
+        }
+        return projectRepo().findBy(filter)
     },
     async userHasProjects(params: GetAllForUserParams): Promise<boolean> {
         const filters = await getUsersFilters(params)
@@ -172,6 +179,10 @@ export const projectService = {
             externalId,
         })
     },
+    async delete(projectId: ProjectId): Promise<void> {
+        const project = await this.getOneOrThrow(projectId)
+        await projectRepo().softRemove(project)
+    },
 }
 
 
@@ -180,8 +191,16 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     const isPrivilegedUser = user.platformRole === PlatformRole.ADMIN || user.platformRole === PlatformRole.OPERATOR
     const displayNameFilter = params.displayName ? { displayName: ILike(`%${params.displayName}%`) } : {}
     
+    system.globalLogger().info({
+        userId: params.userId,
+        platformId: params.platformId,
+        platformRole: user.platformRole,
+        isPrivilegedUser,
+    }, 'Getting user filters for projects')
+    
     if (isPrivilegedUser) {
         // Platform admins and operators can see all projects in their platform
+        system.globalLogger().info('User is privileged, returning all platform projects')
         return [{
             platformId: params.platformId,
             ...displayNameFilter,
@@ -189,15 +208,80 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     }
     
     // Only fetch project memberships for non-privileged users
-    const projectIds = await projectMemberService(system.globalLogger()).getIdsOfProjects({
-        platformId: params.platformId,
+    const logger = system.globalLogger()
+    logger.info({
         userId: params.userId,
+        platformId: params.platformId,
+    }, 'About to query for owned projects directly')
+    
+    // Query directly for owned projects instead of using getIdsOfProjects
+    // This bypasses any potential issues with that function
+    const { IsNull } = await import('typeorm')
+    const ownedProjects = await projectRepo().find({
+        where: {
+            ownerId: params.userId,
+            platformId: params.platformId,
+            deleted: IsNull(),
+        },
+        select: {
+            id: true,
+        },
     })
     
-    // Regular members can only see projects they're members of
+    const ownedProjectIds = ownedProjects.map(p => p.id)
+    
+    logger.info({
+        userId: params.userId,
+        ownedProjectIds,
+        ownedCount: ownedProjects.length,
+    }, 'Found owned projects directly')
+    
+    // Also get project member records
+    const projectMemberServiceInstance = projectMemberService(logger)
+    const memberProjectIds = await (async () => {
+        try {
+            // Get project members
+            const { repoFactory } = await import('../core/db/repo-factory')
+            const { ProjectMemberEntity } = await import('../project-members/project-member.entity')
+            const memberRepo = repoFactory(ProjectMemberEntity)
+            const members = await memberRepo().find({
+                where: {
+                    userId: params.userId,
+                    platformId: params.platformId,
+                },
+            })
+            return members.map(m => m.projectId)
+        } catch (error) {
+            logger.error({ error }, 'Error fetching project members')
+            return []
+        }
+    })()
+    
+    // Combine owned and member project IDs
+    const allProjectIds = [...new Set([...ownedProjectIds, ...memberProjectIds])]
+    
+    logger.info({
+        userId: params.userId,
+        allProjectIds,
+        totalCount: allProjectIds.length,
+        ownedCount: ownedProjectIds.length,
+        memberCount: memberProjectIds.length,
+    }, 'Combined project IDs for user')
+    
+    // Regular members can only see projects they're members of or own
+    if (allProjectIds.length === 0) {
+        // Return a filter that will match nothing
+        logger.info('No project IDs found, returning empty filter')
+        return [{
+            platformId: params.platformId,
+            id: In(['__NONEXISTENT_ID__']), // This will never match
+            ...displayNameFilter,
+        }]
+    }
+    
     return [{
         platformId: params.platformId,
-        id: In(projectIds),
+        id: In(allProjectIds),
         ...displayNameFilter,
     }]
 }
