@@ -1,5 +1,8 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { isNil } from '@activepieces/shared';
+
+import { authenticationSession } from './authentication-session';
 import { useEmbedding } from '../components/embed-provider';
 
 export const useNewWindow = () => {
@@ -35,6 +38,23 @@ export const useRedirectAfterLogin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultRedirectPath = useDefaultRedirectPath();
-  const from = searchParams.get(FROM_QUERY_PARAM) ?? defaultRedirectPath;
-  return () => navigate(from);
+  const from = searchParams.get(FROM_QUERY_PARAM);
+  
+  return () => {
+    // If there's a specific 'from' parameter, use it
+    if (from) {
+      navigate(from);
+      return;
+    }
+    
+    // Otherwise, check if user has a project
+    const projectId = authenticationSession.getProjectId();
+    if (isNil(projectId)) {
+      // No project - redirect to dashboard to create one
+      navigate('/dashboard');
+    } else {
+      // Has project - use default redirect path
+      navigate(defaultRedirectPath);
+    }
+  };
 };

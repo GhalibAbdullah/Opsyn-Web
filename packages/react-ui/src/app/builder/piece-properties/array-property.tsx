@@ -133,21 +133,22 @@ const ArrayPieceProperty = React.memo(
                 >
                   <div className="flex justify-between">
                     <div className="font-semibold"> #{index + 1}</div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-8 shrink-0"
-                      onClick={() => {
-                        remove(index);
-                      }}
-                      disabled={disabled}
-                    >
-                      <TrashIcon
-                        className="size-4 text-destructive"
-                        aria-hidden="true"
-                      />
-                      <span className="sr-only">{t('Remove')}</span>
-                    </Button>
+                    {!disabled && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="size-8 shrink-0"
+                        onClick={() => {
+                          remove(index);
+                        }}
+                      >
+                        <TrashIcon
+                          className="size-4 text-destructive"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">{t('Remove')}</span>
+                      </Button>
+                    )}
                   </div>
                   <AutoPropertiesFormComponent
                     prefixValue={`${inputName}.[${index}]`}

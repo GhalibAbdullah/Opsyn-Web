@@ -57,13 +57,43 @@ function setupTimeZone(): void {
 
 const main = async (): Promise<void> => {
     setupTimeZone()
-    if (system.isApp()) {
-        await distributedLock(system.globalLogger()).runExclusive({
-            key: 'database-migration-lock',
-            timeoutInSeconds: dayjs.duration(10, 'minutes').asSeconds(),
-            fn: async () => initializeDatabase({ runMigrations: true }),
-        })
+    
+    // Always run migrations - use distributed lock if available, but fallback if it fails
+    // This ensures migrations run even if Redis is not configured
+    const log = system.globalLogger()
+    log.info('Starting database initialization and migrations...')
+    
+    try {
+        if (system.isApp()) {
+            log.info('Running migrations with distributed lock (app mode)')
+            try {
+                await distributedLock(log).runExclusive({
+                    key: 'database-migration-lock',
+                    timeoutInSeconds: dayjs.duration(10, 'minutes').asSeconds(),
+                    fn: async () => {
+                        log.info('Executing database migrations...')
+                        await initializeDatabase({ runMigrations: true })
+                        log.info('Database migrations completed successfully')
+                    },
+                })
+            } catch (error) {
+                // If distributed lock fails (Redis not available, etc.), run migrations directly
+                log.warn({ error }, 'Distributed lock failed, running migrations without lock')
+                log.info('Executing database migrations directly (without lock)...')
+                await initializeDatabase({ runMigrations: true })
+                log.info('Database migrations completed successfully (without lock)')
+            }
+        } else {
+            // If not in app mode, still run migrations directly
+            log.info('Running migrations directly (non-app mode)')
+            await initializeDatabase({ runMigrations: true })
+            log.info('Database migrations completed successfully')
+        }
+    } catch (error) {
+        log.error({ error }, 'Failed to run database migrations')
+        throw error
     }
+    
     const app = await setupServer()
 
     process.on('SIGINT', async () => {

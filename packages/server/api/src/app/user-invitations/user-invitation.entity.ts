@@ -37,6 +37,11 @@ export const UserInvitationEntity = new EntitySchema<UserInvitationSchema>({
             type: String,
             nullable: true,
         },
+        projectRole: {
+            type: String,
+            nullable: true,
+            length: 20,
+        },
     },
     indices: [
         {

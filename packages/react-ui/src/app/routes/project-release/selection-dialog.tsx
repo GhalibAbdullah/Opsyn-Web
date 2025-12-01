@@ -36,7 +36,7 @@ export function SelectionButton({
         <ProjectSelectionDialog
           open={open}
           setOpen={setOpen}
-          projectId={project.id}
+          projectId={project!.id}
           onSuccess={onSuccess}
         />
       )}

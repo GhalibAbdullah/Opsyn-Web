@@ -19,12 +19,14 @@ import {
     Type,
 } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../authentication/authentication-utils'
 import { eventsHooks } from '../helper/application-events'
 import { securityHelper } from '../helper/security-helper'
 import { appConnectionService } from './app-connection-service/app-connection-service'
 
 export const appConnectionController: FastifyPluginCallbackTypebox = (app, _opts, done) => {
     app.post('/', UpsertAppConnectionRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const appConnection = await appConnectionService(request.log).upsert({
             platformId: request.principal.platform.id,
             projectIds: [request.principal.projectId],
@@ -49,6 +51,7 @@ export const appConnectionController: FastifyPluginCallbackTypebox = (app, _opts
     })
 
     app.post('/:id', UpdateConnectionValueRequest, async (request) => {
+        assertProjectId(request.principal)
         const appConnection = await appConnectionService(request.log).update({
             id: request.params.id,
             platformId: request.principal.platform.id,
@@ -86,6 +89,7 @@ export const appConnectionController: FastifyPluginCallbackTypebox = (app, _opts
     },
     )
     app.get('/owners', ListAppConnectionOwnersRequest, async (request): Promise<SeekPage<AppConnectionOwners>> => {
+        assertProjectId(request.principal)
         const owners = await appConnectionService(request.log).getOwners({
             projectId: request.principal.projectId,
             platformId: request.principal.platform.id,
@@ -99,6 +103,7 @@ export const appConnectionController: FastifyPluginCallbackTypebox = (app, _opts
     )
 
     app.post('/replace', ReplaceAppConnectionsRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const { sourceAppConnectionId, targetAppConnectionId } = request.body
         await appConnectionService(request.log).replace({
             sourceAppConnectionId,

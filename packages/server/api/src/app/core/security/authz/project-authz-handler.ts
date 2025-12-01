@@ -7,6 +7,7 @@ import {
 import { FastifyRequest } from 'fastify'
 import { requestUtils } from '../../request/request-utils'
 import { BaseSecurityHandler } from '../security-handler'
+import { userHasProjectAccess } from '../../../authentication/permission-helpers'
 
 export class ProjectAuthzHandler extends BaseSecurityHandler {
     private static readonly IGNORED_ROUTES = [
@@ -25,15 +26,18 @@ export class ProjectAuthzHandler extends BaseSecurityHandler {
     ]
 
     protected canHandle(request: FastifyRequest): Promise<boolean> {
-        const routerPath = request.routeOptions.url
-        assertNotNullOrUndefined(routerPath, 'routerPath is undefined')
+        // Some routes may not have routeOptions.url set, skip authorization for those
+        const routerPath = request.routeOptions?.url
+        if (!routerPath) {
+            return Promise.resolve(false)
+        }
         const requestMatches = !ProjectAuthzHandler.IGNORED_ROUTES.includes(
             routerPath,
         )
         return Promise.resolve(requestMatches)
     }
 
-    protected doHandle(request: FastifyRequest): Promise<void> {
+    protected async doHandle(request: FastifyRequest): Promise<void> {
         const principal = request.principal
         if (principal.type === PrincipalType.WORKER || principal.type === PrincipalType.UNKNOWN) {
             return Promise.resolve()
@@ -48,6 +52,20 @@ export class ProjectAuthzHandler extends BaseSecurityHandler {
                     message: 'invalid project id',
                 },
             })
+        }
+
+        // Also verify that the user actually has access to the project
+        // This prevents users with old tokens from accessing projects they were removed from
+        if (projectId && principal.type === PrincipalType.USER) {
+            const hasAccess = await userHasProjectAccess(projectId, principal.id, request.log)
+            if (!hasAccess) {
+                throw new ActivepiecesError({
+                    code: ErrorCode.AUTHORIZATION,
+                    params: {
+                        message: 'You do not have access to this project',
+                    },
+                })
+            }
         }
 
         return Promise.resolve()

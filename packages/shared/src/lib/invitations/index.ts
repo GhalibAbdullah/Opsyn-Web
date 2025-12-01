@@ -22,7 +22,8 @@ export const UserInvitation = Type.Object({
     platformRole: NullableEnum(Type.Enum(PlatformRole)),
     projectId: Nullable(Type.String()),
     projectRoleId: Nullable(Type.String()),
-    projectRole: Nullable(ProjectRole),
+    projectRole: Nullable(Type.String()), // Simple role: 'OWNER' | 'EDITOR' | 'VIEWER'
+    projectRoleEntity: Nullable(ProjectRole), // Enterprise ProjectRole entity (for backward compatibility)
 })
 
 export type UserInvitation = Static<typeof UserInvitation>

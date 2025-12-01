@@ -43,7 +43,8 @@ import { adminPlatformModule } from './ee/platform/admin/admin-platform.controll
 import { platformPlanModule } from './ee/platform/platform-plan/platform-plan.module'
 import { projectEnterpriseHooks } from './ee/projects/ee-project-hooks'
 import { platformProjectModule } from './ee/projects/platform-project-module'
-import { projectMemberModule } from './ee/projects/project-members/project-member.module'
+import { projectMemberModule as EEProjectMemberModule } from './ee/projects/project-members/project-member.module'
+import { projectMemberModule as CEProjectMemberModule } from './project-members/project-member.module'
 import { gitRepoModule } from './ee/projects/project-release/git-sync/git-sync.module'
 import { projectReleaseModule } from './ee/projects/project-release/project-release.module'
 import { projectRoleModule } from './ee/projects/project-role/project-role.module'
@@ -159,20 +160,26 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
         // eslint-disable-next-line
         reply.header('x-request-id', request.id)
     })
+    // Log ALL incoming requests for debugging
     app.addHook('onRequest', async (request, reply) => {
-        const route = app.hasRoute({
-            method: request.method as HTTPMethods,
-            url: request.routeOptions.url!,
-        })
-        if (!route) {
-            return reply.code(404).send({
-                statusCode: 404,
-                error: 'Not Found',
-                message: 'Route not found',
-            })
+        app.log.info({
+            method: request.method,
+            url: request.url,
+        }, 'Incoming request received')
+    })
+    // Log when routes are registered (at startup)
+    app.addHook('onRoute', (routeOptions) => {
+        if (routeOptions.url?.includes('users/projects')) {
+            app.log.info({
+                method: routeOptions.method,
+                url: routeOptions.url,
+                path: routeOptions.path,
+            }, 'Route registered - users/projects')
         }
     })
-
+    // Removed route check hook - it was causing false 404s because routeOptions.url
+    // isn't available until after route matching, and hasRoute() doesn't work correctly
+    // with request URLs. Let Fastify handle 404s naturally after route matching.
     app.addHook('preHandler', securityHandlerChain)
     app.addHook('preHandler', rbacMiddleware)
     await systemJobsSchedule(app.log).init()
@@ -258,9 +265,11 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
             await app.register(adminPlatformModule)
             await app.register(appCredentialModule)
             await app.register(connectionKeyModule)
+            app.log.info('About to register platformProjectModule for CLOUD edition')
             await app.register(platformProjectModule)
+            app.log.info('Successfully registered platformProjectModule for CLOUD edition')
             await app.register(platformPlanModule)
-            await app.register(projectMemberModule)
+            await app.register(EEProjectMemberModule)
             await app.register(appSumoModule)
             await app.register(customDomainModule)
             await app.register(signingKeyModule)
@@ -290,7 +299,7 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
             await app.register(platformPlanModule)
             await app.register(customDomainModule)
             await app.register(platformProjectModule)
-            await app.register(projectMemberModule)
+            await app.register(EEProjectMemberModule)
             await app.register(signingKeyModule)
             await app.register(authnSsoSamlModule)
             await app.register(managedAuthnModule)
@@ -315,12 +324,26 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
             flagHooks.set(enterpriseFlagsHooks)
             break
         case ApEdition.COMMUNITY:
+            await app.register(CEProjectMemberModule)
             await app.register(projectModule)
             await app.register(communityPiecesModule)
             await app.register(communityFlowTemplateModule)
             await app.register(queueMetricsModule)
             break
     }
+
+    // Add custom 404 handler for debugging
+    app.setNotFoundHandler(async (request, reply) => {
+        app.log.warn({
+            method: request.method,
+            url: request.url,
+        }, 'Route not found - setNotFoundHandler called')
+        return reply.code(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: `Route not found: ${request.method} ${request.url}`,
+        })
+    })
 
     app.addHook('onClose', async () => {
         app.log.info('Shutting down')

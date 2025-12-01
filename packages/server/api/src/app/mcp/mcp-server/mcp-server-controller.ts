@@ -1,6 +1,7 @@
 import { apId, ApId, CreateMcpRequestBody, ListMcpsRequest, McpWithTools, Nullable, Permission, PrincipalType, SeekPage, SERVICE_KEY_SECURITY_OPENAPI, UpdateMcpRequestBody } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
 import { mcpService } from '../mcp-service'
 
@@ -33,6 +34,7 @@ export const mcpServerController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/:id', GetMcpRequest, async (req) => {
+        assertProjectId(req.principal)
         const mcpId = req.params.id
         return mcpService(req.log).getOrThrow({
             mcpId,
@@ -59,6 +61,7 @@ export const mcpServerController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.delete('/:id', DeleteMcpRequest, async (req, reply) => {
+        assertProjectId(req.principal)
         const mcpId = req.params.id
         await mcpService(req.log).delete({
             mcpId,

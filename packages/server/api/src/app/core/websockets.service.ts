@@ -33,7 +33,9 @@ export const websocketService = {
                     userId: principal.id,
                     projectId: principal.projectId,
                 })
-                await socket.join(principal.projectId)
+                if (principal.projectId) {
+                    await socket.join(principal.projectId)
+                }
                 break
             }
             case PrincipalType.WORKER: {

@@ -43,6 +43,6 @@ export const useAuthorization = () => {
 };
 
 export const useShowPlatformAdminDashboard = () => {
-  const platformRole = userHooks.getCurrentUserPlatformRole();
-  return platformRole === PlatformRole.ADMIN;
+  const { data: user } = userHooks.useCurrentUser();
+  return user?.platformRole === PlatformRole.ADMIN;
 };

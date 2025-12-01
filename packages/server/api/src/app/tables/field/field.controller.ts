@@ -1,17 +1,20 @@
 import { CreateFieldRequest, Field, PrincipalType, UpdateFieldRequest } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { fieldService } from './field.service'
 
 export const fieldController: FastifyPluginAsyncTypebox = async (fastify) => {
 
     fastify.post('/', CreateRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const response = await fieldService.create({ request: request.body, projectId: request.principal.projectId })
         await reply.status(StatusCodes.CREATED).send(response)
     },
     )
 
     fastify.get('/', GetFieldsRequest, async (request) => {
+        assertProjectId(request.principal)
         return fieldService.getAll({
             projectId: request.principal.projectId,
             tableId: request.query.tableId,
@@ -20,6 +23,7 @@ export const fieldController: FastifyPluginAsyncTypebox = async (fastify) => {
     )
 
     fastify.get('/:id', GetFieldByIdRequest, (request) => {
+        assertProjectId(request.principal)
         return fieldService.getById({
             id: request.params.id,
             projectId: request.principal.projectId,
@@ -28,6 +32,7 @@ export const fieldController: FastifyPluginAsyncTypebox = async (fastify) => {
     )
 
     fastify.delete('/:id', DeleteFieldRequest, async (request) => {
+        assertProjectId(request.principal)
         return fieldService.delete({
             id: request.params.id,
             projectId: request.principal.projectId,
@@ -36,6 +41,7 @@ export const fieldController: FastifyPluginAsyncTypebox = async (fastify) => {
     )
 
     fastify.post('/:id', UpdateRequest, async (request) => {
+        assertProjectId(request.principal)
         return fieldService.update({
             id: request.params.id,
             projectId: request.principal.projectId,

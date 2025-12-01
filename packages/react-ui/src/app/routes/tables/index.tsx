@@ -263,7 +263,7 @@ const ApTablesPage = () => {
           page={data}
           isLoading={isLoading}
           onRowClick={(row, newWindow) => {
-            const path = `/projects/${project.id}/tables/${row.id}`;
+            const path = `/projects/${project!.id}/tables/${row.id}`;
             if (newWindow) {
               openNewWindow(path);
             } else {

@@ -23,6 +23,7 @@ import {
     Type,
 } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { flowRunService } from './flow-run-service'
 
 const DEFAULT_PAGING_LIMIT = 10
@@ -48,8 +49,9 @@ export const flowRunController: FastifyPluginAsyncTypebox = async (app) => {
         '/:id',
         GetRequest,
         async (request, reply) => {
+            assertProjectId(request.principal)
             const flowRun = await flowRunService(request.log).getOnePopulatedOrThrow({
-                projectId: request.principal.projectId,
+                projectId: request.principal.projectId ?? undefined,
                 id: request.params.id,
             })
             await reply.send(flowRun)
@@ -109,6 +111,7 @@ export const flowRunController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.post('/retry', BulkRetryFlowRequest, async (req) => {
+        assertProjectId(req.principal)
         return flowRunService(req.log).bulkRetry({
             projectId: req.principal.projectId,
             flowRunIds: req.body.flowRunIds,
@@ -123,6 +126,7 @@ export const flowRunController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.post('/archive', ArchiveFlowRunRequest, async (req) => {
+        assertProjectId(req.principal)
         return flowRunService(req.log).bulkArchive({
             projectId: req.principal.projectId,
             flowRunIds: req.body.flowRunIds,

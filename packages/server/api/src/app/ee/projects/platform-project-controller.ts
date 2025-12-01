@@ -30,14 +30,15 @@ import { projectLimitsService } from './project-plan/project-plan.service'
 const DEFAULT_LIMIT_SIZE = 50
 
 export const platformProjectController: FastifyPluginAsyncTypebox = async (app) => {
+    // Register POST '/' before other routes to ensure exact match routes are handled first
     app.post('/', CreateProjectRequest, async (request, reply) => {
-        await platformMustHaveFeatureEnabled(platform => platform.plan.manageProjectsEnabled).call(app, request, reply)
+        // Allow all users to create projects - no feature restriction
         const platformId = request.principal.platform.id
         assertNotNullOrUndefined(platformId, 'platformId')
-        const platform = await platformService.getOneOrThrow(platformId)
-
+        const userId = await getUserId(request.principal)
+        
         const project = await projectService.create({
-            ownerId: platform.ownerId,
+            ownerId: userId,
             displayName: request.body.displayName,
             platformId,
             externalId: request.body.externalId ?? undefined,

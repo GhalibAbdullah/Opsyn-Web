@@ -1,6 +1,7 @@
 import { ListMcpRunRequest, McpRun, Permission, PrincipalType, SeekPage } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
 import { mcpRunService } from './mcp-run.service'
 
@@ -10,6 +11,7 @@ export const mcpRunController: FastifyPluginAsyncTypebox = async (app) => {
     app.addHook('preSerialization', entitiesMustBeOwnedByCurrentProject)
     
     app.get('/', GetMcpRunRequest, async (req) => {
+        assertProjectId(req.principal)
         const { mcpId, cursorRequest, limit, status, metadata } = req.query
         return mcpRunService(req.log).list({
             mcpId,

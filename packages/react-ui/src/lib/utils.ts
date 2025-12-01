@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import { useEffect, useRef, useState, RefObject } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { LocalesEnum, Permission } from '@activepieces/shared';
+import { isNil, LocalesEnum, Permission } from '@activepieces/shared';
 
 import { authenticationSession } from './authentication-session';
 
@@ -229,6 +229,11 @@ export const useTimeAgo = (date: Date) => {
 export const determineDefaultRoute = (
   checkAccess: (permission: Permission) => boolean,
 ) => {
+  const projectId = authenticationSession.getProjectId();
+  if (isNil(projectId)) {
+    // No project - redirect to dashboard to create one
+    return '/dashboard';
+  }
   if (checkAccess(Permission.READ_FLOW)) {
     return authenticationSession.appendProjectRoutePrefix('/flows');
   }

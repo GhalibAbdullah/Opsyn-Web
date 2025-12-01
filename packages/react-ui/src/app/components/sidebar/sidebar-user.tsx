@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronsUpDown, LogOut, Shield, UserCogIcon } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Settings, Shield, UserCogIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -34,6 +34,7 @@ export function SidebarUser() {
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const { embedState } = useEmbedding();
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: user } = userHooks.useCurrentUser();
   const queryClient = useQueryClient();
   const { reset } = useTelemetry();
@@ -102,6 +103,14 @@ export function SidebarUser() {
             {!isInPlatformAdmin && <SidebarPlatformAdminButton />}
 
             <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => navigate(isInPlatformAdmin ? '/' : '/platform')}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {isInPlatformAdmin
+                  ? t('Exit Platform Admin Settings')
+                  : t('Platform Admin Settings')}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setAccountSettingsOpen(true)}>
                 <UserCogIcon className="w-4 h-4 mr-2" />
                 {t('Account Settings')}
@@ -131,7 +140,8 @@ function SidebarPlatformAdminButton() {
   const messages = notificationHooks.useNotifications();
   const platformRole = userHooks.getCurrentUserPlatformRole();
 
-  if (embedState.isEmbedded || !showPlatformAdminDashboard) {
+  // Allow all users to see platform admin button - no admin restriction
+  if (embedState.isEmbedded) {
     return null;
   }
 

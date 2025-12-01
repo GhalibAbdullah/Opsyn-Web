@@ -42,6 +42,6 @@ export type ApplicationEventHooks = {
 type MetaInformation = {
     platformId: string
     userId: string
-    projectId: string
+    projectId?: string
     ip: string
 }

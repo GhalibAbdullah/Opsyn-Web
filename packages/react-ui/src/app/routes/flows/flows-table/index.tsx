@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { HttpStatusCode } from 'axios';
 import { t } from 'i18next';
 import { CheckIcon, Link2, Workflow } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { ProjectNotFoundPage } from '@/app/components/project-not-found-page';
 import { useEmbedding } from '@/components/embed-provider';
 import { DataTable, DataTableFilters } from '@/components/ui/data-table';
 import { appConnectionsQueries } from '@/features/connections/lib/app-connections-hooks';
@@ -14,10 +16,12 @@ import {
   folderIdParamName,
 } from '@/features/folders/component/folder-filter-list';
 import { piecesHooks } from '@/features/pieces/lib/pieces-hooks';
+import { api } from '@/lib/api';
 import { authenticationSession } from '@/lib/authentication-session';
 import { useNewWindow } from '@/lib/navigation-utils';
 import { formatUtils } from '@/lib/utils';
 import {
+  ErrorCode,
   FlowStatus,
   PopulatedFlow,
   UncategorizedFolderId,
@@ -40,7 +44,7 @@ export const FlowsTable = ({ refetch: parentRefetch }: FlowsTableProps) => {
   const [selectedRows, setSelectedRows] = useState<Array<PopulatedFlow>>([]);
   const { pieces } = piecesHooks.usePieces({});
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['flow-table', searchParams.toString(), projectId, refresh],
     staleTime: 0,
     queryFn: () => {
@@ -82,6 +86,15 @@ export const FlowsTable = ({ refetch: parentRefetch }: FlowsTableProps) => {
     }
   };
 
+  const bulkActions = useFlowsBulkActions({
+    selectedRows,
+    refresh,
+    setSelectedRows,
+    setRefresh,
+    refetch: handleRefetch,
+    folderId: searchParams.get(folderIdParamName) ?? UncategorizedFolderId,
+  });
+
   const columns = useMemo(() => {
     return flowsTableColumns({
       refetch: handleRefetch,
@@ -91,6 +104,31 @@ export const FlowsTable = ({ refetch: parentRefetch }: FlowsTableProps) => {
       setSelectedRows,
     });
   }, [refresh, handleRefetch, selectedRows]);
+
+  // Check if the error is due to lack of project access
+  const isAccessError = useMemo(() => {
+    if (!isError || !api.isError(error)) {
+      return false;
+    }
+    
+    const errorCode: ErrorCode | undefined = (
+      error.response?.data as { code: ErrorCode }
+    )?.code;
+    
+    const statusCode = error.response?.status;
+    
+    return (
+      statusCode === HttpStatusCode.Forbidden ||
+      statusCode === HttpStatusCode.NotFound ||
+      errorCode === ErrorCode.AUTHORIZATION ||
+      errorCode === ErrorCode.PERMISSION_DENIED
+    );
+  }, [isError, error]);
+
+  // If there's an access error, show the error page instead of the table
+  if (isAccessError) {
+    return <ProjectNotFoundPage />;
+  }
 
   const filters: DataTableFilters<
     keyof PopulatedFlow | 'connectionExternalId' | 'name'
@@ -127,15 +165,6 @@ export const FlowsTable = ({ refetch: parentRefetch }: FlowsTableProps) => {
       icon: Link2,
     } as const,
   ];
-
-  const bulkActions = useFlowsBulkActions({
-    selectedRows,
-    refresh,
-    setSelectedRows,
-    setRefresh,
-    refetch: handleRefetch,
-    folderId: searchParams.get(folderIdParamName) ?? UncategorizedFolderId,
-  });
 
   return (
     <div className="flex flex-row gap-8">

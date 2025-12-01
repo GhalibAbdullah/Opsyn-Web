@@ -1,6 +1,7 @@
 import { ALL_PRINCIPAL_TYPES, CreateTodoRequestBody, ListTodoAssigneesRequestQuery, ListTodosQueryParams, PrincipalType, ResolveTodoRequestQuery, SeekPage, TodoEnvironment, UpdateTodoRequestBody, UserWithMetaInformation } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../authentication/authentication-utils'
 import { paginationHelper } from '../helper/pagination/pagination-utils'
 import { userService } from '../user/user-service'
 import { todoService } from './todo.service'
@@ -23,15 +24,17 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/:id', GetTodoRequest, async (request) => {
+        assertProjectId(request.principal)
         const { id } = request.params
         return todoService(request.log).getOnePopulatedOrThrow({
             id,
             platformId: request.principal.platform.id,
-            projectId: request.principal.projectId,
+            projectId: request.principal.projectId ?? undefined,
         })
     })
 
     app.post('/', CreateTodoRequest, async (request) => {
+        assertProjectId(request.principal)
         const { title, description, statusOptions, flowId, runId, assigneeId, resolveUrl, environment } = request.body
         return todoService(request.log).create({
             title,
@@ -48,6 +51,7 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.post('/:id', UpdateTodoRequest, async (request) => {
+        assertProjectId(request.principal)
         const { id } = request.params
         const { title, description, status, statusOptions, assigneeId, isTest } = request.body
         return todoService(request.log).update({
@@ -76,6 +80,7 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/assignees', ListTodoAssigneesRequest, async (request) => {
+        assertProjectId(request.principal)
         const users = await userService.listProjectUsers({
             platformId: request.principal.platform.id,
             projectId: request.principal.projectId,
@@ -84,6 +89,7 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.delete('/:id', DeleteTodoRequest, async (request) => {
+        assertProjectId(request.principal)
         const { id } = request.params
         return todoService(request.log).delete({
             id,

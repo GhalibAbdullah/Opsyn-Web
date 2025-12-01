@@ -1,5 +1,6 @@
 import { CreateTodoActivityRequestBody, ListTodoActivitiesQueryParams, PrincipalType } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { todoActivitiesService as todoActivityService } from './todos-activity.service'
 
 const DEFAULT_LIMIT = 10
@@ -7,6 +8,7 @@ const DEFAULT_CURSOR = null
 
 export const todoActivityController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/', ListTodoCommentsRequest, async (request) => {
+        assertProjectId(request.principal)
         return todoActivityService(request.log).list({
             todoId: request.query.todoId,
             platformId: request.principal.platform.id,
@@ -17,6 +19,7 @@ export const todoActivityController: FastifyPluginAsyncTypebox = async (app) => 
     })
 
     app.post('/', CreateTodoCommentRequest, async (request) => {
+        assertProjectId(request.principal)
         const { content } = request.body
         return todoActivityService(request.log).create({
             content,

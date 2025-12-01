@@ -25,6 +25,7 @@ export const AllowOnlyLoggedInUserOnlyGuard = ({
   }
   platformHooks.useCurrentPlatform();
   flagsHooks.useFlags();
-  projectHooks.useCurrentProject();
+  // Note: useCurrentProject is called conditionally in components that need it
+  // Platform routes don't require a project, so we don't call it here
   return <SocketProvider>{children}</SocketProvider>;
 };

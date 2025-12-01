@@ -70,7 +70,7 @@ export const NewProjectDialog = ({
       } catch (error) {
         console.error('Error invalidating queries:', error);
         // Still close dialog and call onCreate even if invalidation fails
-        setOpen(false);
+      setOpen(false);
         form.reset({ displayName: '' });
         onCreate?.(createdProject);
       }

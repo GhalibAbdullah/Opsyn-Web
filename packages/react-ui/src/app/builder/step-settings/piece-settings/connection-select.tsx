@@ -138,7 +138,7 @@ const ConnectionSelect = memo((params: ConnectionSelectProps) => {
                 <div className="relative">
                   {field.value && !field.disabled && (
                     <>
-                      {connections?.data?.find(
+                      {!params.disabled && connections?.data?.find(
                         (connection) =>
                           connection.externalId ===
                             removeBrackets(field.value) &&
@@ -212,18 +212,20 @@ const ConnectionSelect = memo((params: ConnectionSelectProps) => {
                 </div>
 
                 <SelectContent>
-                  <SelectAction
-                    onClick={() => {
-                      setSelectConnectionOpen(false);
-                      setReconnectConnection(null);
-                      setConnectionDialogOpen(true);
-                    }}
-                  >
-                    <span className="flex items-center gap-1 text-primary w-full">
-                      <Plus size={16} />
-                      {t('Create Connection')}
-                    </span>
-                  </SelectAction>
+                  {!params.disabled && (
+                    <SelectAction
+                      onClick={() => {
+                        setSelectConnectionOpen(false);
+                        setReconnectConnection(null);
+                        setConnectionDialogOpen(true);
+                      }}
+                    >
+                      <span className="flex items-center gap-1 text-primary w-full">
+                        <Plus size={16} />
+                        {t('Create Connection')}
+                      </span>
+                    </SelectAction>
+                  )}
 
                   {connections &&
                     connections.data &&

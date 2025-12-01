@@ -18,8 +18,14 @@ export const userInvitationApi = {
   delete(id: string): Promise<void> {
     return api.delete<void>(`/v1/user-invitations/${id}`);
   },
-  accept(token: string): Promise<{ registered: boolean }> {
-    return api.post<{ registered: boolean }>(`/v1/user-invitations/accept`, {
+  accept(token: string, email?: string, projectId?: string): Promise<{ registered: boolean }> {
+    // Include email and projectId in query params for idempotent checking
+    const queryParams = new URLSearchParams();
+    if (email) queryParams.set('email', email);
+    if (projectId) queryParams.set('projectId', projectId);
+    const queryString = queryParams.toString();
+    const url = `/v1/user-invitations/accept${queryString ? `?${queryString}` : ''}`;
+    return api.post<{ registered: boolean }>(url, {
       invitationToken: token,
     });
   },

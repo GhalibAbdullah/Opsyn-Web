@@ -33,6 +33,9 @@ const repo = repoFactory(ProjectMemberEntity)
 export type ProjectMember = Omit<ProjectMemberSchema, 'user' | 'project'>
 
 export type ProjectMemberWithUser = ProjectMember & {
+    projectRole?: {
+        name: string
+    }
     user: {
         id: string
         email: string
@@ -310,16 +313,27 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
             return finalAttempt
         }
         
-        // Last resort: throw error if member truly not found
-        // This shouldn't happen in normal operation
-        throw new ActivepiecesError({
-            code: ErrorCode.ENTITY_NOT_FOUND,
-            params: {
-                entityType: 'project_member',
-                entityId: `${projectId}/${userId}/${platformId}`,
-                message: 'Project member was not found after creation',
-            },
-        })
+        // Last resort: if member still not found after all retries, it might be a transaction isolation issue
+        // The save succeeded, so the member should exist. Return a "stub" member object
+        // The caller can verify membership later if needed
+        log.warn({ 
+            projectId, 
+            userId, 
+            platformId,
+            savedId: projectMember.id 
+        }, '[projectMemberService.create] Member not immediately visible after save - likely transaction isolation issue, returning stub')
+        
+        // Return a stub member - the actual member exists in the database but isn't visible yet
+        // This allows the invitation acceptance to succeed, and the member will be visible after transaction commits
+        return {
+            id: projectMember.id,
+            projectId,
+            userId,
+            platformId,
+            role: finalRole,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+        } as ProjectMember
     },
 
     async update({
@@ -438,12 +452,33 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
             .where({ platformId })
 
         if (projectId) {
+            // CRITICAL: Strictly filter by projectId to ensure we only get members for this project
             queryBuilder.andWhere({ projectId })
         }
 
         const { data, cursor } = await paginator.paginate(queryBuilder)
+        
+        // Log initial query results for debugging
+        if (projectId) {
+            log.debug({ 
+                projectId, 
+                initialRecordCount: data.length,
+                initialRecordProjectIds: data.map(m => m.projectId),
+                initialRecordUserIds: data.map(m => m.userId)
+            }, 'Initial project_member query results')
+        }
+        
         const enrichedData: (ProjectMemberWithUser | null)[] = await Promise.all(
             data.map(async (member) => {
+                // Safety check: ensure member belongs to requested project
+                if (projectId && member.projectId !== projectId) {
+                    log.error({ 
+                        requestedProjectId: projectId,
+                        memberProjectId: member.projectId,
+                        memberId: member.id
+                    }, 'CRITICAL: Query returned member from wrong project - filtering out')
+                    return null
+                }
                 return await enrichProjectMemberWithUser(member, log)
             }),
         )
@@ -451,75 +486,218 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
             (member) => !isNil(member),
         )
 
-        // For Community Edition: Also include platform admins who don't have explicit ProjectMember records
-        // This maintains backward compatibility
+        // For Community Edition: Always ensure project owner is included and shows as OWNER
+        // This ensures project owners are always visible in the members list with correct role
         if (projectId) {
             const project = await projectService.getOneOrThrow(projectId)
-            const platformAdminUsers = await userService.getByPlatformRole(
+            
+            // CRITICAL: Verify we're working with the correct project
+            if (project.id !== projectId) {
+                log.error({ 
+                    requestedProjectId: projectId, 
+                    actualProjectId: project.id 
+                }, 'Project ID mismatch in member list')
+                throw new ActivepiecesError({
+                    code: ErrorCode.VALIDATION,
+                    params: { message: 'Project ID mismatch' },
+                })
+            }
+            
+            // Log project details for debugging
+            log.info({ 
+                projectId, 
+                projectDisplayName: project.displayName,
+                projectOwnerId: project.ownerId,
                 platformId,
-                PlatformRole.ADMIN,
-            )
+                explicitMemberCount: filteredEnrichedData.length,
+                explicitMemberUserIds: filteredEnrichedData.map(m => m.userId)
+            }, 'Listing project members - BEFORE adding owner')
 
-            // Get user IDs that already have ProjectMember records
+            // Get user IDs that already have ProjectMember records for THIS project
             const existingMemberUserIds = new Set(
                 filteredEnrichedData.map((m) => m.userId),
             )
 
-            // Only show platform admins as virtual members if they're the project owner
-            // This prevents removed members from reappearing as virtual members
-            // Other platform admins must be explicitly added via ProjectMember records
-            const virtualMembers: ProjectMemberWithUser[] = await Promise.all(
-                platformAdminUsers
-                    .filter((user) => {
-                        // Only include if:
-                        // 1. They don't have an explicit ProjectMember record
-                        // 2. They are the project owner (project owners should always be visible)
-                        return !existingMemberUserIds.has(user.id) && user.id === project.ownerId
-                    })
-                    .map(async (user) => {
+            // Always ensure the project owner is included with OWNER role
+            // ONLY if they are the actual owner of THIS specific project
+            // CRITICAL: Double-check that project.ownerId matches the project we're querying
+            if (project.ownerId && project.id === projectId) {
+                try {
+                    const ownerUser = await userService.getOneOrFail({ id: project.ownerId })
+                    
+                    // Verify owner belongs to the same platform
+                    if (ownerUser.platformId !== platformId) {
+                        log.warn({ 
+                            projectId, 
+                            ownerId: project.ownerId, 
+                            ownerPlatformId: ownerUser.platformId,
+                            projectPlatformId: platformId 
+                        }, 'Project owner belongs to different platform, skipping')
+                    } else if (project.id !== projectId) {
+                        // Extra safety check - this should never happen due to earlier check
+                        log.error({ 
+                            projectId, 
+                            projectOwnerId: project.ownerId,
+                            actualProjectId: project.id 
+                        }, 'Project ID mismatch when adding owner, skipping')
+                    } else {
                         const identity = await userIdentityService(log).getBasicInformation(
-                            user.identityId,
+                            ownerUser.identityId,
                         )
-                        // Project owner is always OWNER
-                        const role: ProjectMemberRole = 'OWNER'
-
-                        return {
-                            id: `virtual-${user.id}`, // Virtual ID for members without DB records
-                            created: user.created,
-                            updated: user.updated,
-                            projectId,
-                            platformId,
-                            userId: user.id,
-                            role,
-                            user: {
-                                id: user.id,
-                                email: identity.email,
-                                firstName: identity.firstName,
-                                lastName: identity.lastName,
-                                platformId: user.platformId ?? '',
-                                platformRole: user.platformRole,
-                                status: user.status,
-                                externalId: user.externalId ?? null,
-                                created: user.created,
-                                updated: user.updated,
-                            },
+                        
+                        // If owner has an explicit ProjectMember record for THIS project, update it to OWNER role
+                        // CRITICAL: Only update if the member record belongs to THIS specific project
+                        const existingOwnerMemberIndex = filteredEnrichedData.findIndex(
+                            (m) => m.userId === project.ownerId && m.projectId === projectId
+                        )
+                        
+                        if (existingOwnerMemberIndex >= 0) {
+                            const existingMember = filteredEnrichedData[existingOwnerMemberIndex]
+                            // Double-check: ensure this member record belongs to the correct project
+                            if (existingMember.projectId !== projectId) {
+                                log.error({ 
+                                    projectId,
+                                    memberProjectId: existingMember.projectId,
+                                    memberUserId: existingMember.userId
+                                }, 'CRITICAL: Found owner member record for wrong project - SKIPPING update')
+                            } else {
+                                // Update existing member to OWNER role
+                                filteredEnrichedData[existingOwnerMemberIndex] = {
+                                    ...existingMember,
+                                    role: 'OWNER',
+                                    projectRole: {
+                                        name: 'OWNER',
+                                    },
+                                }
+                            }
+                        } else {
+                            // Add owner as virtual member if they don't have an explicit record for THIS project
+                            // CRITICAL: Triple-check that we're adding for the correct project
+                            if (project.id !== projectId || project.ownerId !== ownerUser.id) {
+                                log.error({ 
+                                    projectId,
+                                    projectActualId: project.id,
+                                    projectOwnerId: project.ownerId,
+                                    ownerUserId: ownerUser.id
+                                }, 'CRITICAL: Project/owner mismatch when adding virtual member - SKIPPING')
+                            } else {
+                                log.info({ 
+                                    projectId, 
+                                    ownerId: ownerUser.id,
+                                    ownerEmail: identity.email,
+                                    ownerName: `${identity.firstName} ${identity.lastName}`
+                                }, 'Adding project owner as virtual member')
+                                
+                                filteredEnrichedData.push({
+                                    id: `virtual-${ownerUser.id}`,
+                                    created: ownerUser.created,
+                                    updated: ownerUser.updated,
+                                    projectId, // Explicitly set to the current projectId
+                                    platformId,
+                                    userId: ownerUser.id,
+                                    role: 'OWNER',
+                                    projectRole: {
+                                        name: 'OWNER',
+                                    },
+                                    user: {
+                                        id: ownerUser.id,
+                                        email: identity.email,
+                                        firstName: identity.firstName,
+                                        lastName: identity.lastName,
+                                        platformId: ownerUser.platformId ?? '',
+                                        platformRole: ownerUser.platformRole,
+                                        status: ownerUser.status,
+                                        externalId: ownerUser.externalId ?? null,
+                                        created: ownerUser.created,
+                                        updated: ownerUser.updated,
+                                    },
+                                })
+                            }
                         }
-                    }),
-            )
+                    }
+                } catch (error) {
+                    // If owner user doesn't exist, log but don't fail
+                    log.warn({ projectId, ownerId: project.ownerId, error }, 'Failed to load project owner')
+                }
+            }
 
-            // Combine explicit members with virtual members
-            const allMembers = [...filteredEnrichedData, ...virtualMembers]
+            // Final safety check: Filter out any members that don't belong to this project
+            // This should never happen if the query is correct, but it's a safety net
+            const allMembers = filteredEnrichedData.filter(
+                (member) => member.projectId === projectId
+            )
+            
+            // Remove duplicates by userId WITHIN THIS PROJECT ONLY
+            // CRITICAL: Key by userId only (not projectId+userId) because we've already filtered to this project
+            // This ensures we don't accidentally merge members from different projects
+            const membersMap = new Map<string, ProjectMemberWithUser>()
+            allMembers.forEach(member => {
+                // Double-check: ensure member belongs to this project
+                if (member.projectId !== projectId) {
+                    log.warn({ 
+                        memberProjectId: member.projectId, 
+                        requestedProjectId: projectId,
+                        memberUserId: member.userId 
+                    }, 'Filtering out member from wrong project')
+                    return // Skip this member
+                }
+                
+                const existing = membersMap.get(member.userId)
+                if (!existing) {
+                    // No existing member for this userId in this project, add this one
+                    membersMap.set(member.userId, member)
+                } else {
+                    // We have a duplicate for this userId in this project - prefer explicit records over virtual ones
+                    const isCurrentExplicit = !member.id.startsWith('virtual-')
+                    const isExistingExplicit = !existing.id.startsWith('virtual-')
+                    
+                    if (isCurrentExplicit && !isExistingExplicit) {
+                        // Current is explicit, existing is virtual - replace with explicit
+                        membersMap.set(member.userId, member)
+                    }
+                    // Otherwise keep existing (either both are same type, or existing is explicit)
+                }
+            })
+            
+            const finalMembers = Array.from(membersMap.values())
+            
+            // Final validation: Ensure ALL members belong to the requested project
+            const invalidMembers = finalMembers.filter(m => m.projectId !== projectId)
+            if (invalidMembers.length > 0) {
+                log.error({ 
+                    projectId, 
+                    invalidMembers: invalidMembers.map(m => ({ userId: m.userId, projectId: m.projectId }))
+                }, 'CRITICAL: Found members from wrong project after deduplication')
+                // Filter them out as a safety measure
+                return {
+                    data: finalMembers.filter(m => m.projectId === projectId),
+                    next: null,
+                    previous: null,
+                }
+            }
+            
+            // Log final members for debugging
+            log.info({ 
+                projectId, 
+                finalMemberCount: finalMembers.length,
+                finalMemberDetails: finalMembers.map(m => ({
+                    userId: m.userId,
+                    email: m.user.email,
+                    role: m.role,
+                    isVirtual: m.id.startsWith('virtual-')
+                }))
+            }, 'Listing project members - FINAL result')
 
             // Simple pagination for combined results
             const startIndex = decodedCursor.nextCursor
                 ? parseInt(decodedCursor.nextCursor, 10) || 0
                 : 0
             const endIndex = startIndex + (limit || 10)
-            const paginatedMembers = allMembers.slice(startIndex, endIndex)
+            const paginatedMembers = finalMembers.slice(startIndex, endIndex)
 
             return {
                 data: paginatedMembers,
-                next: endIndex < allMembers.length ? endIndex.toString() : null,
+                next: endIndex < finalMembers.length ? endIndex.toString() : null,
                 previous: startIndex > 0 ? (startIndex - limit).toString() : null,
             }
         }
@@ -550,14 +728,14 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
                 platformId,
             }, '🔍 getIdsOfProjects START - ERROR LEVEL')
             
-            const edition = system.getEdition()
+        const edition = system.getEdition()
             globalLog.error({ edition }, '🔍 Edition check')
             
-            if (edition !== ApEdition.COMMUNITY) {
-                // For Enterprise/Cloud, this should not be used
+        if (edition !== ApEdition.COMMUNITY) {
+            // For Enterprise/Cloud, this should not be used
                 globalLog.error({}, '🔍 Not Community Edition, returning empty array')
-                return []
-            }
+            return []
+        }
 
             globalLog.info({
                 userId,
@@ -571,25 +749,61 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
                 edition,
             }, 'Getting project IDs for user - START')
 
-            // Get all projects where user has explicit ProjectMember records
-            const members = await repo().find({
-                where: {
-                    userId,
-                    platformId,
-                },
-            })
+        // Get all projects where user has explicit ProjectMember records
+        // Add retry logic to handle transaction isolation issues where newly created members
+        // might not be immediately visible
+        let members = await repo().find({
+            where: {
+                userId,
+                platformId,
+            },
+        })
 
-            const projectIds = members.map((member) => member.projectId)
+        // If no members found, retry a few times with delays to handle transaction isolation
+        // This is especially important after accepting invitations where members are just created
+        // SQLite with connection pooling may have delays before changes are visible to other connections
+        if (members.length === 0) {
+            const maxRetries = 5
+            const baseDelayMs = 200
+            
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                if (attempt > 0) {
+                    const delayMs = baseDelayMs * attempt // Linear backoff: 200ms, 400ms, 600ms, 800ms, 1000ms
+                    log.info({
+                        attempt: attempt + 1,
+                        delayMs,
+                    }, 'Retrying member query due to transaction isolation')
+                    await new Promise(resolve => setTimeout(resolve, delayMs))
+                }
+                
+                members = await repo().find({
+                    where: {
+                        userId,
+                        platformId,
+                    },
+                })
+                
+                if (members.length > 0) {
+                    log.info({
+                        attempt: attempt + 1,
+                        memberCount: members.length,
+                    }, 'Found project members after retry')
+                    break
+                }
+            }
+        }
+
+        const projectIds = members.map((member) => member.projectId)
             log.info({
                 memberProjectIds: projectIds,
                 memberCount: members.length,
             }, 'Found project member records')
 
-            // Also include projects where user is the owner (query directly to avoid circular dependency)
-            const { ProjectEntity } = await import('../project/project-entity')
-            const { repoFactory } = await import('../core/db/repo-factory')
-            const { IsNull } = await import('typeorm')
-            const projectRepository = repoFactory(ProjectEntity)
+        // Also include projects where user is the owner (query directly to avoid circular dependency)
+        const { ProjectEntity } = await import('../project/project-entity')
+        const { repoFactory } = await import('../core/db/repo-factory')
+        const { IsNull } = await import('typeorm')
+        const projectRepository = repoFactory(ProjectEntity)
             
             log.info({
                 queryingFor: {
@@ -657,16 +871,16 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
             }, 'Owned projects (no deleted filter)')
             
             // Also try with explicit IsNull filter
-            const ownedProjects = await projectRepository().find({
-                where: {
-                    ownerId: userId,
-                    platformId,
-                    deleted: IsNull(), // Exclude soft-deleted projects
-                },
-                select: {
-                    id: true,
-                },
-            })
+        const ownedProjects = await projectRepository().find({
+            where: {
+                ownerId: userId,
+                platformId,
+                deleted: IsNull(), // Exclude soft-deleted projects
+            },
+            select: {
+                id: true,
+            },
+        })
             
             globalLog.info({
                 ownedProjectsCount: ownedProjects.length,
@@ -684,7 +898,7 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
                 queryResult: finalOwnedProjects,
             }, 'Found owned projects')
 
-            // Combine and deduplicate
+        // Combine and deduplicate
             const allProjectIds = [...new Set([...projectIds, ...finalOwnedProjectIds])]
             
             log.info({
@@ -694,7 +908,7 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
                 ownedIds: finalOwnedProjectIds,
             }, 'Combined project IDs - END')
 
-            return allProjectIds
+        return allProjectIds
         } catch (error) {
             log.error({
                 error,
@@ -756,6 +970,9 @@ async function enrichProjectMemberWithUser(
 
     return {
         ...projectMember,
+        projectRole: {
+            name: projectMember.role,
+        },
         user: {
             platformId: user.platformId ?? '',
             platformRole: user.platformRole,

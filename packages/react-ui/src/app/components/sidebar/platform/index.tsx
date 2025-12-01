@@ -24,6 +24,7 @@ import {
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { flagsHooks } from '@/hooks/flags-hooks';
 import { platformHooks } from '@/hooks/platform-hooks';
+import { projectApi } from '@/lib/project-api';
 import { cn, determineDefaultRoute } from '@/lib/utils';
 import { ApEdition, ApFlagId } from '@activepieces/shared';
 
@@ -41,6 +42,23 @@ export function PlatformSidebar() {
   const { checkAccess } = useAuthorization();
   const defaultRoute = determineDefaultRoute(checkAccess);
   const branding = flagsHooks.useWebsiteBranding();
+
+  const handleExitPlatformAdmin = async () => {
+    // Check if user has any projects
+    try {
+      const projectsList = await projectApi.list({ limit: 1 });
+      if (projectsList.data && projectsList.data.length > 0) {
+        // User has projects, navigate to default route (which will use a project)
+        navigate(defaultRoute);
+      } else {
+        // User has no projects, go to dashboard
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      // If we can't fetch projects, go to dashboard as fallback
+      navigate('/dashboard');
+    }
+  };
 
   const items: SidebarGeneralItemType[] = [
     {
@@ -233,7 +251,7 @@ export function PlatformSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuButton
-            onClick={() => navigate('/')}
+            onClick={handleExitPlatformAdmin}
             className="py-5 px-2"
           >
             <ArrowLeft />

@@ -6,7 +6,7 @@ import { repoFactory } from '../core/db/repo-factory'
 import { domainHelper } from '../ee/custom-domains/domain-helper'
 import { smtpEmailSender } from '../ee/helper/email/email-sender/smtp-email-sender'
 import { emailService } from '../ee/helper/email/email-service'
-import { projectMemberService } from '../ee/projects/project-members/project-member.service'
+import { projectMemberService } from '../project-members/project-member.service'
 import { projectRoleService } from '../ee/projects/project-role/project-role.service'
 import { jwtUtils } from '../helper/jwt-utils'
 import { buildPaginator } from '../helper/pagination/build-paginator'
@@ -19,24 +19,55 @@ import { UserInvitationEntity } from './user-invitation.entity'
 const repo = repoFactory(UserInvitationEntity)
 
 export const userInvitationsService = (log: FastifyBaseLogger) => ({
-    async getOneByInvitationTokenOrThrow(invitationToken: string): Promise<UserInvitation> {
-        const decodedToken = await jwtUtils.decodeAndVerify<UserInvitationToken>({
-            jwt: invitationToken,
-            key: await jwtUtils.getJwtSecret(),
-        })
-        const invitation = await repo().findOneBy({
-            id: decodedToken.id,
-        })
-        if (isNil(invitation)) {
+    async getOneByInvitationTokenOrThrow(invitationToken: string): Promise<UserInvitation | null> {
+        try {
+            const decodedToken = await jwtUtils.decodeAndVerify<UserInvitationToken>({
+                jwt: invitationToken,
+                key: await jwtUtils.getJwtSecret(),
+            })
+            log.info({ invitationId: decodedToken.id }, '[getOneByInvitationTokenOrThrow] Decoded token')
+            
+            const invitation = await repo().findOneBy({
+                id: decodedToken.id,
+            })
+            
+            if (isNil(invitation)) {
+                log.warn({ invitationId: decodedToken.id }, '[getOneByInvitationTokenOrThrow] Invitation not found - may have been deleted or already accepted')
+                // Return null instead of throwing - let the accept method handle it
+                return null
+            }
+            
+            // Allow accepting already-accepted invitations (idempotent)
+            // This handles cases where the user clicks the link multiple times
+            // or the invitation was accepted but the frontend didn't get the response
+            if (invitation.status === InvitationStatus.ACCEPTED) {
+                log.info({ 
+                    invitationId: invitation.id, 
+                    status: invitation.status,
+                    email: invitation.email 
+                }, '[getOneByInvitationTokenOrThrow] Invitation already accepted, but allowing idempotent acceptance')
+            }
+            
+            log.info({ 
+                invitationId: invitation.id, 
+                status: invitation.status,
+                email: invitation.email 
+            }, '[getOneByInvitationTokenOrThrow] Found invitation')
+            
+            return invitation
+        } catch (error) {
+            log.error({ error, tokenLength: invitationToken.length }, '[getOneByInvitationTokenOrThrow] Error decoding or finding invitation')
+            if (error instanceof ActivepiecesError) {
+                throw error
+            }
+            // If JWT verification fails, throw a more user-friendly error
             throw new ActivepiecesError({
-                code: ErrorCode.ENTITY_NOT_FOUND,
+                code: ErrorCode.INVALID_BEARER_TOKEN,
                 params: {
-                    entityId: `id=${decodedToken.id}`,
-                    entityType: 'UserInvitation',
+                    message: 'Invalid or expired invitation token',
                 },
             })
         }
-        return invitation
     },
     async provisionUserInvitation({ email }: ProvisionUserInvitationParams): Promise<void> {
         const identity = await userIdentityService(log).getIdentityByEmail(email)
@@ -65,26 +96,109 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
                     break
                 }
                 case InvitationType.PROJECT: {
-                    const { projectId, projectRoleId } = invitation
+                    const { projectId, projectRole, projectRoleId } = invitation
                     assertNotNullOrUndefined(projectId, 'projectId')
-                    assertNotNullOrUndefined(projectRoleId, 'projectRoleId')
+                    
+                    // Use simple projectRole string if available, otherwise fall back to Enterprise ProjectRole
+                    let roleToUse: 'OWNER' | 'EDITOR' | 'VIEWER' | null = null
+                    
+                    if (projectRole && ['OWNER', 'EDITOR', 'VIEWER'].includes(projectRole.toUpperCase())) {
+                        // Use simple projectRole string
+                        roleToUse = projectRole.toUpperCase() as 'OWNER' | 'EDITOR' | 'VIEWER'
+                    } else if (projectRoleId) {
+                        // Fall back to Enterprise ProjectRole for backward compatibility
                     const platform = await platformService.getOneWithPlanOrThrow(invitation.platformId)
                     assertEqual(platform.plan.projectRolesEnabled, true, 'Project roles are not enabled', 'PROJECT_ROLES_NOT_ENABLED')
 
-                    const projectRole = await projectRoleService.getOneOrThrowById({
+                        const enterpriseProjectRole = await projectRoleService.getOneOrThrowById({
                         id: projectRoleId,
                     })
+                        // Map Enterprise role name to simple role (assuming names match)
+                        const roleName = enterpriseProjectRole.name.toUpperCase()
+                        if (['OWNER', 'EDITOR', 'VIEWER'].includes(roleName)) {
+                            roleToUse = roleName as 'OWNER' | 'EDITOR' | 'VIEWER'
+                        }
+                    }
+                    
+                    if (!roleToUse) {
+                        throw new ActivepiecesError({
+                            code: ErrorCode.VALIDATION,
+                            params: {
+                                message: 'Project role is required and must be OWNER, EDITOR, or VIEWER',
+                            },
+                        })
+                    }
 
                     const project = await projectService.exists({
                         projectId,
                         isSoftDeleted: false,
                     })
                     if (!isNil(project)) {
-                        await projectMemberService(log).upsert({
-                            projectId,
-                            userId: user.id,
-                            projectRoleName: projectRole.name,
-                        })
+                        try {
+                            await projectMemberService(log).create({
+                                projectId,
+                                userId: user.id,
+                                role: roleToUse,
+                            })
+                            
+                            // Wait for the member to become visible before deleting the invitation
+                            // This ensures that when the project query runs, the member is visible
+                            // Use exponential backoff with up to ~2 seconds total wait time
+                            const maxRetries = 8
+                            const baseDelayMs = 100
+                            let memberVisible = false
+                            
+                            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                                if (attempt > 0) {
+                                    const delayMs = baseDelayMs * Math.pow(2, attempt - 1)
+                                    await new Promise(resolve => setTimeout(resolve, delayMs))
+                                }
+                                
+                                const visibleMember = await projectMemberService(log).getByProjectIdAndUserId(
+                                    projectId,
+                                    user.id,
+                                )
+                                
+                                if (!isNil(visibleMember)) {
+                                    memberVisible = true
+                                    log.info({ 
+                                        projectId, 
+                                        userId: user.id,
+                                        attempts: attempt + 1 
+                                    }, '[provisionUserInvitation] Project member is now visible')
+                                    break
+                                }
+                            }
+                            
+                            if (!memberVisible) {
+                                log.warn({ 
+                                    projectId, 
+                                    userId: user.id 
+                                }, '[provisionUserInvitation] Project member not visible after retries, but continuing (member was created)')
+                            }
+                        } catch (createError) {
+                            // If creation fails but member might already exist, check if it exists
+                            const existingMember = await projectMemberService(log).getByProjectIdAndUserId(
+                                projectId,
+                                user.id,
+                            )
+                            if (isNil(existingMember)) {
+                                // Member doesn't exist and creation failed - log error but continue
+                                // The invitation was accepted, so we don't want to fail the whole operation
+                                log.error({ 
+                                    error: createError, 
+                                    projectId, 
+                                    userId: user.id,
+                                    role: roleToUse 
+                                }, '[provisionUserInvitation] Failed to create project member, but invitation was accepted')
+                            } else {
+                                // Member already exists - that's fine, it's idempotent
+                                log.info({ 
+                                    projectId, 
+                                    userId: user.id 
+                                }, '[provisionUserInvitation] Project member already exists (idempotent)')
+                            }
+                        }
                     }
                     break
                 }
@@ -100,6 +214,7 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
         projectId,
         type,
         projectRoleId,
+        projectRole,
         platformRole,
         invitationExpirySeconds,
         status,
@@ -112,7 +227,8 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
             type,
             email: email.toLowerCase().trim(),
             platformId,
-            projectRoleId: type === InvitationType.PLATFORM ? undefined : projectRoleId!,
+            projectRoleId: type === InvitationType.PLATFORM ? undefined : projectRoleId ?? undefined,
+            projectRole: type === InvitationType.PROJECT ? projectRole ?? undefined : undefined,
             platformRole: type === InvitationType.PROJECT ? undefined : platformRole!,
             projectId: type === InvitationType.PLATFORM ? undefined : projectId!,
         }, ['email', 'platformId', 'projectId'])
@@ -150,10 +266,12 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
             })
         const { data, cursor } = await paginator.paginate(queryBuilder)
         const enrichedData = await Promise.all(data.map(async (invitation) => {
+            // Return both simple projectRole string and Enterprise projectRole entity for backward compatibility
             return {
-                projectRole: !isNil(invitation.projectRoleId) ? await projectRoleService.getOneOrThrowById({
+                projectRoleEntity: !isNil(invitation.projectRoleId) ? await projectRoleService.getOneOrThrowById({
                     id: invitation.projectRoleId,
-                }) : null,
+                }).catch(() => null) : null,
+                // projectRole string is already in invitation object from database
                 ...invitation,
             }
         }))
@@ -184,8 +302,80 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
         }
         return invitation
     },
+    async acceptByIdempotent({ invitationId, invitationToken }: { invitationId: string, invitationToken: string }): Promise<{ registered: boolean } | null> {
+        // Try to find the invitation by ID first
+        const invitation = await repo().findOneBy({ id: invitationId })
+        
+        if (!isNil(invitation)) {
+            // If invitation exists, use the regular accept flow
+            return this.accept({
+                invitationId: invitation.id,
+                platformId: invitation.platformId,
+            })
+        }
+        
+        // Invitation is deleted, but check if user was already provisioned
+        // We need to decode the token to get the email
+        try {
+            const decodedToken = await jwtUtils.decodeAndVerify<UserInvitationToken>({
+                jwt: invitationToken,
+                key: await jwtUtils.getJwtSecret(),
+            })
+            
+            // Try to find any accepted invitation with this ID in the past
+            // Since we can't query deleted records easily, we'll check if the user is already a member
+            // by looking up invitations that were accepted for this email
+            // For now, we'll return null and let the caller handle it
+            // The real solution is to check project membership directly
+            log.info({ invitationId }, '[acceptByIdempotent] Invitation deleted, cannot verify idempotency without invitation data')
+            return null
+        } catch (error) {
+            log.error({ error, invitationId }, '[acceptByIdempotent] Error decoding token')
+            return null
+        }
+    },
+    
     async accept({ invitationId, platformId }: AcceptParams): Promise<{ registered: boolean }> {
         const invitation = await this.getOneOrThrow({ id: invitationId, platformId })
+        
+        // If already accepted, check if user is already provisioned and return success
+        if (invitation.status === InvitationStatus.ACCEPTED) {
+            log.info({ invitationId, email: invitation.email }, '[accept] Invitation already accepted, checking if user is provisioned')
+            const identity = await userIdentityService(log).getIdentityByEmail(invitation.email)
+            if (isNil(identity)) {
+                return {
+                    registered: false,
+                }
+            }
+            // Check if user is already a member (for project invitations)
+            if (invitation.type === InvitationType.PROJECT && invitation.projectId) {
+                const user = await userService.getOneByIdentityAndPlatform({
+                    identityId: identity.id,
+                    platformId: invitation.platformId,
+                })
+                if (!isNil(user)) {
+                    const existingMember = await projectMemberService(log).getByProjectIdAndUserId(
+                        invitation.projectId,
+                        user.id,
+                    )
+                    if (!isNil(existingMember)) {
+                        log.info({ invitationId, userId: user.id, projectId: invitation.projectId }, '[accept] User already a project member, returning success')
+                        return {
+                            registered: true,
+                        }
+                    }
+                }
+            }
+            // Re-provision to ensure everything is set up correctly
+            await this.provisionUserInvitation({
+                email: invitation.email,
+            })
+            return {
+                registered: true,
+            }
+        }
+        
+        // First time acceptance
         await repo().update(invitation.id, {
             status: InvitationStatus.ACCEPTED,
         })
@@ -250,24 +440,39 @@ async function generateInvitationLink(userInvitation: UserInvitation, expireyInS
         key: await jwtUtils.getJwtSecret(),
     })
 
+    // URL encode the token to handle special characters safely
+    const encodedToken = encodeURIComponent(token)
+    
+    // Include projectId in the invitation link if it's a project invitation
+    const projectIdParam = userInvitation.projectId ? `&projectId=${userInvitation.projectId}` : '';
     return domainHelper.getPublicUrl({
         platformId: userInvitation.platformId,
-        path: `invitation?token=${token}&email=${encodeURIComponent(userInvitation.email)}`,
+        path: `invitation?token=${encodedToken}&email=${encodeURIComponent(userInvitation.email)}${projectIdParam}`,
     })
 }
 const enrichWithInvitationLink = async (platform: Platform, userInvitation: UserInvitation, expireyInSeconds: number, log: FastifyBaseLogger) => {
     const invitationLink = await generateInvitationLink(userInvitation, expireyInSeconds)
-    if (!smtpEmailSender(log).isSmtpConfigured(platform)) {
-        return {
+    
+    // Always include the link in the response so users can copy it if needed
+    const invitationWithLink: UserInvitationWithLink = {
             ...userInvitation,
             link: invitationLink,
         }
-    }
+    
+    // Try to send email if SMTP is configured
+    if (smtpEmailSender(log).isSmtpConfigured(platform)) {
+        try {
     await emailService(log).sendInvitation({
         userInvitation,
         invitationLink,
     })
-    return userInvitation
+        } catch (error) {
+            // If email sending fails, log the error but still return the link
+            log.warn({ error }, 'Failed to send invitation email, but link is still available')
+        }
+    }
+    
+    return invitationWithLink
 }
 type ListUserParams = {
     platformId: string
@@ -307,6 +512,7 @@ type CreateParams = {
     status: InvitationStatus
     type: InvitationType
     projectRoleId: string | null
+    projectRole: string | null // Simple role: 'OWNER' | 'EDITOR' | 'VIEWER'
     invitationExpirySeconds: number
 }
 

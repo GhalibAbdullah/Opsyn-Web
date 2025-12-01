@@ -2,6 +2,7 @@ import { ApplicationEventName } from '@activepieces/ee-shared'
 import { ApId, CreateProjectReleaseRequestBody, DiffReleaseRequest, ListProjectReleasesRequest, PrincipalType, ProjectRelease, SeekPage, SERVICE_KEY_SECURITY_OPENAPI } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../../authentication/authentication-utils'
 import { eventsHooks } from '../../../helper/application-events'
 import { platformService } from '../../../platform/platform.service'
 import { projectReleaseService } from './project-release.service'
@@ -9,6 +10,7 @@ import { projectReleaseService } from './project-release.service'
 export const projectReleaseController: FastifyPluginAsyncTypebox = async (app) => {
 
     app.get('/:id', GetProjectReleaseRequest, async (req) => {
+        assertProjectId(req.principal)
         const release = await projectReleaseService.getOneOrThrow({
             id: req.params.id,
             projectId: req.principal.projectId,
@@ -17,6 +19,7 @@ export const projectReleaseController: FastifyPluginAsyncTypebox = async (app) =
     })
 
     app.get('/', ListProjectReleasesRequestParams, async (req) => {
+        assertProjectId(req.principal)
         return projectReleaseService.list({
             projectId: req.principal.projectId,
             request: req.query,
@@ -24,6 +27,7 @@ export const projectReleaseController: FastifyPluginAsyncTypebox = async (app) =
     })
 
     app.post('/', CreateProjectReleaseRequest, async (req) => {
+        assertProjectId(req.principal)
         const platform = await platformService.getOneOrThrow(req.principal.platform.id)
         const ownerId = platform.ownerId
         const release = await projectReleaseService.create({
@@ -44,6 +48,7 @@ export const projectReleaseController: FastifyPluginAsyncTypebox = async (app) =
     })
 
     app.post('/diff', DiffProjectReleaseRequest, async (req) => {
+        assertProjectId(req.principal)
         const platform = await platformService.getOneOrThrow(req.principal.platform.id)
         const ownerId = platform.ownerId
         return projectReleaseService.releasePlan(req.principal.projectId, ownerId, req.body, req.log)

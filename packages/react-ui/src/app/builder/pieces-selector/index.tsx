@@ -43,6 +43,7 @@ const PieceSelector = ({
     setSelectedPieceMetadataInPieceSelector,
     isForEmptyTrigger,
     deselectStep,
+    readonly,
   ] = useBuilderStateContext((state) => [
     state.openedPieceSelectorStepNameOrAddButtonId,
     state.setOpenedPieceSelectorStepNameOrAddButtonId,
@@ -50,6 +51,7 @@ const PieceSelector = ({
     state.flowVersion.trigger.type === FlowTriggerType.EMPTY &&
       id === 'trigger',
     state.deselectStep,
+    state.readonly,
   ]);
   const [searchQuery, setSearchQuery] = useState('');
   const isForReplace =
@@ -76,9 +78,12 @@ const PieceSelector = ({
   };
   return (
     <Popover
-      open={isOpen}
+      open={isOpen && !readonly}
       modal={true}
       onOpenChange={(open) => {
+        if (readonly) {
+          return; // Don't allow opening if readonly
+        }
         if (!open) {
           clearSearch();
           setOpenedPieceSelectorStepNameOrAddButtonId(null);
@@ -91,13 +96,29 @@ const PieceSelector = ({
       <PopoverTrigger
         ref={popoverTriggerRef}
         asChild={true}
-        onClick={() => {
+        disabled={readonly}
+        onClick={(e) => {
+          if (readonly) {
+            e.preventDefault();
+            e.stopPropagation();
+            return; // Don't open if readonly
+          }
           if (openSelectorOnClick) {
             setOpenedPieceSelectorStepNameOrAddButtonId(id);
           }
         }}
       >
-        {children}
+        <div
+          style={readonly ? { pointerEvents: 'none', cursor: 'not-allowed', opacity: 0.5 } : undefined}
+          onClick={(e) => {
+            if (readonly) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
+          {children}
+        </div>
       </PopoverTrigger>
 
       <PieceSelectorTabsProvider

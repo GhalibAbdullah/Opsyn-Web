@@ -128,28 +128,30 @@ export const DictionaryProperty = ({
             )}
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8 shrink-0"
-            disabled={disabled}
-            onClick={() => remove(index)}
-          >
-            <TrashIcon className="size-4 text-destructive" aria-hidden="true" />
-            <span className="sr-only">{t('Remove')}</span>
-          </Button>
+          {!disabled && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={() => remove(index)}
+            >
+              <TrashIcon className="size-4 text-destructive" aria-hidden="true" />
+              <span className="sr-only">{t('Remove')}</span>
+            </Button>
+          )}
         </div>
       ))}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={add}
-        type="button"
-        disabled={disabled}
-      >
-        <TextWithIcon icon={<Plus size={18} />} text={t('Add Item')} />
-      </Button>
+      {!disabled && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={add}
+          type="button"
+        >
+          <TextWithIcon icon={<Plus size={18} />} text={t('Add Item')} />
+        </Button>
+      )}
     </div>
   );
 };

@@ -30,8 +30,9 @@ import {
 } from '@fastify/type-provider-typebox'
 import dayjs from 'dayjs'
 import { StatusCodes } from 'http-status-codes'
-import { authenticationUtils } from '../../authentication/authentication-utils'
+import { assertProjectId, authenticationUtils } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
+import { assertCanEditFlow } from '../../authentication/permission-helpers'
 import { assertUserHasPermissionToFlow } from '../../ee/authentication/project-role/rbac-middleware'
 import { platformPlanService } from '../../ee/platform/platform-plan/platform-plan.service'
 import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
@@ -44,6 +45,9 @@ const DEFAULT_PAGE_SIZE = 10
 export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     app.addHook('preSerialization', entitiesMustBeOwnedByCurrentProject)
     app.post('/', CreateFlowRequestOptions, async (request, reply) => {
+        assertProjectId(request.principal)
+        const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        await assertCanEditFlow(request.principal.projectId!, userId, request.log)
         const newFlow = await flowService(request.log).create({
             projectId: request.principal.projectId,
             request: request.body,
@@ -106,6 +110,8 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
         },
     }, async (request) => {
         const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        assertProjectId(request.principal)
+        await assertCanEditFlow(request.principal.projectId!, userId, request.log)
         await assertUserHasPermissionToFlow(request.principal, request.body.type, request.log)
 
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
@@ -159,6 +165,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/', ListFlowsRequestOptions, async (request) => {
+        assertProjectId(request.principal)
         return flowService(request.log).list({
             projectId: request.principal.projectId,
             folderId: request.query.folderId,
@@ -174,6 +181,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/count', CountFlowsRequestOptions, async (request) => {
+        assertProjectId(request.principal)
         return flowService(request.log).count({
             folderId: request.query.folderId,
             projectId: request.principal.projectId,
@@ -181,6 +189,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/:id/template', GetFlowTemplateRequestOptions, async (request) => {
+        assertProjectId(request.principal)
         return flowService(request.log).getTemplate({
             flowId: request.params.id,
             projectId: request.principal.projectId,
@@ -189,6 +198,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/:id', GetFlowRequestOptions, async (request) => {
+        assertProjectId(request.principal)
         return flowService(request.log).getOnePopulatedOrThrow({
             id: request.params.id,
             projectId: request.principal.projectId,
@@ -197,6 +207,9 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.delete('/:id', DeleteFlowRequestOptions, async (request, reply) => {
+        assertProjectId(request.principal)
+        const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        await assertCanEditFlow(request.principal.projectId!, userId, request.log)
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
             id: request.params.id,
             projectId: request.principal.projectId,

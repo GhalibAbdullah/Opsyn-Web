@@ -39,9 +39,13 @@ const ApAddButton = React.memo((props: ApButtonData) => {
     },
   });
 
+  if (readonly) {
+    return null;
+  }
+
   return (
     <>
-      {showDropIndicator && !readonly && (
+      {showDropIndicator && (
         <div
           style={{
             width: flowUtilConsts.AP_NODE_SIZE.ADD_BUTTON.width + 'px',
@@ -63,7 +67,7 @@ const ApAddButton = React.memo((props: ApButtonData) => {
           ></div>
         </div>
       )}
-      {!showDropIndicator && !readonly && (
+      {!showDropIndicator && (
         <PieceSelector
           operation={flowCanvasUtils.createAddOperationFromAddButtonData(props)}
           id={props.edgeId}

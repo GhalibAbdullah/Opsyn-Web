@@ -236,14 +236,27 @@ async function getEntityNameForInvitation(userInvitation: UserInvitation): Promi
         }
         case InvitationType.PROJECT: {
             assertNotNullOrUndefined(userInvitation.projectId, 'projectId')
-            assertNotNullOrUndefined(userInvitation.projectRoleId, 'projectRoleId')
+            const project = await projectService.getOneOrThrow(userInvitation.projectId)
+            
+            // For Community Edition, use simple projectRole string
+            // For Enterprise, use projectRoleId to fetch ProjectRole entity
+            let roleName: string
+            if (userInvitation.projectRole && ['OWNER', 'EDITOR', 'VIEWER'].includes(userInvitation.projectRole.toUpperCase())) {
+                // Community Edition: use simple projectRole string
+                roleName = userInvitation.projectRole.toUpperCase()
+            } else if (userInvitation.projectRoleId) {
+                // Enterprise: fetch ProjectRole entity
             const projectRole = await projectRoleService.getOneOrThrowById({
                 id: userInvitation.projectRoleId,
             })
-            const project = await projectService.getOneOrThrow(userInvitation.projectId)
+                roleName = projectRole.name.toUpperCase()
+            } else {
+                throw new Error('Either projectRole or projectRoleId must be provided for project invitations')
+            }
+            
             return {
                 name: project.displayName,
-                role: capitalizeFirstLetter(projectRole.name),
+                role: capitalizeFirstLetter(roleName),
             }
         }
     }

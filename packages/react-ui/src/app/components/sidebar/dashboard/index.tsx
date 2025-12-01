@@ -77,8 +77,8 @@ export function ProjectDashboardSidebar() {
     icon: Package,
     label: t('Releases'),
     hasPermission:
-      project.releasesEnabled && checkAccess(Permission.READ_PROJECT_RELEASE),
-    show: project.releasesEnabled,
+      project!.releasesEnabled && checkAccess(Permission.READ_PROJECT_RELEASE),
+    show: project!.releasesEnabled,
     isSubItem: false,
   };
 

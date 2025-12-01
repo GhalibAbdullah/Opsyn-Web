@@ -5,6 +5,7 @@ import {
     SaveTriggerEventRequest,
 } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { flowService } from '../../flows/flow/flow.service'
 import { triggerEventService } from './trigger-event.service'
 
@@ -14,6 +15,7 @@ export const triggerEventController: FastifyPluginAsyncTypebox = async (fastify)
 
 
     fastify.post('/', SaveTriggerEventRequestParams, async (request) => {
+        assertProjectId(request.principal)
         return triggerEventService(request.log).saveEvent({
             projectId: request.principal.projectId,
             flowId: request.body.flowId,
@@ -22,6 +24,7 @@ export const triggerEventController: FastifyPluginAsyncTypebox = async (fastify)
     })
 
     fastify.get('/', ListTriggerEventsRequestParams, async (request) => {
+        assertProjectId(request.principal)
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
             id: request.query.flowId,
             projectId: request.principal.projectId,

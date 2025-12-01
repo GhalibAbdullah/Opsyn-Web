@@ -1,5 +1,5 @@
 import { AppSystemProp } from '@activepieces/server-shared'
-import { ActivepiecesError, ApEdition, ApEnvironment, AuthenticationResponse, EnginePrincipal, ErrorCode, isNil, PrincipalType, Project, ServicePrincipal, TelemetryEventName, User, UserIdentity, UserIdentityProvider, UserPrincipal, UserStatus } from '@activepieces/shared'
+import { ActivepiecesError, ApEdition, ApEnvironment, AuthenticationResponse, EnginePrincipal, ErrorCode, isNil, PrincipalType, Project, ServicePrincipal, TelemetryEventName, User, UserIdentity, UserIdentityProvider, UserPrincipal, UserStatus, Principal } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { system } from '../helper/system/system'
 import { telemetry } from '../helper/telemetry.utils'
@@ -37,14 +37,6 @@ export const authenticationUtils = {
             userId: params.userId,
         })
         const project = isNil(params.projectId) ? projects?.[0] : projects.find((project) => project.id === params.projectId)
-        if (isNil(project)) {
-            throw new ActivepiecesError({
-                code: ErrorCode.INVITATION_ONLY_SIGN_UP,
-                params: {
-                    message: 'No project found for user',
-                },
-            })
-        }
         const identity = await userIdentityService(system.globalLogger()).getOneOrFail({ id: user.identityId })
         if (!identity.verified) {
             throw new ActivepiecesError({
@@ -65,7 +57,7 @@ export const authenticationUtils = {
         const token = await accessTokenManager.generateToken({
             id: user.id,
             type: PrincipalType.USER,
-            projectId: project.id,
+            projectId: project?.id ?? null,
             platform: {
                 id: params.platformId,
             },
@@ -80,7 +72,7 @@ export const authenticationUtils = {
             newsLetter: identity.newsLetter,
             verified: identity.verified,
             token,
-            projectId: project.id,
+            projectId: project?.id,
         }
     },
 
@@ -195,6 +187,22 @@ export const authenticationUtils = {
         const project = await projectService.getOneOrThrow(principal.projectId)
         return project.ownerId
     },
+}
+
+/**
+ * Asserts that the principal has a projectId (required for project-specific routes).
+ * Throws an error if projectId is null/undefined or if the principal type doesn't support projectId.
+ * Works with UserPrincipal, ServicePrincipal, and EnginePrincipal.
+ */
+export function assertProjectId<P extends Principal>(principal: P): asserts principal is P & { projectId: string } {
+    if (!('projectId' in principal) || isNil(principal.projectId)) {
+        throw new ActivepiecesError({
+            code: ErrorCode.AUTHORIZATION,
+            params: {
+                message: 'Project ID is required for this operation',
+            },
+        })
+    }
 }
 
 type SendTelemetryParams = {

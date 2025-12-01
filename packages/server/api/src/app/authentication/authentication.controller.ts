@@ -33,7 +33,7 @@ export const authenticationController: FastifyPluginAsyncTypebox = async (
         eventsHooks.get(request.log).sendUserEvent({
             platformId: signUpResponse.platformId!,
             userId: signUpResponse.id,
-            projectId: signUpResponse.projectId,
+            ...(signUpResponse.projectId && { projectId: signUpResponse.projectId }),
             ip: networkUtils.extractClientRealIp(request, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
         }, {
             action: ApplicationEventName.USER_SIGNED_UP,
@@ -59,7 +59,7 @@ export const authenticationController: FastifyPluginAsyncTypebox = async (
         eventsHooks.get(request.log).sendUserEvent({
             platformId: responsePlatformId,
             userId: response.id,
-            projectId: response.projectId,
+            ...(response.projectId && { projectId: response.projectId }),
             ip: networkUtils.extractClientRealIp(request, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
         }, {
             action: ApplicationEventName.USER_SIGNED_IN,

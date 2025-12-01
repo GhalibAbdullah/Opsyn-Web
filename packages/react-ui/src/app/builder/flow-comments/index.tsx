@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, Info } from 'lucide-react';
 
 import {
@@ -20,15 +20,37 @@ import { SidebarHeader } from '../sidebar-header';
 import { FlowCommentItem } from './flow-comment-item';
 
 const FlowCommentsList = () => {
-    const [flow, setLeftSidebar, leftSidebar, selectedStep, flowVersion] = useBuilderStateContext(
-        (state) => [state.flow, state.setLeftSidebar, state.leftSidebar, state.selectedStep, state.flowVersion],
+    const [flow, setLeftSidebar, leftSidebar, selectedStep, flowVersion, selectStepByName] = useBuilderStateContext(
+        (state) => [state.flow, state.setLeftSidebar, state.leftSidebar, state.selectedStep, state.flowVersion, state.selectStepByName],
     );
 
     const [newComment, setNewComment] = useState('');
     const [activeTab, setActiveTab] = useState<'workflow' | 'step'>('workflow');
+    const previousSelectedStepRef = useRef<string | null>(null);
+    const isPreservingSelectionRef = useRef(false);
 
     const isVisible = leftSidebar === LeftSideBarType.COMMENTS;
     const currentStepName = activeTab === 'step' && selectedStep ? selectedStep : null;
+    
+    // Store the selected step when it changes, so we can restore it if it gets cleared
+    useEffect(() => {
+        if (selectedStep) {
+            previousSelectedStepRef.current = selectedStep;
+        }
+    }, [selectedStep]);
+    
+    // When switching to step tab, ensure the step stays selected
+    useEffect(() => {
+        if (activeTab === 'step' && previousSelectedStepRef.current && !selectedStep && !isPreservingSelectionRef.current) {
+            // Step was cleared, restore it
+            isPreservingSelectionRef.current = true;
+            selectStepByName(previousSelectedStepRef.current);
+            // Reset the flag after a short delay
+            setTimeout(() => {
+                isPreservingSelectionRef.current = false;
+            }, 100);
+        }
+    }, [activeTab, selectedStep, selectStepByName]);
     
     // Get the step display name if a step is selected
     const selectedStepDisplayName = !isNil(selectedStep) && !isNil(flowVersion)
@@ -90,20 +112,100 @@ const FlowCommentsList = () => {
     const comments = activeTab === 'workflow' ? workflowComments : stepComments;
     const isLoading = activeTab === 'workflow' ? isLoadingWorkflow : isLoadingStep;
     const isError = activeTab === 'workflow' ? isErrorWorkflow : isErrorStep;
+    
+    // Don't show error if query is disabled (e.g., step tab without selected step)
+    const shouldShowError = isError && (activeTab === 'workflow' || (activeTab === 'step' && !!selectedStep));
 
     return (
-        <>
+        <div
+            onClick={(e) => {
+                // Prevent all clicks inside the comments sidebar from propagating to canvas
+                e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+                // Also prevent mousedown events
+                e.stopPropagation();
+            }}
+            className="h-full"
+        >
             <SidebarHeader onClose={() => setLeftSidebar(LeftSideBarType.NONE)}>
                 {t('Comments')}
             </SidebarHeader>
             <div className="flex flex-col h-full">
                 <div className="p-4 border-b space-y-3">
-                    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'workflow' | 'step')}>
-                        <TabsList className="w-full">
-                            <TabsTrigger value="workflow" className="flex-1">
+                    <Tabs 
+                        value={activeTab} 
+                        onValueChange={(v) => {
+                            const newTab = v as 'workflow' | 'step';
+                            // Store the current selected step before changing tabs
+                            const stepToPreserve = selectedStep || previousSelectedStepRef.current;
+                            
+                            setActiveTab(newTab);
+                            
+                            // If switching to step tab and we have a step to preserve, ensure it stays selected
+                            if (newTab === 'step' && stepToPreserve) {
+                                // Use a flag to prevent infinite loops
+                                isPreservingSelectionRef.current = true;
+                                // Re-select the step immediately and also after a delay to catch any race conditions
+                                selectStepByName(stepToPreserve);
+                                setTimeout(() => {
+                                    if (!selectedStep && stepToPreserve) {
+                                        selectStepByName(stepToPreserve);
+                                    }
+                                    isPreservingSelectionRef.current = false;
+                                }, 50);
+                            }
+                        }}
+                    >
+                        <TabsList 
+                            className="w-full"
+                            onClick={(e) => {
+                                // Prevent clicks on the tab list from propagating to canvas
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                            }}
+                            onMouseDown={(e) => {
+                                // Also prevent mousedown from propagating
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                            }}
+                        >
+                            <TabsTrigger 
+                                value="workflow" 
+                                className="flex-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                }}
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                }}
+                            >
                                 {t('Workflow')}
                             </TabsTrigger>
-                            <TabsTrigger value="step" className="flex-1" disabled={!selectedStep}>
+                            <TabsTrigger 
+                                value="step" 
+                                className="flex-1" 
+                                disabled={!selectedStep && !previousSelectedStepRef.current}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                    // Preserve the step when clicking the tab
+                                    const stepToPreserve = selectedStep || previousSelectedStepRef.current;
+                                    if (stepToPreserve) {
+                                        isPreservingSelectionRef.current = true;
+                                        selectStepByName(stepToPreserve);
+                                        setTimeout(() => {
+                                            isPreservingSelectionRef.current = false;
+                                        }, 100);
+                                    }
+                                }}
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                }}
+                            >
                                 {t('Step')} {selectedStepDisplayName && `(${selectedStepDisplayName})`}
                             </TabsTrigger>
                         </TabsList>
@@ -152,17 +254,21 @@ const FlowCommentsList = () => {
                 </div>
                 <CardList className="flex-1">
                     {isLoading && <CardListItemSkeleton numberOfCards={5} />}
-                    {isError && (
-                        <div className="p-4 text-sm text-muted-foreground">
+                    {!isLoading && shouldShowError && !comments && (
+                        <div className="p-4 text-sm text-muted-foreground text-center">
                             {t('Error loading comments. Please try again.')}
                         </div>
                     )}
-                    {comments && comments.data && (
+                    {!isLoading && !shouldShowError && (
                         <ScrollArea className="w-full h-full">
-                            {comments.data.length === 0 ? (
+                            {!comments || comments.data.length === 0 ? (
                                 <div className="p-4 text-sm text-muted-foreground text-center">
                                     <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                    {t('No comments yet. Be the first to comment!')}
+                                    {activeTab === 'workflow' 
+                                        ? t('No comments yet. Be the first to comment!')
+                                        : activeTab === 'step' && !selectedStep
+                                        ? t('Select a step to view comments')
+                                        : t('No comments on this step yet. Be the first to comment!')}
                                 </div>
                             ) : (
                                 comments.data.map((comment) => (
@@ -173,7 +279,7 @@ const FlowCommentsList = () => {
                     )}
                 </CardList>
             </div>
-        </>
+        </div>
     );
 };
 

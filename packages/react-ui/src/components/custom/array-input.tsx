@@ -110,24 +110,25 @@ const ArrayInput = React.memo(
         <div className="flex w-full flex-col gap-4 ">
           <Sortable
             value={fields}
-            onMove={({ activeIndex, overIndex }) => {
+            onMove={disabled ? undefined : ({ activeIndex, overIndex }) => {
               move(activeIndex, overIndex);
             }}
           >
             {fields.map((field, index) => (
               <SortableItem key={field.id} value={field.id} asChild>
                 <div className="flex items-center gap-3">
-                  <SortableDragHandle
-                    variant="outline"
-                    size="icon"
-                    disabled={disabled}
-                    className={cn('shrink-0 size-8', thinInputs && 'size-7')}
-                  >
-                    <DragHandleDots2Icon
-                      className="size-4"
-                      aria-hidden="true"
-                    />
-                  </SortableDragHandle>
+                  {!disabled && (
+                    <SortableDragHandle
+                      variant="outline"
+                      size="icon"
+                      className={cn('shrink-0 size-8', thinInputs && 'size-7')}
+                    >
+                      <DragHandleDots2Icon
+                        className="size-4"
+                        aria-hidden="true"
+                      />
+                    </SortableDragHandle>
+                  )}
 
                   <FormField
                     control={form.control}
@@ -157,12 +158,11 @@ const ArrayInput = React.memo(
                     )}
                   />
 
-                  {showRemoveButton && (
+                  {showRemoveButton && !disabled && (
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      disabled={disabled}
                       className={cn('shrink-0 size-8', thinInputs && 'size-7')}
                       onClick={() => {
                         remove(index);

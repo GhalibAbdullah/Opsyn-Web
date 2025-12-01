@@ -12,6 +12,7 @@ import {
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { Type } from '@sinclair/typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../../authentication/authentication-utils'
 import { projectMemberService } from './project-member.service'
 
 const DEFAULT_LIMIT_SIZE = 10
@@ -21,6 +22,7 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
 ) => {
 
     app.get('/role', GetCurrentProjectMemberRoleRequest, async (request) => {
+        assertProjectId(request.principal)
         return  projectMemberService(request.log).getRole({
             projectId: request.principal.projectId,
             userId: request.principal.id,
@@ -28,9 +30,10 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
     })
 
     app.get('/', ListProjectMembersRequestQueryOptions, async (request) => {
+        assertProjectId(request.principal)
         return projectMemberService(request.log).list({
             platformId: request.principal.platform.id,  
-            projectId: request.principal.projectId,
+            projectId: request.principal.projectId ?? undefined,
             cursorRequest: request.query.cursor ?? null,
             limit: request.query.limit ?? DEFAULT_LIMIT_SIZE,
             projectRoleId: request.query.projectRoleId ?? undefined,
@@ -40,6 +43,7 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
 
 
     app.post('/:id', UpdateProjectMemberRoleRequest, async (req) => {
+        assertProjectId(req.principal)
         return projectMemberService(req.log).update({
             id: req.params.id,
             role: req.body.role,
@@ -50,6 +54,7 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
 
 
     app.delete('/:id', DeleteProjectMemberRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         await projectMemberService(request.log).delete(
             request.principal.projectId,
             request.params.id,

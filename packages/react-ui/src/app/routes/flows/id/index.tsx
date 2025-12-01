@@ -8,14 +8,16 @@ import { Link, useParams } from 'react-router-dom';
 import { BuilderPage } from '@/app/builder';
 import { BuilderStateProvider } from '@/app/builder/builder-state-provider';
 import { useFlowCollaboration } from '@/app/builder/use-flow-collaboration';
+import { NotAvailablePage } from '@/app/components/not-available-page';
 import { buttonVariants } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/spinner';
 import { useSocket } from '@/components/socket-provider';
 import { flowsApi } from '@/features/flows/lib/flows-api';
 import { sampleDataHooks } from '@/features/flows/lib/sample-data-hooks';
+import { useAuthorization } from '@/hooks/authorization-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
 import { cn } from '@/lib/utils';
-import { isNil, PopulatedFlow, WebsocketServerEvent } from '@activepieces/shared';
+import { isNil, Permission, PopulatedFlow, WebsocketServerEvent } from '@activepieces/shared';
 
 // Type definitions for flow editor events
 type FlowEditorJoined = { flowId: string };
@@ -24,6 +26,8 @@ type FlowEditorLeft = { flowId: string };
 const FlowBuilderPage = () => {
   const { flowId } = useParams();
   const socket = useSocket();
+  const { checkAccess } = useAuthorization();
+  const canEditFlow = checkAccess(Permission.WRITE_FLOW);
 
   const {
     data: flow,
@@ -96,27 +100,7 @@ const FlowBuilderPage = () => {
   }
 
   if (isNil(flow) || isError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-        <div className="rounded-full bg-muted p-4">
-          <FileX className="size-9 text-muted-foreground" />
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold">{t('Flow not found')}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("The flow you are looking for doesn't exist or was removed.")}
-          </p>
-        </div>
-
-        <Link
-          className={cn(buttonVariants({ variant: 'outline' }))}
-          to="/dashboard"
-        >
-          {t('Go to Dashboard')}
-        </Link>
-      </div>
-    );
+    return <NotAvailablePage />;
   }
 
   return (
@@ -124,7 +108,7 @@ const FlowBuilderPage = () => {
       <BuilderStateProvider
         flow={flow}
         flowVersion={flow!.version}
-        readonly={false}
+        readonly={!canEditFlow}
         run={null}
         outputSampleData={sampleData ?? {}}
         inputSampleData={sampleDataInput ?? {}}

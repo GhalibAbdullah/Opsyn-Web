@@ -13,8 +13,11 @@ export class PrincipalTypeAuthzHandler extends BaseSecurityHandler {
         '/redirect',
     ]
     protected canHandle(request: FastifyRequest): Promise<boolean> {
-        const routerPath = request.routeOptions.url
-        assertNotNullOrUndefined(routerPath, 'routerPath is undefined'  )    
+        // Some routes may not have routeOptions.url set, skip authorization for those
+        const routerPath = request.routeOptions?.url
+        if (!routerPath) {
+            return Promise.resolve(false)
+        }
         const requestMatches =
       !PrincipalTypeAuthzHandler.IGNORED_ROUTES.includes(routerPath) &&
       !routerPath.startsWith('/ui')

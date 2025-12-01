@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/context-menu';
 import { ShortcutProps } from '@/components/ui/shortcut';
 
+import { useBuilderStateContext } from '../../builder-hooks';
 import { CanvasContextMenuContent } from './canvas-context-menu-content';
 
 export type CanvasShortcutsProps = Record<
@@ -46,6 +47,10 @@ export const CanvasContextMenu = ({
   contextMenuType,
   children,
 }: CanvasContextMenuProps) => {
+  const readonly = useBuilderStateContext((state) => state.readonly);
+  if (readonly) {
+    return <>{children}</>;
+  }
   return (
     <ContextMenu modal={false}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>

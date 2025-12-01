@@ -30,6 +30,17 @@ export const todosHooks = {
     queryClient.setQueryData(todoKeys.single(todoId), todo);
   },
 
+  useCreateTodo: (onSuccess?: () => void) => {
+    return useMutation({
+      mutationFn: async (requestBody: Parameters<typeof todosApi.create>[0]) => {
+        return await todosApi.create(requestBody);
+      },
+      onSuccess: () => {
+        onSuccess?.();
+      },
+    });
+  },
+
   useDeleteTodos: (refetch: () => void) => {
     return useMutation({
       mutationFn: async (todoIds: string[]) => {

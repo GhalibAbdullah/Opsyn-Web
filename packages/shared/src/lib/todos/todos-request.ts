@@ -37,7 +37,7 @@ export const CreateTodoRequestBody = Type.Object({
     title: Type.String(),
     description: Type.String(),
     statusOptions: StatusOptionsSchema,
-    flowId: ApId,
+    flowId: Type.Optional(ApId),
     runId: Type.Optional(ApId),
     assigneeId: Type.Optional(ApId),
     resolveUrl: Type.Optional(Type.String()),

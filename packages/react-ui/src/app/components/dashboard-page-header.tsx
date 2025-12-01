@@ -18,6 +18,7 @@ import { InviteUserDialog } from '@/features/team/component/invite-user-dialog';
 import { projectMembersHooks } from '@/features/team/lib/project-members-hooks';
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { projectHooks } from '@/hooks/project-hooks';
+import { userHooks } from '@/hooks/user-hooks';
 import { Permission } from '@activepieces/shared';
 
 import { ProjectSettingsDialog } from './project-settings';
@@ -42,10 +43,13 @@ export const DashboardPageHeader = ({
   const location = useLocation();
   const { projectMembers } = projectMembersHooks.useProjectMembers();
   const { project } = projectHooks.useCurrentProject();
+  const { data: currentUser } = userHooks.useCurrentUser();
   const { checkAccess } = useAuthorization();
   const userHasPermissionToInviteUser = checkAccess(
     Permission.WRITE_INVITATION,
   );
+  const isProjectOwner = project?.ownerId === currentUser?.id;
+  const canInvite = userHasPermissionToInviteUser && isProjectOwner;
   const isProjectPage = location.pathname.includes('/projects/');
 
   if (embedState.hidePageHeader) {
@@ -75,7 +79,7 @@ export const DashboardPageHeader = ({
                 {projectMembers?.length}
               </span>
             </div>
-            {userHasPermissionToInviteUser && (
+            {canInvite && (
               <Button
                 variant="outline"
                 size="sm"
@@ -97,7 +101,7 @@ export const DashboardPageHeader = ({
                   {project?.displayName}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {userHasPermissionToInviteUser && (
+                {canInvite && (
                   <DropdownMenuItem onClick={() => setInviteOpen(true)}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite

@@ -33,9 +33,19 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
     })
 
     app.get('/', ListProjectMembersRequestQueryOptions, async (request) => {
+        // Accept projectId from query parameter or principal
+        const projectId = request.query.projectId ?? request.principal.projectId
+        if (!projectId) {
+            throw new ActivepiecesError({
+                code: ErrorCode.VALIDATION,
+                params: {
+                    message: 'Project ID is required',
+                },
+            })
+        }
         return projectMemberService(request.log).list({
             platformId: request.principal.platform.id,
-            projectId: request.principal.projectId!,
+            projectId,
             cursorRequest: request.query.cursor ?? null,
             limit: request.query.limit ?? DEFAULT_LIMIT_SIZE,
         })
@@ -164,6 +174,7 @@ const ListProjectMembersRequestQueryOptions = {
     schema: {
         tags: ['project-members'],
         querystring: Type.Object({
+            projectId: Type.Optional(Type.String()),
             cursor: Type.Optional(Type.String()),
             limit: Type.Optional(Type.Number()),
         }),

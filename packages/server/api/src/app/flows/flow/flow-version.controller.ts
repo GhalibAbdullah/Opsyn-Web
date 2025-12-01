@@ -4,6 +4,7 @@ import {
     Type,
 } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { flowVersionService } from '../flow-version/flow-version.service'
 import { flowService } from './flow.service'
 
@@ -12,6 +13,7 @@ const DEFAULT_PAGE_SIZE = 10
 export const flowVersionController: FastifyPluginAsyncTypebox = async (fastify) => {
 
     fastify.get('/:flowId/versions', ListVersionParams, async (request) => {
+        assertProjectId(request.principal)
         const flow = await flowService(request.log).getOneOrThrow({
             id: request.params.flowId,
             projectId: request.principal.projectId,

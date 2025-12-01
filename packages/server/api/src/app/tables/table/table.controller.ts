@@ -2,6 +2,7 @@ import { GitPushOperationType } from '@activepieces/ee-shared'
 import { ApId, CreateTableRequest, CreateTableWebhookRequest, ExportTableResponse, ListTablesRequest, Permission, PrincipalType, SeekPage, SERVICE_KEY_SECURITY_OPENAPI, Table, UpdateTableRequest } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
 import { tableService } from './table.service'
 
@@ -10,6 +11,7 @@ const DEFAULT_PAGE_SIZE = 10
 export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
 
     fastify.post('/', CreateRequest, async (request) => {
+        assertProjectId(request.principal)
         return tableService.create({
             projectId: request.principal.projectId,
             request: request.body,
@@ -17,6 +19,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.post('/:id', UpdateRequest, async (request) => {
+        assertProjectId(request.principal)
         return tableService.update({
             projectId: request.principal.projectId,
             id: request.params.id,
@@ -26,6 +29,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.get('/', GetTablesRequest, async (request) => {
+        assertProjectId(request.principal)
         return tableService.list({
             projectId: request.principal.projectId,
             cursor: request.query.cursor,
@@ -36,6 +40,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.delete('/:id', DeleteRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const table = await tableService.getOneOrThrow({
             projectId: request.principal.projectId,
             id: request.params.id,
@@ -57,6 +62,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     )
 
     fastify.get('/:id', GetTableByIdRequest, async (request) => {
+        assertProjectId(request.principal)
         return tableService.getOneOrThrow({
             projectId: request.principal.projectId,
             id: request.params.id,
@@ -65,6 +71,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     )
 
     fastify.get('/:id/export', ExportTableRequest, async (request) => {
+        assertProjectId(request.principal)
         return tableService.exportTable({
             projectId: request.principal.projectId,
             id: request.params.id,
@@ -72,6 +79,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.post('/:id/webhooks', CreateTableWebhook, async (request) => {
+        assertProjectId(request.principal)
         return tableService.createWebhook({
             projectId: request.principal.projectId,
             id: request.params.id,
@@ -80,6 +88,7 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.delete('/:id/webhooks/:webhookId', DeleteTableWebhook, async (request) => {
+        assertProjectId(request.principal)
         return tableService.deleteWebhook({
             projectId: request.principal.projectId,
             id: request.params.id,

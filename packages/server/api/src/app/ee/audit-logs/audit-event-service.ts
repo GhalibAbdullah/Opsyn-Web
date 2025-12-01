@@ -39,7 +39,7 @@ export const auditLogService = (log: FastifyBaseLogger) => ({
             const userId = await authenticationUtils.extractUserIdFromPrincipal(principal)
             await saveEvent({
                 platformId: principal.platform.id,
-                projectId: principal.projectId,
+                projectId: principal.projectId ?? undefined,
                 userId,
                 ip: networkUtils.extractClientRealIp(request, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
             }, params, log)

@@ -22,6 +22,7 @@ import {
     FastifyPluginAsyncTypebox,
 } from '@fastify/type-provider-typebox'
 import { EngineHelperPropResult, EngineHelperResponse } from 'server-worker'
+import { assertProjectId } from '../authentication/authentication-utils'
 import { flowService } from '../flows/flow/flow.service'
 import { sampleDataService } from '../flows/step-run/sample-data.service'
 import { userInteractionWatcher } from '../workers/user-interaction-watcher'
@@ -40,7 +41,7 @@ const basePiecesController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/versions', ListVersionsRequest, async (req): Promise<ListVersionsResponse> => {
         return pieceMetadataService(req.log).getVersions({
             name: req.query.name,
-            projectId: req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.projectId,
+            projectId: req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : (req.principal.projectId ?? undefined),
             release: req.query.release,
             edition: req.query.edition ?? ApEdition.COMMUNITY,
             platformId: req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.platform.id,
@@ -62,7 +63,7 @@ const basePiecesController: FastifyPluginAsyncTypebox = async (app) => {
         const release = query.release ?? latestRelease
         const edition = query.edition ?? ApEdition.COMMUNITY
         const platformId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.platform.id
-        const projectId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER || req.principal.type === PrincipalType.SERVICE ? undefined : req.principal.projectId
+        const projectId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER || req.principal.type === PrincipalType.SERVICE ? undefined : (req.principal.projectId ?? undefined)
         const pieceMetadataSummary = await pieceMetadataService(req.log).list({
             release,
             includeHidden: query.includeHidden ?? false,
@@ -97,7 +98,7 @@ const basePiecesController: FastifyPluginAsyncTypebox = async (app) => {
             const projectId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.projectId
             const platformId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.platform.id
             return pieceMetadataService(req.log).getOrThrow({
-                projectId,
+                projectId: projectId!,
                 platformId,
                 name: `${decodeScope}/${decodedName}`,
                 version,
@@ -116,7 +117,7 @@ const basePiecesController: FastifyPluginAsyncTypebox = async (app) => {
             const projectId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.projectId
             const platformId = req.principal.type === PrincipalType.UNKNOWN || req.principal.type === PrincipalType.WORKER ? undefined : req.principal.platform.id
             return pieceMetadataService(req.log).getOrThrow({
-                projectId,
+                projectId: projectId!,
                 platformId,
                 name: decodedName,
                 version,
@@ -141,24 +142,25 @@ const basePiecesController: FastifyPluginAsyncTypebox = async (app) => {
         '/options',
         OptionsPieceRequest,
         async (req) => {
-            const { projectId, platform } = req.principal
+            assertProjectId(req.principal)
+            const { platform } = req.principal
             const flow = await flowService(req.log).getOnePopulatedOrThrow({
-                projectId,
+                projectId: req.principal.projectId,
                 id: req.body.flowId,
                 versionId: req.body.flowVersionId,
             })
-            const sampleData = await sampleDataService(req.log).getSampleDataForFlow(projectId, flow.version, SampleDataFileType.OUTPUT)
+            const sampleData = await sampleDataService(req.log).getSampleDataForFlow(req.principal.projectId, flow.version, SampleDataFileType.OUTPUT)
             const { result } = await userInteractionWatcher(req.log).submitAndWaitForResponse<EngineHelperResponse<EngineHelperPropResult>>({
                 jobType: WorkerJobType.EXECUTE_PROPERTY,
                 platformId: platform.id,
-                projectId,
+                projectId: req.principal.projectId,
                 flowVersion: flow.version,
                 propertyName: req.body.propertyName,
                 actionOrTriggerName: req.body.actionOrTriggerName,
                 input: req.body.input,
                 sampleData,
                 searchValue: req.body.searchValue,
-                piece: await getPiecePackageWithoutArchive(req.log, projectId, platform.id, req.body),
+                piece: await getPiecePackageWithoutArchive(req.log, req.principal.projectId, platform.id, req.body),
             })
             return result
         },

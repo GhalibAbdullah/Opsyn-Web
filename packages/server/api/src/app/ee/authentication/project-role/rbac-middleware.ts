@@ -14,6 +14,7 @@ import {
 import { FastifyBaseLogger, FastifyRequest } from 'fastify'
 import { system } from '../../../helper/system/system'
 import { projectMemberService } from '../../projects/project-members/project-member.service'
+import { assertProjectId } from '../../../authentication/authentication-utils'
 import { projectRoleService } from '../../projects/project-role/project-role.service'
 
 const EDITION_IS_COMMUNITY = system.getEdition() === ApEdition.COMMUNITY
@@ -99,10 +100,11 @@ const ignoreRequest = (req: FastifyRequest): boolean => {
 }
 
 export const getPrincipalRoleOrThrow = async (principal: UserPrincipal, log: FastifyBaseLogger): Promise<ProjectRole> => {
+    assertProjectId(principal)
     const { id: userId, projectId } = principal
 
     const projectRole = await projectMemberService(log).getRole({
-        projectId,
+        projectId: projectId!,
         userId,
     })
 
@@ -112,7 +114,7 @@ export const getPrincipalRoleOrThrow = async (principal: UserPrincipal, log: Fas
             params: {
                 message: 'No role found for the user',
                 userId,
-                projectId,
+                projectId: projectId!,
             },
         })
     }
@@ -138,6 +140,7 @@ const grantAccess = async ({ principalRoleId, routePermission }: GrantAccessArgs
 }
 
 const throwPermissionDenied = (projectRole: ProjectRole, principal: UserPrincipal, permission: Permission | undefined): never => {
+    assertProjectId(principal)
     throw new ActivepiecesError({
         code: ErrorCode.PERMISSION_DENIED,
         params: {

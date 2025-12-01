@@ -1,5 +1,6 @@
 import {
     assertNotNullOrUndefined,
+    EndpointScope,
     ListProjectRequestForUserQueryParams,
     PrincipalType,
     ProjectWithLimits,
@@ -19,19 +20,33 @@ import { platformProjectService } from './platform-project-service'
 export const usersProjectController: FastifyPluginAsyncTypebox = async (
     fastify,
 ) => {
-
-    fastify.get('/:id', GetProjectRequestForUser, async (request) => {
-        return platformProjectService(request.log).getWithPlanAndUsageOrThrow(request.principal.projectId)
+    fastify.log.info('Registering GET / route in usersProjectController')
+    // Register '/' before '/:id' to ensure exact match routes are handled first
+    fastify.get('/', ListProjectRequestForUser, async (request) => {
+        fastify.log.info({
+            method: request.method,
+            url: request.url,
+            userId: request.principal.id,
+            platformId: request.principal.platform.id,
+        }, 'Listing projects for user - route handler called')
+        try {
+            const result = await platformProjectService(request.log).getAllForPlatform({
+                platformId: request.principal.platform.id,
+                userId: request.principal.id,
+                cursorRequest: request.query.cursor ?? null,
+                displayName: request.query.displayName,
+                limit: request.query.limit ?? 10,
+            })
+            fastify.log.info('Projects retrieved successfully')
+            return result
+        } catch (error) {
+            fastify.log.error({ error }, 'Error retrieving projects')
+            throw error
+        }
     })
 
-    fastify.get('/', ListProjectRequestForUser, async (request) => {
-        return platformProjectService(request.log).getAllForPlatform({
-            platformId: request.principal.platform.id,
-            userId: request.principal.id,
-            cursorRequest: request.query.cursor ?? null,
-            displayName: request.query.displayName,
-            limit: request.query.limit ?? 10,
-        })
+    fastify.get('/:id', GetProjectRequestForUser, async (request) => {
+        return platformProjectService(request.log).getWithPlanAndUsageOrThrow(request.params.id)
     })
 
     fastify.get('/platforms', ListProjectsForPlatforms, async (request) => {
@@ -69,11 +84,21 @@ async function getPlatformsForUser(identityId: string, platformId: string) {
 const GetProjectRequestForUser = {
     config: {
         allowedPrincipals: [PrincipalType.USER] as const,
+        scope: EndpointScope.PLATFORM,
+    },
+    schema: {
+        params: Type.Object({
+            id: Type.String(),
+        }),
+        response: {
+            [StatusCodes.OK]: ProjectWithLimits,
+        },
     },
 }
 const ListProjectRequestForUser = {
     config: {
         allowedPrincipals: [PrincipalType.USER] as const,
+        scope: EndpointScope.PLATFORM,
     },
     schema: {
         response: {
@@ -86,6 +111,7 @@ const ListProjectRequestForUser = {
 const ListProjectsForPlatforms = {
     config: {
         allowedPrincipals: [PrincipalType.USER] as const,
+        scope: EndpointScope.PLATFORM,
     },
     schema: {
         response: {

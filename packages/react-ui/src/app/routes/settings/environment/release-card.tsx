@@ -14,8 +14,8 @@ const ReleaseCard = () => {
 
   const { mutate } = useMutation({
     mutationFn: () => {
-      return projectApi.update(project.id, {
-        releasesEnabled: !project.releasesEnabled,
+      return projectApi.update(project!.id, {
+        releasesEnabled: !project!.releasesEnabled,
       });
     },
     onSuccess: () => {
@@ -45,10 +45,10 @@ const ReleaseCard = () => {
             variant={'basic'}
             onClick={() => mutate()}
             className={cn('', {
-              'text-destructive': project.releasesEnabled,
+              'text-destructive': project!.releasesEnabled,
             })}
           >
-            {project.releasesEnabled ? t('Disable') : t('Enable')}
+            {project!.releasesEnabled ? t('Disable') : t('Enable')}
           </Button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { PieceMetadataModel } from '@activepieces/pieces-framework'
 import { AddPieceRequestBody, PrincipalType } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../authentication/authentication-utils'
 import { pieceService } from './piece-service'
 
 export const communityPiecesModule: FastifyPluginAsyncTypebox = async (app) => {
@@ -20,11 +21,10 @@ const communityPiecesController: FastifyPluginAsyncTypebox = async (app) => {
             },
         },
         async (req, res): Promise<PieceMetadataModel> => {
-            const platformId = req.principal.platform.id
-            const projectId = req.principal.projectId
+            assertProjectId(req.principal)
             const pieceMetadata = await pieceService(req.log).installPiece(
-                platformId,
-                projectId,
+                req.principal.platform.id,
+                req.principal.projectId,
                 req.body,
             )
             return res.code(StatusCodes.CREATED).send(pieceMetadata)

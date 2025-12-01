@@ -24,9 +24,11 @@ import { flagsHooks } from './flags-hooks';
 export const projectHooks = {
   useCurrentProject: () => {
     const currentProjectId = authenticationSession.getProjectId();
-    const query = useSuspenseQuery<ProjectWithLimits, Error>({
+    const query = useQuery<ProjectWithLimits, Error>({
       queryKey: ['current-project', currentProjectId],
       queryFn: projectApi.current,
+      enabled: !!currentProjectId,
+      retry: false,
     });
     return {
       ...query,
@@ -34,6 +36,17 @@ export const projectHooks = {
       updateCurrentProject,
       setCurrentProject,
     };
+  },
+  useCurrentProjectOrThrow: () => {
+    const { project, isLoading, isError, error } = projectHooks.useCurrentProject();
+    if (isLoading) {
+      // Return undefined while loading - caller should handle this
+      return { project: undefined, isLoading: true, isError: false, error: undefined, updateCurrentProject, setCurrentProject };
+    }
+    if (isError || !project) {
+      throw error || new Error('Project not found');
+    }
+    return { project, isLoading: false, isError: false, error: undefined, updateCurrentProject, setCurrentProject };
   },
   useProjects: () => {
     return useQuery<ProjectWithLimits[], Error>({

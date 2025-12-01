@@ -8,10 +8,12 @@ import {
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
 import sizeof from 'object-sizeof'
+import { assertProjectId } from '../authentication/authentication-utils'
 import { storeEntryService } from './store-entry.service'
 
 export const storeEntryController: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.post( '/', CreateRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const sizeOfValue = sizeof(request.body.value)
         if (sizeOfValue > STORE_VALUE_MAX_SIZE) {
             await reply.status(StatusCodes.REQUEST_TOO_LONG).send({})
@@ -26,6 +28,7 @@ export const storeEntryController: FastifyPluginAsyncTypebox = async (fastify) =
     )
 
     fastify.get('/', GetRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const value = await storeEntryService.getOne({
             projectId: request.principal.projectId,
             key: request.query.key,
@@ -40,6 +43,7 @@ export const storeEntryController: FastifyPluginAsyncTypebox = async (fastify) =
     )
 
     fastify.delete( '/', DeleteStoreRequest, async (request) => {
+        assertProjectId(request.principal)
         return storeEntryService.delete({
             projectId: request.principal.projectId,
             key: request.query.key,

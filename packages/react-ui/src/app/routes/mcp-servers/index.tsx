@@ -59,7 +59,7 @@ const McpServersPage = () => {
       onSuccess: (newMcpServer) => {
         refetch();
         navigate(
-          `/projects/${project.id}/mcps/${newMcpServer.id}?${NEW_MCP_QUERY_PARAM}=true`,
+          `/projects/${project!.id}/mcps/${newMcpServer.id}?${NEW_MCP_QUERY_PARAM}=true`,
         );
       },
     });
@@ -236,7 +236,7 @@ const McpServersPage = () => {
           page={data}
           isLoading={isLoading}
           onRowClick={(row) => {
-            navigate(`/projects/${project.id}/mcps/${row.id}`);
+            navigate(`/projects/${project!.id}/mcps/${row.id}`);
           }}
           bulkActions={bulkActions}
         />

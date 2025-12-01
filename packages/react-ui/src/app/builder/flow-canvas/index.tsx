@@ -22,6 +22,7 @@ import {
 
 import {
   doesSelectionRectangleExist,
+  LeftSideBarType,
   NODE_SELECTION_RECT_CLASS_NAME,
   useBuilderStateContext,
   useFocusOnStep,
@@ -96,6 +97,8 @@ export const FlowCanvas = React.memo(
       selectedStep,
       panningMode,
       selectStepByName,
+      readonly,
+      leftSidebar,
     ] = useBuilderStateContext((state) => {
       return [
         state.flowVersion,
@@ -104,6 +107,8 @@ export const FlowCanvas = React.memo(
         state.selectedStep,
         state.panningMode,
         state.selectStepByName,
+        state.readonly,
+        state.leftSidebar,
       ];
     });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -113,17 +118,43 @@ export const FlowCanvas = React.memo(
     useHandleKeyPressOnCanvas();
     useResizeCanvas(containerRef, setHasCanvasBeenInitialised);
     const storeApi = useStoreApi();
+    
+    // Ensure selected step's node stays selected when comments sidebar opens
+    React.useEffect(() => {
+      if (leftSidebar === LeftSideBarType.COMMENTS && selectedStep && selectedStep !== 'trigger') {
+        // Re-select the node in React Flow to maintain visual selection
+        const state = storeApi.getState();
+        const currentSelected = state.nodes.filter((n: { id: string; selected?: boolean }) => n.selected).map((n: { id: string }) => n.id);
+        if (!currentSelected.includes(selectedStep)) {
+          state.addSelectedNodes([selectedStep]);
+          setSelectedNodes([selectedStep]);
+        }
+      }
+    }, [leftSidebar, selectedStep, storeApi, setSelectedNodes]);
     const isShiftKeyPressed = useKeyPress('Shift');
     const inGrabPanningMode = !isShiftKeyPressed && panningMode === 'grab';
     const onSelectionChange = useCallback(
       (ev: OnSelectionChangeParams) => {
+        if (readonly) {
+          return;
+        }
         const selectedNodes = ev.nodes.map((n) => n.id);
+        // If comments sidebar is open and we have a selected step, preserve it even if React Flow cleared selection
         if (selectedNodes.length === 0 && selectedStep) {
-          selectedNodes.push(selectedStep);
+          if (leftSidebar === LeftSideBarType.COMMENTS) {
+            // Preserve the step selection for commenting
+            selectedNodes.push(selectedStep);
+            // Re-select the node in React Flow to maintain visual selection
+            setTimeout(() => {
+              storeApi.getState().addSelectedNodes([selectedStep]);
+            }, 0);
+          } else {
+            selectedNodes.push(selectedStep);
+          }
         }
         setSelectedNodes(selectedNodes);
       },
-      [setSelectedNodes, selectedStep],
+      [readonly, setSelectedNodes, selectedStep, leftSidebar, storeApi],
     );
     const graphKey = useMemo(() => {
       if (!flowVersion?.trigger) {
@@ -142,6 +173,10 @@ export const FlowCanvas = React.memo(
     );
     const onContextMenu = useCallback(
       (ev: React.MouseEvent<HTMLDivElement>) => {
+        if (readonly) {
+          ev.preventDefault();
+          return;
+        }
         if (
           ev.target instanceof HTMLElement ||
           ev.target instanceof SVGElement
@@ -179,10 +214,13 @@ export const FlowCanvas = React.memo(
           }
         }
       },
-      [setSelectedNodes, selectedNodes, doesSelectionRectangleExist],
+      [readonly, setSelectedNodes, selectedNodes, doesSelectionRectangleExist, selectStepByName, storeApi],
     );
 
     const onSelectionEnd = useCallback(() => {
+      if (readonly) {
+        return;
+      }
       const selectedSteps = selectedNodes.map((node) =>
         flowStructureUtil.getStepOrThrow(node, flowVersion.trigger),
       );
@@ -206,19 +244,77 @@ export const FlowCanvas = React.memo(
       storeApi
         .getState()
         .addSelectedNodes(selectedSteps.map((step) => step.name));
-    }, [selectedNodes, storeApi, selectedStep]);
+    }, [readonly, selectedNodes, storeApi, selectedStep, flowVersion]);
     const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
     return (
       <div
         ref={containerRef}
         className="size-full relative overflow-hidden z-30"
       >
+        {readonly && (
+          <div
+            className="absolute inset-0 z-[10000] bg-transparent cursor-not-allowed"
+            style={{ pointerEvents: 'auto' }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onDragStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onWheel={(e) => {
+              // Allow scrolling
+              e.stopPropagation();
+            }}
+          />
+        )}
         <FlowDragLayer cursorPosition={cursorPosition}>
           <CanvasContextMenu contextMenuType={contextMenuType}>
             <ReactFlow
               key={graphKey || 'empty-graph'}
               onContextMenu={onContextMenu}
               onPaneClick={() => {
+                if (readonly) {
+                  return;
+                }
+                // Don't clear selection if comments sidebar is open and we have a selected step
+                // This allows users to click on the canvas while keeping the step selected for commenting
+                if (leftSidebar === LeftSideBarType.COMMENTS && selectedStep) {
+                  return;
+                }
                 storeApi.getState().unselectNodesAndEdges();
               }}
               nodeTypes={flowUtilConsts.nodeTypes}
@@ -230,22 +326,28 @@ export const FlowCanvas = React.memo(
               elevateEdgesOnSelect={false}
               maxZoom={1.5}
               minZoom={0.5}
-              panOnDrag={inGrabPanningMode ? [0, 1] : [1]}
+              panOnDrag={readonly ? false : (inGrabPanningMode ? [0, 1] : [1])}
               zoomOnDoubleClick={false}
-              panOnScroll={true}
+              panOnScroll={!readonly}
               panOnScrollMode={PanOnScrollMode.Free}
               fitView={false}
               nodesConnectable={false}
-              elementsSelectable={true}
+              elementsSelectable={!readonly}
               nodesDraggable={false}
               nodesFocusable={false}
               onNodeDrag={(event) => {
+                if (readonly) {
+                  return;
+                }
                 setCursorPosition({ x: event.clientX, y: event.clientY });
               }}
-              selectionKeyCode={inGrabPanningMode ? 'Shift' : null}
-              multiSelectionKeyCode={inGrabPanningMode ? 'Shift' : null}
-              selectionOnDrag={inGrabPanningMode ? false : true}
-              selectNodesOnDrag={true}
+              selectionKeyCode={readonly ? null : (inGrabPanningMode ? 'Shift' : null)}
+              multiSelectionKeyCode={readonly ? null : (inGrabPanningMode ? 'Shift' : null)}
+              selectionOnDrag={readonly ? false : (inGrabPanningMode ? false : true)}
+              selectNodesOnDrag={!readonly}
+              onNodesDelete={readonly ? undefined : undefined}
+              onEdgesDelete={readonly ? undefined : undefined}
+              deleteKeyCode={readonly ? null : 'Delete'}
               selectionMode={SelectionMode.Partial}
               onSelectionChange={onSelectionChange}
               onSelectionEnd={onSelectionEnd}

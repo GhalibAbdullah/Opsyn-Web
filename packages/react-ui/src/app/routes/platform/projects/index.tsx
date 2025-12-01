@@ -395,8 +395,19 @@ export default function ProjectsPage() {
         )}
         emptyStateIcon={<Package className="size-14" />}
         onRowClick={async (project) => {
-          await setCurrentProject(queryClient, project);
-          navigate('/');
+          try {
+            await setCurrentProject(queryClient, project);
+            // Navigate directly to the project flows page instead of root
+            // This avoids the default route logic that might redirect to dashboard
+            navigate(`/projects/${project.id}/flows`);
+          } catch (error) {
+            // If switching fails, show error but stay on platform admin page
+            toast({
+              title: t('Error'),
+              description: t('Failed to switch to project. You may not have access to this project.'),
+              variant: 'destructive',
+            });
+          }
         }}
         filters={[
           {

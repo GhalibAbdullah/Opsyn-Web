@@ -9,6 +9,7 @@ import { ALL_PRINCIPAL_TYPES, AppConnectionScope, PrincipalType } from '@activep
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { appConnectionService } from '../../app-connection/app-connection-service/app-connection-service'
 import { projectService } from '../../project/project-service'
 import { connectionKeyService } from './connection-key.service'
@@ -95,6 +96,7 @@ const connectionKeyController: FastifyPluginAsyncTypebox = async (fastify) => {
         async (
             request,
         ) => {
+            assertProjectId(request.principal)
             return connectionKeyService(request.log).list(
                 request.principal.projectId,
                 request.query.cursor ?? null,
@@ -116,6 +118,7 @@ const connectionKeyController: FastifyPluginAsyncTypebox = async (fastify) => {
         async (
             request,
         ) => {
+            assertProjectId(request.principal)
             return connectionKeyService(request.log).upsert({
                 projectId: request.principal.projectId,
                 request: request.body,

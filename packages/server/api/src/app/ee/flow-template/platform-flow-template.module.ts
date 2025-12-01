@@ -16,6 +16,7 @@ import {
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { Static, Type } from '@sinclair/typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { communityTemplates } from '../../flows/templates/community-flow-template.module'
 import { system } from '../../helper/system/system'
 import { platformService } from '../../platform/platform.service'
@@ -51,9 +52,10 @@ const flowTemplateController: FastifyPluginAsyncTypebox = async (fastify) => {
         if (type === TemplateType.PLATFORM) {
             await platformMustBeOwnedByCurrentUser.call(fastify, request, reply)
         }
+        assertProjectId(request.principal)
         const result = await flowTemplateService.upsert(
             request.principal.platform.id,
-            request.principal.projectId,
+            request.principal.projectId ?? undefined,
             request.body,
         )
         return reply.status(StatusCodes.CREATED).send(result)

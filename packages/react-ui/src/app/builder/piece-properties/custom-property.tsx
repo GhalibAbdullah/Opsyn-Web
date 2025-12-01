@@ -39,7 +39,7 @@ const CustomProperty = ({
         value,
         onChange,
         isEmbedded: embedState.isEmbedded,
-        projectId: project.id,
+        projectId: project!.id,
         disabled,
         property,
       };

@@ -11,6 +11,7 @@ import {
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { Type } from '@sinclair/typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
 import { eventsHooks } from '../../helper/application-events'
 import { flowFolderService as folderService } from './folder.service'
@@ -24,6 +25,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.addHook('preSerialization', entitiesMustBeOwnedByCurrentProject)
 
     fastify.post('/', CreateFolderParams, async (request) => {
+        assertProjectId(request.principal)
         const createdFolder = await folderService(request.log).upsert({
             projectId: request.principal.projectId,
             request: request.body,
@@ -42,6 +44,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
         '/:id',
         UpdateFolderParams,
         async (request) => {
+            assertProjectId(request.principal)
             const updatedFlow = await folderService(request.log).update({
                 projectId: request.principal.projectId,
                 folderId: request.params.id,
@@ -65,6 +68,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
         async (
             request,
         ) => {
+            assertProjectId(request.principal)
             return folderService(request.log).getOneOrThrow({
                 projectId: request.principal.projectId,
                 folderId: request.params.id,
@@ -76,6 +80,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
         '/',
         ListFoldersParams,
         async (request) => {
+            assertProjectId(request.principal)
             return folderService(request.log).list({
                 projectId: request.principal.projectId,
                 cursorRequest: request.query.cursor ?? null,
@@ -88,6 +93,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
         '/:id',
         DeleteFolderParams,
         async (request, reply) => {
+            assertProjectId(request.principal)
             const folder = await folderService(request.log).getOneOrThrow({
                 projectId: request.principal.projectId,
                 folderId: request.params.id,
@@ -98,6 +104,7 @@ const folderController: FastifyPluginAsyncTypebox = async (fastify) => {
                     folder,
                 },
             })
+            assertProjectId(request.principal)
             await folderService(request.log).delete({
                 projectId: request.principal.projectId,
                 folderId: request.params.id,

@@ -12,10 +12,15 @@ import { userService } from '../user/user-service'
 import { userInvitationsService } from '../user-invitations/user-invitation.service'
 import { authenticationUtils } from './authentication-utils'
 import { userIdentityService } from './user-identity/user-identity-service'
+import { projectPermissionsService } from './project-permissions.service'
 
 export const authenticationService = (log: FastifyBaseLogger) => ({
     async signUp(params: SignUpParams): Promise<AuthenticationResponse> {
-        if (!isNil(params.platformId)) {
+        const edition = system.getEdition()
+        // In COMMUNITY edition, always allow open sign-up - each user gets their own platform
+        const shouldCreateNewPlatform = isNil(params.platformId) || edition === ApEdition.COMMUNITY
+        
+        if (!shouldCreateNewPlatform && !isNil(params.platformId)) {
             await authenticationUtils.assertEmailAuthIsEnabled({
                 platformId: params.platformId,
                 provider: params.provider,
@@ -25,7 +30,8 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
                 platformId: params.platformId,
             })
         }
-        if (isNil(params.platformId)) {
+        
+        if (shouldCreateNewPlatform) {
             const userIdentity = await userIdentityService(log).create({
                 ...params,
                 verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
@@ -33,9 +39,13 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             return createUserAndPlatform(userIdentity, log)
         }
 
+        // At this point, we know platformId is not null because shouldCreateNewPlatform is false
+        assertNotNullOrUndefined(params.platformId, 'Platform ID is required for existing platform sign-up')
+        const platformId = params.platformId
+
         await authenticationUtils.assertUserIsInvitedToPlatformOrProject(log, {
             email: params.email,
-            platformId: params.platformId,
+            platformId,
         })
         const userIdentity = await userIdentityService(log).create({
             ...params,
@@ -44,7 +54,7 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         const user = await userService.create({
             identityId: userIdentity.id,
             platformRole: PlatformRole.MEMBER,
-            platformId: params.platformId,
+            platformId,
         })
         await userInvitationsService(log).provisionUserInvitation({
             email: params.email,
@@ -52,7 +62,7 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
 
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
-            platformId: params.platformId,
+            platformId,
             projectId: null,
         })
     },
@@ -151,6 +161,23 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         const projectPlatform = await platformService.getOneWithPlanOrThrow(project.platformId)
         await assertUserCanSwitchToPlatform(params.currentPlatformId, projectPlatform)
         const user = await getUserForPlatform(params.identityId, projectPlatform)
+        
+        // Check if user has access to the project (is owner or member)
+        const edition = system.getEdition()
+        if (edition === ApEdition.COMMUNITY) {
+            const role = await projectPermissionsService(log).getRole(params.projectId, user.id)
+            if (!role) {
+                // User doesn't have access to this project
+                throw new ActivepiecesError({
+                    code: ErrorCode.AUTHORIZATION,
+                    params: {
+                        message: 'You do not have access to this project',
+                    },
+                })
+            }
+        }
+        // For Enterprise/Cloud, RBAC middleware will handle authorization
+        
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
             platformId: project.platformId,
@@ -266,7 +293,9 @@ async function getPersonalPlatformIdForIdentity(identityId: string): Promise<str
         const platform = platforms.find((platform) => !platformUtils.isCustomerOnDedicatedDomain(platform))
         return platform?.id ?? null
     }
-    return null
+    // For COMMUNITY edition, find the user's platform(s) and return the first one
+    const platforms = await platformService.listPlatformsForIdentityWithAtleastProject({ identityId })
+    return platforms?.[0]?.id ?? null
 }
 
 

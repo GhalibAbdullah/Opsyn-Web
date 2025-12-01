@@ -50,7 +50,7 @@ export const projectManagementController: FastifyPluginAsyncTypebox = async (app
         })
 
         app.log.info(`Projects retrieved successfully: ${projects.length} projects`)
-        
+
         // Return as a page (for consistency with frontend)
         return paginationHelper.createPage(projects, null)
     })

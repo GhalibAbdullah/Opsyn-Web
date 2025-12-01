@@ -27,7 +27,7 @@ export const authnSsoSamlController: FastifyPluginAsyncTypebox = async (app) => 
         eventsHooks.get(req.log).sendUserEvent({
             platformId,
             userId: response.id,
-            projectId: response.projectId,
+            ...(response.projectId && { projectId: response.projectId }),
             ip: networkUtils.extractClientRealIp(req, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
         }, {
             action: ApplicationEventName.USER_SIGNED_UP,

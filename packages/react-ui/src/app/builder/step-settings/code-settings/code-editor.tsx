@@ -95,49 +95,65 @@ const CodeEditor = ({
       <div className="flex flex-row justify-center items-center h-full">
         <div className="flex justify-start gap-4 items-center">
           <div
-            className={cn('text-sm cursor-pointer', {
+            className={cn('text-sm', {
               'font-bold': activeTab === 'code',
+              'cursor-pointer': !readonly,
+              'cursor-default opacity-60': readonly,
             })}
-            onClick={() => handleCodeClick()}
+            onClick={() => {
+              if (!readonly) {
+                handleCodeClick();
+              }
+            }}
           >
             {t('Code')}
           </div>
           {allowNpmPackagesInCodeStep && (
             <div
-              className={cn('text-sm cursor-pointer', {
+              className={cn('text-sm', {
                 'font-bold': activeTab === 'packageJson',
+                'cursor-pointer': !readonly,
+                'cursor-default opacity-60': readonly,
               })}
-              onClick={() => handlePackageClick()}
+              onClick={() => {
+                if (!readonly) {
+                  handlePackageClick();
+                }
+              }}
             >
               {t('Dependencies')}
             </div>
           )}
         </div>
         <div className="flex flex-grow"></div>
-        {codeApplicationEnabled ? (
-          <Button
-            variant="outline"
-            className="flex gap-2"
-            size={'sm'}
-            onClick={applyCodeToCurrentStep}
-          >
-            <Code className="w-3 h-3" />
-            {t('Use code')}
-          </Button>
-        ) : (
-          allowNpmPackagesInCodeStep && (
-            <AddNpmDialog onAdd={handleAddPackages}>
+        {!readonly && (
+          <>
+            {codeApplicationEnabled ? (
               <Button
                 variant="outline"
                 className="flex gap-2"
                 size={'sm'}
-                onClick={() => {}}
+                onClick={applyCodeToCurrentStep}
               >
-                <Package className="w-4 h-4" />
-                {t('Add package')}
+                <Code className="w-3 h-3" />
+                {t('Use code')}
               </Button>
-            </AddNpmDialog>
-          )
+            ) : (
+              allowNpmPackagesInCodeStep && (
+                <AddNpmDialog onAdd={handleAddPackages}>
+                  <Button
+                    variant="outline"
+                    className="flex gap-2"
+                    size={'sm'}
+                    onClick={() => {}}
+                  >
+                    <Package className="w-4 h-4" />
+                    {t('Add package')}
+                  </Button>
+                </AddNpmDialog>
+              )
+            )}
+          </>
         )}
       </div>
       <CodeMirror

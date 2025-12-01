@@ -63,7 +63,7 @@ export const BranchesList = ({
         id: idx + 1,
         branch,
       }))}
-      onMove={({ activeIndex, overIndex }) => {
+      onMove={readonly ? undefined : ({ activeIndex, overIndex }) => {
         moveBranch({ sourceIndex: activeIndex, targetIndex: overIndex });
       }}
     >
@@ -141,11 +141,17 @@ export const BranchListItem = ({
 }: BranchListItemProps) => {
   return (
     <div
-      className={
-        'flex items-center gap-2 hover:transition-colors   has-[div.button-group:hover]:bg-background  text-sm hover:bg-gray-100 dark:hover:bg-accent px-2 cursor-pointer'
-      }
+      className={cn(
+        'flex items-center gap-2 hover:transition-colors   has-[div.button-group:hover]:bg-background  text-sm px-2',
+        {
+          'hover:bg-gray-100 dark:hover:bg-accent cursor-pointer': !readonly,
+          'cursor-default opacity-60': readonly,
+        }
+      )}
       onClick={() => {
-        onClick();
+        if (!readonly) {
+          onClick();
+        }
       }}
     >
       <EditableText
@@ -179,74 +185,74 @@ export const BranchListItem = ({
         </div>
       )}
       <div className="grow"></div>
-      <div
-        className={cn('flex gap-2 py-3 items-center button-group', {
-          'pointer-events-none': readonly,
-          'opacity-0': readonly,
-        })}
-      >
-        {showDeleteButton && (
+      {!readonly && (
+        <div className="flex gap-2 py-3 items-center button-group">
+          {showDeleteButton && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={'ghost'}
+                  size={'icon'}
+                  disabled={readonly}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteBranch();
+                  }}
+                >
+                  <Trash className="w-4 h-4 stroke-destructive"></Trash>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('Delete')}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant={'ghost'}
                 size={'icon'}
+                disabled={readonly}
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteBranch();
+                  setIsEditingBranchName(true);
                 }}
               >
-                <Trash className="w-4 h-4 stroke-destructive"></Trash>
+                <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t('Delete')}</TooltipContent>
+            <TooltipContent side="bottom">{t('Rename')}</TooltipContent>
           </Tooltip>
-        )}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={'ghost'}
-              size={'icon'}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsEditingBranchName(true);
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{t('Rename')}</TooltipContent>
-        </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={'ghost'}
-              size={'icon'}
-              onClick={(e) => {
-                e.stopPropagation();
-                duplicateBranch();
-              }}
-            >
-              <CopyPlus className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{t('Duplicate')}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <SortableDragHandle
-              variant="ghost"
-              size="icon"
-              disabled={readonly}
-              className={'shrink-0 size-7'}
-            >
-              <DragHandleDots2Icon className="size-4" aria-hidden="true" />
-            </SortableDragHandle>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{t('Move')}</TooltipContent>
-        </Tooltip>
-      </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={'ghost'}
+                size={'icon'}
+                disabled={readonly}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  duplicateBranch();
+                }}
+              >
+                <CopyPlus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('Duplicate')}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SortableDragHandle
+                variant="ghost"
+                size="icon"
+                disabled={readonly}
+                className={'shrink-0 size-7'}
+              >
+                <DragHandleDots2Icon className="size-4" aria-hidden="true" />
+              </SortableDragHandle>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('Move')}</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 };

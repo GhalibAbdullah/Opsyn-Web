@@ -25,7 +25,8 @@ import { CustomDomainEntity } from '../ee/custom-domains/custom-domain.entity'
 import { FlowTemplateEntity } from '../ee/flow-template/flow-template.entity'
 import { OAuthAppEntity } from '../ee/oauth-apps/oauth-app.entity'
 import { PlatformPlanEntity } from '../ee/platform/platform-plan/platform-plan.entity'
-import { ProjectMemberEntity } from '../ee/projects/project-members/project-member.entity'
+import { ProjectMemberEntity as CEProjectMemberEntity } from '../project-members/project-member.entity'
+import { ProjectMemberEntity as EEProjectMemberEntity } from '../ee/projects/project-members/project-member.entity'
 import { ProjectPlanEntity } from '../ee/projects/project-plan/project-plan.entity'
 import { GitRepoEntity } from '../ee/projects/project-release/git-sync/git-sync.entity'
 import { ProjectReleaseEntity } from '../ee/projects/project-release/project-release.entity'
@@ -34,6 +35,7 @@ import { SigningKeyEntity } from '../ee/signing-key/signing-key-entity'
 import { FileEntity } from '../file/file.entity'
 import { FlagEntity } from '../flags/flag.entity'
 import { FlowEntity } from '../flows/flow/flow.entity'
+import { FlowCommentEntity } from '../flows/flow-comment/flow-comment.entity'
 import { FlowRunEntity } from '../flows/flow-run/flow-run-entity'
 import { FlowVersionEntity } from '../flows/flow-version/flow-version-entity'
 import { FolderEntity } from '../flows/folder/folder.entity'
@@ -74,6 +76,7 @@ function getEntities(): EntitySchema<unknown>[] {
         FileEntity,
         FlagEntity,
         FlowEntity,
+        FlowCommentEntity,
         FlowVersionEntity,
         FlowRunEntity,
         ProjectEntity,
@@ -109,7 +112,7 @@ function getEntities(): EntitySchema<unknown>[] {
         case ApEdition.CLOUD:
         case ApEdition.ENTERPRISE:
             entities.push(
-                ProjectMemberEntity,
+                EEProjectMemberEntity,
                 ProjectPlanEntity,
                 CustomDomainEntity,
                 SigningKeyEntity,
@@ -130,6 +133,9 @@ function getEntities(): EntitySchema<unknown>[] {
             )
             break
         case ApEdition.COMMUNITY:
+            entities.push(
+                CEProjectMemberEntity,
+            )
             break
         default:
             throw new Error(`Unsupported edition: ${edition}`)

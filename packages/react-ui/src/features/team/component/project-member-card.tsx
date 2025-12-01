@@ -5,7 +5,7 @@ import { PermissionNeededTooltip } from '@/components/custom/permission-needed-t
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { projectHooks } from '@/hooks/project-hooks';
-import { ProjectMemberWithUser } from '@activepieces/ee-shared';
+import { ProjectMemberWithUser } from '@/lib/project-member-types';
 import { Permission } from '@activepieces/shared';
 
 import { ConfirmationDeleteDialog } from '../../../components/delete-dialog';
@@ -51,13 +51,13 @@ export function ProjectMemberCard({
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium leading-none">
             {member.user.firstName} {member.user.lastName} (
-            {member.projectRole.name})
+            {project?.ownerId === member.userId ? 'OWNER' : (member.projectRole?.name ?? member.role)})
           </p>
           <p className="text-sm text-muted-foreground">{member.user.email}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {project.ownerId !== member.userId && (
+        {project!.ownerId !== member.userId && (
           <PermissionNeededTooltip
             hasPermission={userHasPermissionToRemoveMember}
           >

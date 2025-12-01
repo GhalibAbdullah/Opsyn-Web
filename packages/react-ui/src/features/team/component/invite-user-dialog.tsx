@@ -93,6 +93,8 @@ export const InviteUserDialog = ({
   const userHasPermissionToInviteUser = checkAccess(
     Permission.WRITE_INVITATION,
   );
+  const isProjectOwner = project?.ownerId === currentUser?.id;
+  const canInvite = userHasPermissionToInviteUser && (project ? isProjectOwner : true);
 
   const { mutate, isPending } = useMutation<
     UserInvitationWithLink,
@@ -108,6 +110,9 @@ export const InviteUserDialog = ({
             platformRole: data.platformRole,
           });
         case InvitationType.PROJECT:
+          if (!project) {
+            throw new Error('Project is required for project invitations');
+          }
           return userInvitationApi.invite({
             email: data.email.trim().toLowerCase(),
             type: data.type,
@@ -130,6 +135,14 @@ export const InviteUserDialog = ({
     },
   });
 
+  // Simple project roles for Community Edition
+  const simpleProjectRoles = [
+    { value: 'OWNER', label: 'Owner' },
+    { value: 'EDITOR', label: 'Editor' },
+    { value: 'VIEWER', label: 'Viewer' },
+  ];
+
+  // Enterprise project roles (for backward compatibility)
   const { data: rolesData } = useQuery({
     queryKey: ['project-roles'],
     queryFn: () => projectRoleApi.list(),
@@ -138,17 +151,15 @@ export const InviteUserDialog = ({
       platform.plan.projectRolesEnabled,
   });
 
-  const roles = rolesData?.data ?? [];
+  const enterpriseRoles = rolesData?.data ?? [];
 
   const form = useForm<FormSchema>({
     resolver: typeboxResolver(FormSchema),
     defaultValues: {
       email: '',
-      type: platform.plan.projectRolesEnabled
-        ? InvitationType.PROJECT
-        : InvitationType.PLATFORM,
+      type: project ? InvitationType.PROJECT : InvitationType.PLATFORM,
       platformRole: PlatformRole.ADMIN,
-      projectRole: roles?.[0]?.name,
+      projectRole: 'EDITOR', // Default to EDITOR for simple roles
     },
   });
 
@@ -170,7 +181,7 @@ export const InviteUserDialog = ({
     });
   };
 
-  if (embedState.isEmbedded || !userHasPermissionToInviteUser) {
+  if (embedState.isEmbedded || !canInvite) {
     return null;
   }
 
@@ -248,7 +259,7 @@ export const InviteUserDialog = ({
                                   {t('Entire Platform')}
                                 </SelectItem>
                               )}
-                              {platform.plan.projectRolesEnabled && (
+                              {project && (
                                 <SelectItem value={InvitationType.PROJECT}>
                                   {project.displayName} (Current)
                                 </SelectItem>
@@ -272,12 +283,7 @@ export const InviteUserDialog = ({
                         <FormItem className="grid gap-2">
                           <Label>{t('Select Project Role')}</Label>
                           <Select
-                            onValueChange={(value) => {
-                              const selectedRole = roles.find(
-                                (role) => role.name === value,
-                              );
-                              field.onChange(selectedRole?.name);
-                            }}
+                            onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <SelectTrigger>
@@ -286,11 +292,22 @@ export const InviteUserDialog = ({
                             <SelectContent>
                               <SelectGroup>
                                 <SelectLabel>{t('Roles')}</SelectLabel>
-                                {roles.map((role) => (
-                                  <SelectItem key={role.name} value={role.name}>
-                                    {role.name}
+                                {/* Use simple roles for Community Edition */}
+                                {simpleProjectRoles.map((role) => (
+                                  <SelectItem key={role.value} value={role.value}>
+                                    {role.label}
                                   </SelectItem>
                                 ))}
+                                {/* Enterprise roles for backward compatibility */}
+                                {enterpriseRoles.length > 0 && (
+                                  <>
+                                    {enterpriseRoles.map((role) => (
+                                      <SelectItem key={role.name} value={role.name}>
+                                        {role.name}
+                                      </SelectItem>
+                                    ))}
+                                  </>
+                                )}
                               </SelectGroup>
                             </SelectContent>
                           </Select>

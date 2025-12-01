@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { projectRoleApi } from '@/features/platform-admin/lib/project-role-api';
-import { ProjectMemberWithUser } from '@activepieces/ee-shared';
+import { ProjectMemberWithUser } from '@/lib/project-member-types';
 
 import { projectMembersApi } from '../lib/project-members-api';
 
@@ -37,16 +37,23 @@ export function EditRoleDialog({
   disabled,
 }: EditRoleDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(member.projectRole.name);
+  const initialRole = (member.projectRole?.name ?? member.role) as 'OWNER' | 'EDITOR' | 'VIEWER';
+  const [selectedRole, setSelectedRole] = useState<'OWNER' | 'EDITOR' | 'VIEWER'>(initialRole);
+  // For Community Edition, use simple roles
+  const simpleRoles: ('OWNER' | 'EDITOR' | 'VIEWER')[] = ['OWNER', 'EDITOR', 'VIEWER'];
   const { data: rolesData } = useQuery({
     queryKey: ['project-roles'],
     queryFn: () => projectRoleApi.list(),
+    enabled: false, // Disable for Community Edition - we'll use simple roles
   });
 
-  const roles = rolesData?.data ?? [];
+  // Use simple roles for Community Edition, or Enterprise roles if available
+  const roles = rolesData?.data && rolesData.data.length > 0 
+    ? rolesData.data 
+    : simpleRoles.map(name => ({ name }));
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (newRole: string) => {
+    mutationFn: (newRole: 'OWNER' | 'EDITOR' | 'VIEWER') => {
       return projectMembersApi.update(member.id, {
         role: newRole,
       });
@@ -67,7 +74,9 @@ export function EditRoleDialog({
   });
 
   const handleRoleChange = (newRole: string) => {
-    setSelectedRole(newRole);
+    if (simpleRoles.includes(newRole as 'OWNER' | 'EDITOR' | 'VIEWER')) {
+      setSelectedRole(newRole as 'OWNER' | 'EDITOR' | 'VIEWER');
+    }
   };
 
   const handleSave = () => {

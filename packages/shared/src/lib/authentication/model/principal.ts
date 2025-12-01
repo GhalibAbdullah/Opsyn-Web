@@ -25,7 +25,7 @@ export type ServicePrincipal = {
 export type UserPrincipal = {
     id: ApId
     type: PrincipalType.USER
-    projectId: ProjectId
+    projectId: ProjectId | null
     platform: {
         id: ApId
     }

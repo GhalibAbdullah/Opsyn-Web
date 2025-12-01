@@ -67,6 +67,7 @@ import { ApTableEditorPage } from '../routes/tables/id';
 import { ShareTemplatePage } from '../routes/templates/share-template';
 import { TodosPage } from '../routes/todos';
 import { TodoTestingPage } from '../routes/todos/id';
+import DashboardPage from '../routes/dashboard';
 
 import { AfterImportFlowRedirect } from './after-import-flow-redirect';
 import { DefaultRoute } from './default-route';
@@ -319,6 +320,14 @@ const routes = [
     element: (
       <PageTitle title="Sign Up">
         <SignUpPage />
+      </PageTitle>
+    ),
+  },
+  {
+    path: '/dashboard',
+    element: (
+      <PageTitle title="Dashboard">
+        <DashboardPage />
       </PageTitle>
     ),
   },

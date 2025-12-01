@@ -98,6 +98,7 @@ export type BuilderState = {
   flow: PopulatedFlow;
   flowVersion: FlowVersion;
   readonly: boolean;
+  permissionBasedReadonly: boolean; // Stores permission-based readonly that should never be overridden
   outputSampleData: Record<string, unknown>;
   inputSampleData: Record<string, unknown>;
   loopsIndexes: Record<string, number>;
@@ -242,6 +243,7 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
         ? LeftSideBarType.RUN_DETAILS
         : LeftSideBarType.NONE,
       readonly: initialState.readonly,
+      permissionBasedReadonly: initialState.readonly, // Store initial readonly as permission-based
       run: initialState.run,
       saving: false,
       selectedStep: initiallySelectedStep,
@@ -280,7 +282,22 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
         set({
           selectedBranchIndex: branchIndex,
         }),
-      setReadOnly: (readonly: boolean) => set({ readonly }),
+      setReadOnly: (readOnly: boolean) => {
+        set((state) => {
+          // When called from BuilderStateProvider, readOnly reflects permission-based state
+          // Update permissionBasedReadonly to match the permission-based readonly value
+          const newPermissionBasedReadonly = readOnly;
+          // Calculate final readonly: permission-based OR version-based readonly
+          const versionBasedReadonly =
+            state.flow.publishedVersionId !== state.flowVersion.id &&
+            state.flowVersion.state === FlowVersionState.LOCKED;
+          const finalReadonly = newPermissionBasedReadonly || versionBasedReadonly;
+          return {
+            readonly: finalReadonly,
+            permissionBasedReadonly: newPermissionBasedReadonly,
+          };
+        });
+      },
       renameFlowClientSide: (newName: string) => {
         set((state) => {
           return {
@@ -307,7 +324,10 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
               ? RightSideBarType.NONE
               : RightSideBarType.PIECE_SETTINGS;
 
-          const leftSidebar = !isNil(state.run)
+          // Preserve comments sidebar if it's open, otherwise set based on run state
+          const leftSidebar = state.leftSidebar === LeftSideBarType.COMMENTS
+            ? LeftSideBarType.COMMENTS
+            : !isNil(state.run)
             ? LeftSideBarType.RUN_DETAILS
             : LeftSideBarType.NONE;
 
@@ -375,17 +395,25 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
           selectedBranchIndex: null,
         }),
       exitStepSettings: () =>
-        set((state) => ({
-          rightSidebar: RightSideBarType.NONE,
-          leftSidebar: state.leftSidebar,
-          selectedStep: null,
-          selectedBranchIndex: null,
-          askAiButtonProps: null,
-        })),
+        set((state) => {
+          // Don't clear selectedStep if comments sidebar is open - user might want to comment on the step
+          const shouldPreserveStep = state.leftSidebar === LeftSideBarType.COMMENTS;
+          return {
+            rightSidebar: RightSideBarType.NONE,
+            leftSidebar: state.leftSidebar,
+            selectedStep: shouldPreserveStep ? state.selectedStep : null,
+            selectedBranchIndex: null,
+            askAiButtonProps: null,
+          };
+        }),
       setRightSidebar: (rightSidebar: RightSideBarType) =>
         set({ rightSidebar }),
       setLeftSidebar: (leftSidebar: LeftSideBarType) =>
-        set({ leftSidebar, askAiButtonProps: null }),
+        set((state) => {
+          // Preserve selectedStep when opening/closing comments sidebar
+          // Only clear askAiButtonProps, don't touch selectedStep
+          return { leftSidebar, askAiButtonProps: null };
+        }),
       setRun: async (run: FlowRun, flowVersion: FlowVersion) =>
         set((state) => {
           const lastStepWithStatus = flowRunUtils.findLastStepWithStatus(
@@ -566,20 +594,28 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
         const isEmptyTriggerInitiallySelected =
           initiallySelectedStep === 'trigger' &&
           flowVersion.trigger.type === FlowTriggerType.EMPTY;
-        set((state) => ({
-          flowVersion,
-          run: null,
-          selectedStep: initiallySelectedStep,
-          readonly:
+        set((state) => {
+          // Apply version-based readonly (if flow is locked and not published)
+          const versionBasedReadonly =
             state.flow.publishedVersionId !== flowVersion.id &&
-            flowVersion.state === FlowVersionState.LOCKED,
-          leftSidebar: LeftSideBarType.NONE,
-          rightSidebar:
-            initiallySelectedStep && !isEmptyTriggerInitiallySelected
-              ? RightSideBarType.PIECE_SETTINGS
-              : RightSideBarType.NONE,
-          selectedBranchIndex: null,
-        }));
+            flowVersion.state === FlowVersionState.LOCKED;
+          // readonly is true if either permission-based or version-based readonly is true
+          // permissionBasedReadonly should never be overridden
+          const finalReadonly = state.permissionBasedReadonly || versionBasedReadonly;
+          
+          return {
+            flowVersion,
+            run: null,
+            selectedStep: initiallySelectedStep,
+            readonly: finalReadonly,
+            leftSidebar: LeftSideBarType.NONE,
+            rightSidebar:
+              initiallySelectedStep && !isEmptyTriggerInitiallySelected
+                ? RightSideBarType.PIECE_SETTINGS
+                : RightSideBarType.NONE,
+            selectedBranchIndex: null,
+          };
+        });
       },
       insertMention: null,
       setInsertMentionHandler: (insertMention: InsertMentionHandler | null) => {
@@ -674,7 +710,12 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
           selectStepByName,
           flowVersion,
           setOpenedPieceSelectorStepNameOrAddButtonId,
+          readonly,
         } = get();
+        if (readonly) {
+          console.warn('Cannot add or update step while readonly');
+          return '';
+        }
         const defaultValues = pieceSelectorUtils.getDefaultStepValues({
           stepName: getStepNameFromOperationType(operation, flowVersion),
           pieceSelectorItem,
@@ -1091,9 +1132,13 @@ export const useShowBuilderIsSavingWarningBeforeLeaving = () => {
   const {
     embedState: { isEmbedded },
   } = useEmbedding();
-  const isSaving = useBuilderStateContext((state) => state.saving);
+  const [isSaving, readonly] = useBuilderStateContext((state) => [
+    state.saving,
+    state.readonly,
+  ]);
   useEffect(() => {
-    if (isEmbedded) {
+    // Don't show warnings in readonly mode
+    if (isEmbedded || readonly) {
       return;
     }
     const message = t(
@@ -1114,5 +1159,5 @@ export const useShowBuilderIsSavingWarningBeforeLeaving = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isSaving, isEmbedded]);
+  }, [isSaving, isEmbedded, readonly]);
 };

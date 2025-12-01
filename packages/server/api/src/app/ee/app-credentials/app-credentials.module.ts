@@ -8,6 +8,7 @@ import { ALL_PRINCIPAL_TYPES, PrincipalType, SeekPage } from '@activepieces/shar
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { appCredentialService } from './app-credentials.service'
 
 export const appCredentialModule: FastifyPluginAsyncTypebox = async (app) => {
@@ -55,6 +56,7 @@ const appCredentialController: FastifyPluginAsyncTypebox = async (fastify) => {
             },
         },
         async (request) => {
+            assertProjectId(request.principal)
             return appCredentialService.upsert({
                 projectId: request.principal.projectId,
                 request: request.body,
@@ -75,6 +77,7 @@ const appCredentialController: FastifyPluginAsyncTypebox = async (fastify) => {
             },
         },
         async (request, reply) => {
+            assertProjectId(request.principal)
             await appCredentialService.delete({
                 id: request.params.credentialId,
                 projectId: request.principal.projectId,

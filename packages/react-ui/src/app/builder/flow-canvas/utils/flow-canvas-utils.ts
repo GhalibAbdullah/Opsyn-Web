@@ -148,8 +148,8 @@ const buildGraph: (step: FlowAction | FlowTrigger | undefined) => ApGraph = (
   const graphWithChild = childGraph ? mergeGraph(graph, childGraph) : graph;
   const nextStepGraph = buildGraph(step.nextAction);
   const offsetNextStepGraph = offsetGraph(nextStepGraph, {
-    x: 0,
-    y: calculateGraphBoundingBox(graphWithChild).height,
+      x: 0,
+      y: calculateGraphBoundingBox(graphWithChild).height,
   });
   
   const mergedGraph = mergeGraph(graphWithChild, offsetNextStepGraph);

@@ -14,6 +14,7 @@ import {
     Type,
 } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
 import { recordSideEffects } from './record-side-effects'
 import { recordService } from './record.service'
@@ -24,6 +25,7 @@ export const recordController: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.addHook('preSerialization', entitiesMustBeOwnedByCurrentProject)
 
     fastify.post('/', CreateRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const records = await recordService.create({
             request: request.body,
             projectId: request.principal.projectId,
@@ -40,6 +42,7 @@ export const recordController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.get('/:id', GetRecordByIdRequest, async (request) => {
+        assertProjectId(request.principal)
         return recordService.getById({
             id: request.params.id,
             projectId: request.principal.projectId,
@@ -47,6 +50,7 @@ export const recordController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.post('/:id', UpdateRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const record = await recordService.update({
             id: request.params.id,
             request: request.body,
@@ -64,6 +68,7 @@ export const recordController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.delete('/', DeleteRecordRequest, async (request, reply) => {
+        assertProjectId(request.principal)
         const deletedRecords = await recordService.delete({
             ids: request.body.ids,
             projectId: request.principal.projectId,
@@ -79,6 +84,7 @@ export const recordController: FastifyPluginAsyncTypebox = async (fastify) => {
     })
 
     fastify.get('/', ListRequest, async (request) => {
+        assertProjectId(request.principal)
         return recordService.list({
             tableId: request.query.tableId,
             projectId: request.principal.projectId,

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { ProjectMemberWithUser } from '@activepieces/ee-shared';
+import { ProjectMemberWithUser } from '@/lib/project-member-types';
 
 import { authenticationSession } from '../../../lib/authentication-session';
 
@@ -17,7 +17,6 @@ export const projectMembersHooks = {
         }
         const res = await projectMembersApi.list({
           projectId: projectId,
-          projectRoleId: undefined,
           cursor: undefined,
           limit: 100,
         });

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import {
   BuilderInitialState,
@@ -30,6 +30,16 @@ export function BuilderStateProvider({
       inputSampleData: sampleDataInput,
     });
   }
+
+  // Update readonly state when permissions change
+  useEffect(() => {
+    if (storeRef.current) {
+      const state = storeRef.current.getState();
+      // Update permission-based readonly
+      // Use setReadOnly which will properly handle permissionBasedReadonly
+      state.setReadOnly(readonly);
+    }
+  }, [readonly]);
 
   return (
     <BuilderStateContext.Provider value={storeRef.current}>

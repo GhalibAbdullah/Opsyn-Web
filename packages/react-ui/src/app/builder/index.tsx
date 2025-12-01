@@ -43,6 +43,7 @@ import { FlowVersionsList } from './flow-versions';
 import { FlowRunDetails } from './run-details';
 import { RunsList } from './run-list';
 import { StepSettingsContainer } from './step-settings';
+import { FlowCommentsList } from './flow-comments';
 
 const minWidthOfSidebar = 'min-w-[max(20vw,400px)]';
 const animateResizeClassName = `transition-all duration-200`;
@@ -85,7 +86,7 @@ const constructContainerKey = ({
 };
 const BuilderPage = () => {
   const { platform } = platformHooks.useCurrentPlatform();
-  const [setRun, flowVersion, leftSidebar, rightSidebar, run, selectedStep] =
+  const [setRun, flowVersion, leftSidebar, rightSidebar, run, selectedStep, readonly] =
     useBuilderStateContext((state) => [
       state.setRun,
       state.flowVersion,
@@ -93,8 +94,10 @@ const BuilderPage = () => {
       state.rightSidebar,
       state.run,
       state.selectedStep,
+      state.readonly,
     ]);
 
+  // Only show warning if not readonly
   useShowBuilderIsSavingWarningBeforeLeaving();
 
   const { memorizedSelectedStep, containerKey } = useBuilderStateContext(
@@ -172,12 +175,107 @@ const BuilderPage = () => {
   const [hasCanvasBeenInitialised, setHasCanvasBeenInitialised] =
     useState(false);
 
+  // Block all interactions in readonly mode using event capture
+  useEffect(() => {
+    if (!readonly) return;
+
+    const middlePanelElement = middlePanelRef.current;
+    if (!middlePanelElement) return;
+
+    const blockEvent = (e: Event) => {
+      const target = e.target as HTMLElement;
+      // Allow events from header (outside builder content)
+      if (target.closest('[class*="builder-header"]') || target.closest('header')) {
+        return;
+      }
+      // Allow scroll events
+      if (e.type === 'wheel' || e.type === 'scroll') {
+        return;
+      }
+      // Check if event is within builder content
+      if (middlePanelElement.contains(target)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+      }
+    };
+
+    const events = [
+      'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu',
+      'dragstart', 'drag', 'dragend', 'drop',
+      'touchstart', 'touchend', 'touchmove',
+      'keydown', 'keyup', 'keypress'
+    ];
+    
+    events.forEach(eventType => {
+      document.addEventListener(eventType, blockEvent, { capture: true, passive: false });
+    });
+
+    return () => {
+      events.forEach(eventType => {
+        document.removeEventListener(eventType, blockEvent, { capture: true });
+      });
+    };
+  }, [readonly]);
+
   return (
     <div className="flex h-full w-full flex-col relative">
       <div className="z-50">
         <BuilderHeader />
       </div>
-      <ResizablePanelGroup direction="horizontal">
+      <div className={cn("relative flex-1 overflow-hidden")}>
+        {readonly && (
+          <div 
+            className="absolute inset-0 z-[9999] bg-transparent cursor-not-allowed"
+            style={{ pointerEvents: 'auto' }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onMouseUp={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onDragStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+            }}
+            onWheel={(e) => {
+              // Allow scrolling but prevent other interactions
+              e.stopPropagation();
+            }}
+          />
+        )}
+        <ResizablePanelGroup direction="horizontal" className={readonly ? "pointer-events-none" : ""}>
         <ResizablePanel
           id="left-sidebar"
           defaultSize={0}
@@ -194,6 +292,7 @@ const BuilderPage = () => {
             {leftSidebar === LeftSideBarType.RUNS && <RunsList />}
             {leftSidebar === LeftSideBarType.RUN_DETAILS && <FlowRunDetails />}
             {leftSidebar === LeftSideBarType.VERSIONS && <FlowVersionsList />}
+            {leftSidebar === LeftSideBarType.COMMENTS && <FlowCommentsList />}
           </div>
         </ResizablePanel>
 
@@ -206,8 +305,8 @@ const BuilderPage = () => {
           }
         />
 
-        <ResizablePanel defaultSize={100} order={2} id="flow-canvas">
-          <div ref={middlePanelRef} className="relative h-full w-full">
+        <ResizablePanel defaultSize={100} order={2} id="flow-canvas" className={readonly ? "pointer-events-none" : ""}>
+          <div ref={middlePanelRef} className={cn("relative h-full w-full", readonly && "pointer-events-none")}>
             <FlowCanvas
               setHasCanvasBeenInitialised={setHasCanvasBeenInitialised}
             ></FlowCanvas>
@@ -262,9 +361,10 @@ const BuilderPage = () => {
           className={cn('min-w-0 bg-background z-30', {
             [minWidthOfSidebar]: rightSidebar !== RightSideBarType.NONE,
             [animateResizeClassName]: !isDraggingHandle,
+            'pointer-events-none': readonly,
           })}
         >
-          <div ref={rightSidePanelRef} className="h-full w-full">
+          <div ref={rightSidePanelRef} className={cn("h-full w-full", readonly && "pointer-events-none")}>
             {rightSidebar === RightSideBarType.PIECE_SETTINGS &&
               memorizedSelectedStep && (
                 <StepSettingsProvider
@@ -282,6 +382,7 @@ const BuilderPage = () => {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      </div>
       <ChatDrawer />
     </div>
   );

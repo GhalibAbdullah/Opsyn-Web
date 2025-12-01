@@ -35,6 +35,8 @@ export const flowCommentHooks = {
             },
             enabled: (enabledParam !== undefined ? enabledParam : true) && !!flowId,
             staleTime: 5 * 1000, // Consider data stale after 5 seconds
+            retry: 1, // Only retry once on error
+            retryOnMount: false, // Don't retry when component remounts
         });
 
         // Subscribe to WebSocket events for real-time updates

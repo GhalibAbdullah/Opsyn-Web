@@ -13,7 +13,11 @@ import {
 
 export const projectApi = {
   current: async () => {
-    return projectApi.get(authenticationSession.getProjectId()!);
+    const projectId = authenticationSession.getProjectId();
+    if (!projectId) {
+      throw new Error('No project ID available');
+    }
+    return projectApi.get(projectId);
   },
   list(request: ListProjectRequestForUserQueryParams) {
     return api.get<SeekPage<ProjectWithLimits>>('/v1/users/projects', request);

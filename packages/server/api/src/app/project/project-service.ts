@@ -212,9 +212,9 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     logger.info({
         userId: params.userId,
         platformId: params.platformId,
-    }, 'About to query for owned projects directly')
+    }, 'Checking user project access: querying for owned projects and member projects')
     
-    // Query directly for owned projects instead of using getIdsOfProjects
+    // Query directly for owned projects (where user is the owner)
     // This bypasses any potential issues with that function
     const { IsNull } = await import('typeorm')
     const ownedProjects = await projectRepo().find({
@@ -234,7 +234,7 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
         userId: params.userId,
         ownedProjectIds,
         ownedCount: ownedProjects.length,
-    }, 'Found owned projects directly')
+    }, 'Found projects where user is owner')
     
     // Also get project member records
     const projectMemberServiceInstance = projectMemberService(logger)
@@ -244,15 +244,52 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
             const { repoFactory } = await import('../core/db/repo-factory')
             const { ProjectMemberEntity } = await import('../project-members/project-member.entity')
             const memberRepo = repoFactory(ProjectMemberEntity)
-            const members = await memberRepo().find({
-                where: {
+            
+            // Query for members with a retry to handle transaction isolation issues
+            // If a member was just created, it might not be immediately visible
+            // Use exponential backoff with up to ~3 seconds total wait time
+            const maxRetries = 10
+            const baseDelayMs = 100
+            let members: Array<{ projectId: string }> = []
+            
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                if (attempt > 0) {
+                    const delayMs = baseDelayMs * Math.pow(2, attempt - 1)
+                    await new Promise(resolve => setTimeout(resolve, delayMs))
+                }
+                
+                members = await memberRepo().find({
+                    where: {
+                        userId: params.userId,
+                        platformId: params.platformId,
+                    },
+                })
+                
+                if (members.length > 0) {
+                    if (attempt > 0) {
+                        logger.info({ 
+                            userId: params.userId, 
+                            platformId: params.platformId,
+                            attempts: attempt + 1,
+                            memberCount: members.length,
+                            projectIds: members.map(m => m.projectId)
+                        }, 'Found project members after retry')
+                    }
+                    break
+                }
+            }
+            
+            if (members.length === 0) {
+                logger.warn({
                     userId: params.userId,
                     platformId: params.platformId,
-                },
-            })
+                    attempts: maxRetries
+                }, 'No project members found after all retries - member may not exist or transaction isolation issue')
+            }
+            
             return members.map(m => m.projectId)
         } catch (error) {
-            logger.error({ error }, 'Error fetching project members')
+            logger.error({ error, userId: params.userId, platformId: params.platformId }, 'Error fetching project members')
             return []
         }
     })()
@@ -266,7 +303,7 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
         totalCount: allProjectIds.length,
         ownedCount: ownedProjectIds.length,
         memberCount: memberProjectIds.length,
-    }, 'Combined project IDs for user')
+    }, 'Combined project IDs for user (owned + member projects)')
     
     // Regular members can only see projects they're members of or own
     if (allProjectIds.length === 0) {

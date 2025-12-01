@@ -3,12 +3,20 @@ import { FastifyBaseLogger } from 'fastify';
 import { Server } from 'socket.io';
 
 export const flowCommentSideEffects = (_log: FastifyBaseLogger) => ({
-    async notifyCommentCreated({ socket, flowId, projectId, commentId }: NotifyCommentCreatedParams) {
+    async notifyCommentCreated({ socket, flowId, projectId, commentId, mentionedUserIds }: NotifyCommentCreatedParams) {
         const request = {
             flowId,
             commentId,
+            mentionedUserIds: mentionedUserIds || [],
         };
         socket.to(projectId).emit(WebsocketClientEvent.FLOW_COMMENT_CREATED, request);
+        
+        // Notify mentioned users specifically
+        if (mentionedUserIds && mentionedUserIds.length > 0) {
+            mentionedUserIds.forEach((userId) => {
+                socket.to(userId).emit(WebsocketClientEvent.FLOW_COMMENT_MENTION, request);
+            });
+        }
     },
 
     async notifyCommentChanged({ socket, projectId, commentId, flowId, content }: NotifyCommentChangedParams) {
@@ -34,6 +42,7 @@ type NotifyCommentCreatedParams = {
     projectId: ProjectId;
     flowId: FlowId;
     commentId: string;
+    mentionedUserIds?: string[];
 };
 
 type NotifyCommentChangedParams = {

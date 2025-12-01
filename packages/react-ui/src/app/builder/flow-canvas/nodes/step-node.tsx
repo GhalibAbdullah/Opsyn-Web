@@ -71,6 +71,12 @@ const ApStepCanvasNode = React.memo(
     const handleStepClick = (
       e: React.MouseEvent<HTMLDivElement, MouseEvent>,
     ) => {
+      if (readonly) {
+        // In readonly mode, completely block all interactions
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       selectStepByName(step.name);
       setSelectedBranchIndex(null);
       if (step.type === FlowTriggerType.EMPTY) {
@@ -88,18 +94,44 @@ const ApStepCanvasNode = React.memo(
           height: `${flowUtilConsts.AP_NODE_SIZE.STEP.height}px`,
           width: `${flowUtilConsts.AP_NODE_SIZE.STEP.width}px`,
           maxWidth: `${flowUtilConsts.AP_NODE_SIZE.STEP.width}px`,
+          ...(readonly ? { pointerEvents: 'none', userSelect: 'none' } : {}),
         }}
         className={cn(
-          'transition-all border-box rounded-sm border border-solid border-border relative hover:border-primary/70 group',
+          'transition-all border-box rounded-sm border border-solid border-border relative group',
           {
-            'border-primary/70': isSelected,
+            'border-primary/70': isSelected && !readonly,
             'bg-background': !isDragging,
             'border-none': isDragging,
             'shadow-none': isDragging,
             'bg-accent/90': isSkipped,
+            'hover:border-primary/70': !readonly,
+            'cursor-default opacity-60': readonly,
+            'pointer-events-none': readonly,
           },
         )}
-        onClick={(e) => handleStepClick(e)}
+        onClick={(e) => {
+          if (readonly) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            return;
+          }
+          handleStepClick(e);
+        }}
+        onMouseDown={(e) => {
+          if (readonly) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }
+        }}
+        onMouseUp={(e) => {
+          if (readonly) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }
+        }}
         key={step.name}
         ref={isPieceSelectorOpened ? null : setNodeRef}
         {...stepNodeDivAttributes}
@@ -115,10 +147,11 @@ const ApStepCanvasNode = React.memo(
         </div>
         <div
           className={cn(
-            'absolute left-0 top-0 pointer-events-none  rounded-sm w-full h-full',
+            'absolute left-0 top-0 rounded-sm w-full h-full',
             {
               'border-t-[2px] border-primary/70 border-solid':
                 isSelected && !isDragging,
+              'pointer-events-none': readonly,
             },
           )}
         ></div>
@@ -134,8 +167,15 @@ const ApStepCanvasNode = React.memo(
               stepToReplacePieceDisplayName={stepMetadata?.displayName}
             >
               <div
-                className="flex items-center justify-center h-full w-full gap-3"
+                className={cn("flex items-center justify-center h-full w-full gap-3", {
+                  "pointer-events-none": readonly,
+                })}
                 onClick={(e) => {
+                  if (readonly) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
                   if (!isPieceSelectorOpened) {
                     handleStepClick(e);
                   }

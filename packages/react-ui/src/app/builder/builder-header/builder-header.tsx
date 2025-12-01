@@ -1,7 +1,7 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronDown, History, Logs } from 'lucide-react';
+import { ChevronDown, History, Logs, MessageSquare } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   createSearchParams,
@@ -54,23 +54,29 @@ export const BuilderHeader = () => {
   const { data: showSupport } = flagsHooks.useFlag<boolean>(
     ApFlagId.SHOW_COMMUNITY,
   );
+  const { checkAccess } = useAuthorization();
   const isInRunsPage = useMemo(
     () => location.pathname.includes('/runs'),
     [location.pathname],
   );
-  const hasPermissionToReadRuns = useAuthorization().checkAccess(
-    Permission.READ_FLOW,
-  );
+  const hasPermissionToReadRuns = checkAccess(Permission.READ_FLOW);
+  const canEditFlow = checkAccess(Permission.WRITE_FLOW);
   const [
     flow,
     flowVersion,
     setLeftSidebar,
+    leftSidebar,
+    selectedStep,
+    selectStepByName,
     moveToFolderClientSide,
     applyOperation,
   ] = useBuilderStateContext((state) => [
     state.flow,
     state.flowVersion,
     state.setLeftSidebar,
+    state.leftSidebar,
+    state.selectedStep,
+    state.selectStepByName,
     state.moveToFolderClientSide,
     state.applyOperation,
   ]);
@@ -129,7 +135,7 @@ export const BuilderHeader = () => {
               <EditableText
                 className="font-semibold hover:cursor-text"
                 value={flowVersion.displayName}
-                readonly={!isLatestVersion}
+                readonly={!isLatestVersion || !canEditFlow}
                 onValueChange={(value) => {
                   applyOperation(
                     {
@@ -145,12 +151,12 @@ export const BuilderHeader = () => {
                 }}
                 isEditing={isEditingFlowName}
                 setIsEditing={setIsEditingFlowName}
-                tooltipContent={isLatestVersion ? t('Edit') : ''}
+                tooltipContent={isLatestVersion && canEditFlow ? t('Edit') : ''}
               />
             )}
             <ActiveEditorsBadge flowId={flow.id} />
           </div>
-          {!embedState.hideFlowNameInBuilder && (
+          {!embedState.hideFlowNameInBuilder && canEditFlow && (
             <FlowActionMenu
               insideBuilder={true}
               flow={flow}
@@ -203,6 +209,38 @@ export const BuilderHeader = () => {
             >
               <History className="w-4 h-4" />
               {t('Versions')}
+            </Button>
+          )}
+
+          {canEditFlow && (
+            <Button
+              variant="ghost"
+              className="gap-2 px-2"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                
+                // Preserve the currently selected step before toggling sidebar
+                const currentSelectedStep = selectedStep;
+                const newSidebar = leftSidebar === LeftSideBarType.COMMENTS
+                  ? LeftSideBarType.NONE
+                  : LeftSideBarType.COMMENTS;
+                
+                setLeftSidebar(newSidebar);
+                
+                // If we're opening comments and had a selected step, re-select it
+                // This ensures the step stays selected even if something cleared it
+                if (newSidebar === LeftSideBarType.COMMENTS && currentSelectedStep) {
+                  // Use setTimeout to ensure this happens after state updates
+                  setTimeout(() => {
+                    selectStepByName(currentSelectedStep);
+                  }, 0);
+                }
+              }}
+            >
+              <MessageSquare className="w-4 h-4" />
+              {t('Comments')}
             </Button>
           )}
 

@@ -10,6 +10,7 @@ import {
 } from '@fastify/type-provider-typebox'
 import { FastifyPluginAsync } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
+import { assertProjectId } from '../../../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../../../authentication/authorization'
 import { platformMustHaveFeatureEnabled } from '../../../authentication/ee-authorization'
 import { gitRepoService } from './git-sync.service'
@@ -49,6 +50,7 @@ export const gitRepoController: FastifyPluginCallbackTypebox = (
     })
 
     app.delete('/:id', DeleteRepoRequestSchema, async (request, reply) => {
+        assertProjectId(request.principal)
         await gitRepoService(request.log).delete({
             id: request.params.id,
             projectId: request.principal.projectId,
