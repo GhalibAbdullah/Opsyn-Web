@@ -225,23 +225,28 @@ const FlowActivityList = () => {
                                             </span>
                                         </div>
                                         
-                                        {/* Show step/flow details */}
-                                        {stepInfo?.displayName && (
+                                        {/* Show step/flow details with position */}
+                                        {(stepInfo?.displayName || metadata?.displayName) ? (
                                             <div className="text-sm font-medium mb-1.5 text-foreground">
-                                                {stepInfo.displayName}
+                                                {metadata && 'stepPosition' in metadata && typeof metadata.stepPosition === 'number' ? (
+                                                    <span className="text-muted-foreground mr-1">
+                                                        Step {metadata.stepPosition}:
+                                                    </span>
+                                                ) : null}
+                                                {stepInfo?.displayName || String(metadata?.displayName || '')}
                                             </div>
-                                        )}
+                                        ) : null}
                                         
                                         {/* Show step type for step operations */}
                                         {(activity.actionType === FlowActivityAction.STEP_ADDED ||
                                           activity.actionType === FlowActivityAction.STEP_UPDATED ||
                                           activity.actionType === FlowActivityAction.STEP_REMOVED) && 
                                          stepInfo?.stepType && 
-                                         typeof stepInfo.stepType === 'string' && (
+                                         typeof stepInfo.stepType === 'string' ? (
                                             <div className="text-xs text-muted-foreground mb-1">
                                                 Type: {stepInfo.stepType}
                                             </div>
-                                        )}
+                                        ) : null}
                                         
                                         {/* Show replacement info */}
                                         {activity.actionType === FlowActivityAction.STEP_UPDATED &&
@@ -249,11 +254,14 @@ const FlowActivityList = () => {
                                          typeof metadata === 'object' &&
                                          'replaced' in metadata &&
                                          metadata.replaced && 
-                                         'oldStepType' in metadata && (
-                                            <div className="text-xs text-muted-foreground mb-1">
-                                                {String(metadata.oldStepType)} → {stepInfo?.stepType || String(metadata.stepType)}
+                                         'oldStepType' in metadata && 
+                                         'oldDisplayName' in metadata ? (
+                                            <div className="text-xs text-amber-600 dark:text-amber-400 mb-1 font-medium">
+                                                Replaced "{String(metadata.oldDisplayName)}" ({String(metadata.oldStepType)}) 
+                                                <br />
+                                                → "{String(metadata.displayName)}" ({String(metadata.newStepType || metadata.stepType)})
                                             </div>
-                                        )}
+                                        ) : null}
                                         
                                         {/* Show source step for duplicates */}
                                         {activity.actionType === FlowActivityAction.STEP_ADDED &&
@@ -261,11 +269,11 @@ const FlowActivityList = () => {
                                          typeof metadata === 'object' &&
                                          'operation' in metadata &&
                                          metadata.operation === 'DUPLICATE' &&
-                                         'sourceStepName' in metadata && (
+                                         'sourceStepName' in metadata ? (
                                             <div className="text-xs text-muted-foreground mb-1">
                                                 From: {String(metadata.sourceStepName)}
                                             </div>
-                                        )}
+                                        ) : null}
                                         
                                         {/* Show step names for deleted actions */}
                                         {activity.actionType === FlowActivityAction.STEP_REMOVED && 

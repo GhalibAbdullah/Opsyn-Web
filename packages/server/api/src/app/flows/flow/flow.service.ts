@@ -22,6 +22,7 @@ import {
     PopulatedFlow,
     ProjectId,
     SeekPage, TelemetryEventName, UncategorizedFolderId, UserId,
+    flowStructureUtil,
 } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
@@ -285,6 +286,9 @@ export const flowService = (log: FastifyBaseLogger) => ({
         platformId,
         operation,
     }: UpdateParams): Promise<PopulatedFlow> {
+        let isDuplicateOperation = false
+        let duplicatedStepNames: string[] = []
+        
         await distributedLock(log).runExclusive({
             key: id,
             timeoutInSeconds: 240,
@@ -422,6 +426,22 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                 versionId: undefined,
                             })
                             
+                            // Helper function to calculate step position
+                            const getStepPosition = (stepName: string): number => {
+                                const allSteps = flowStructureUtil.getAllSteps(updatedVersion.trigger)
+                                const position = allSteps.findIndex(s => s.name === stepName)
+                                return position + 1 // 1-indexed
+                            }
+                            
+                            // Helper function to get old step by name
+                            const getOldStep = (stepName: string) => {
+                                try {
+                                    return flowStructureUtil.getStep(stepName, lastVersion.trigger)
+                                } catch {
+                                    return null
+                                }
+                            }
+                            
                             switch (operation.type) {
                                 case FlowOperationType.CHANGE_NAME: {
                                     await flowActivityService(log).create({
@@ -437,21 +457,43 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                     break
                                 }
                                 case FlowOperationType.DUPLICATE_ACTION: {
-                                    // Log duplication as adding a step
-                                    await flowActivityService(log).create({
-                                        projectId,
-                                        flowId: id,
-                                        userId: userId ?? null,
-                                        actionType: FlowActivityAction.STEP_ADDED,
-                                        metadata: {
-                                            stepName: operation.request.stepName,
-                                            operation: 'DUPLICATE',
-                                            sourceStepName: operation.request.stepName,
-                                        },
-                                    })
+                                    // Mark that we're in a duplicate operation
+                                    isDuplicateOperation = true
+                                    
+                                    // Get steps before duplication
+                                    const stepsBefore = flowStructureUtil.getAllSteps(lastVersion.trigger).map(s => s.name)
+                                    // Get steps after duplication
+                                    const stepsAfter = flowStructureUtil.getAllSteps(updatedVersion.trigger).map(s => s.name)
+                                    // Find new steps (the duplicated ones)
+                                    const newSteps = stepsAfter.filter(s => !stepsBefore.includes(s))
+                                    duplicatedStepNames = newSteps
+                                    
+                                    // Log duplication for each new step created
+                                    for (const newStepName of newSteps) {
+                                        const newStep = flowStructureUtil.getStep(newStepName, updatedVersion.trigger)
+                                        await flowActivityService(log).create({
+                                            projectId,
+                                            flowId: id,
+                                            userId: userId ?? null,
+                                            actionType: FlowActivityAction.STEP_ADDED,
+                                            metadata: {
+                                                stepName: newStepName,
+                                                stepPosition: getStepPosition(newStepName),
+                                                stepType: newStep?.type,
+                                                displayName: newStep?.displayName,
+                                                operation: 'DUPLICATE',
+                                                sourceStepName: operation.request.stepName,
+                                            },
+                                        })
+                                    }
                                     break
                                 }
                                 case FlowOperationType.ADD_ACTION: {
+                                    // Skip logging if this is part of a duplicate operation
+                                    if (isDuplicateOperation && duplicatedStepNames.includes(operation.request.action?.name || '')) {
+                                        break
+                                    }
+                                    
                                     await flowActivityService(log).create({
                                         projectId,
                                         flowId: id,
@@ -459,6 +501,7 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                         actionType: FlowActivityAction.STEP_ADDED,
                                         metadata: {
                                             stepName: operation.request.action?.name,
+                                            stepPosition: operation.request.action?.name ? getStepPosition(operation.request.action.name) : undefined,
                                             stepType: operation.request.action?.type,
                                             displayName: operation.request.action?.displayName,
                                         },
@@ -479,9 +522,69 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                 }
                                 case FlowOperationType.UPDATE_ACTION:
                                 case FlowOperationType.UPDATE_TRIGGER: {
-                                    // Check if the step type changed (node replacement)
-                                    const oldStep = lastVersion.trigger.type === 'EMPTY' ? null : lastVersion.trigger.name === operation.request.name ? lastVersion.trigger : null
-                                    const isTypeChanged = oldStep && oldStep.type !== operation.request.type
+                                    // Check if the step was replaced (type changed or piece changed)
+                                    const oldStep = getOldStep(operation.request.name)
+                                    
+                                    let isReplaced = false
+                                    let oldStepTypeDisplay: string | undefined = oldStep?.type
+                                    let newStepTypeDisplay: string = operation.request.type
+                                    
+                                    if (oldStep) {
+                                        // Check if type changed
+                                        const typeChanged = oldStep.type !== operation.request.type
+                                        
+                                        // For PIECE actions, check if piece name OR action name changed
+                                        let pieceChanged = false
+                                        if (oldStep.type === 'PIECE' && operation.request.type === 'PIECE' &&
+                                            'settings' in oldStep && 'settings' in operation.request) {
+                                            const oldPieceName = oldStep.settings?.pieceName
+                                            const newPieceName = operation.request.settings?.pieceName
+                                            const oldActionName = oldStep.settings?.actionName
+                                            const newActionName = operation.request.settings?.actionName
+                                            
+                                            const pieceNameChanged = oldPieceName !== newPieceName
+                                            const actionNameChanged = oldActionName !== newActionName
+                                            pieceChanged = pieceNameChanged || actionNameChanged
+                                            
+                                            // Use piece and action name for better display
+                                            if (pieceChanged) {
+                                                if (pieceNameChanged) {
+                                                    oldStepTypeDisplay = `PIECE (${oldPieceName})`
+                                                    newStepTypeDisplay = `PIECE (${newPieceName})`
+                                                } else if (actionNameChanged) {
+                                                    oldStepTypeDisplay = `${oldPieceName} [${oldActionName}]`
+                                                    newStepTypeDisplay = `${newPieceName} [${newActionName}]`
+                                                }
+                                            }
+                                        }
+                                        
+                                        // For PIECE_TRIGGER, check if trigger name changed
+                                        let triggerChanged = false
+                                        if (oldStep.type === 'PIECE_TRIGGER' && operation.request.type === 'PIECE_TRIGGER' &&
+                                            'settings' in oldStep && 'settings' in operation.request) {
+                                            const oldPieceName = oldStep.settings?.pieceName
+                                            const newPieceName = operation.request.settings?.pieceName
+                                            const oldTriggerName = oldStep.settings?.triggerName
+                                            const newTriggerName = operation.request.settings?.triggerName
+                                            
+                                            const pieceNameChanged = oldPieceName !== newPieceName
+                                            const triggerNameChanged = oldTriggerName !== newTriggerName
+                                            triggerChanged = pieceNameChanged || triggerNameChanged
+                                            
+                                            // Use piece and trigger name for better display
+                                            if (triggerChanged) {
+                                                if (pieceNameChanged) {
+                                                    oldStepTypeDisplay = `PIECE_TRIGGER (${oldPieceName})`
+                                                    newStepTypeDisplay = `PIECE_TRIGGER (${newPieceName})`
+                                                } else if (triggerNameChanged) {
+                                                    oldStepTypeDisplay = `${oldPieceName} [${oldTriggerName}]`
+                                                    newStepTypeDisplay = `${newPieceName} [${newTriggerName}]`
+                                                }
+                                            }
+                                        }
+                                        
+                                        isReplaced = typeChanged || pieceChanged || triggerChanged
+                                    }
                                     
                                     await flowActivityService(log).create({
                                         projectId,
@@ -490,11 +593,14 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                         actionType: FlowActivityAction.STEP_UPDATED,
                                         metadata: {
                                             stepName: operation.request.name,
+                                            stepPosition: getStepPosition(operation.request.name),
                                             stepType: operation.request.type,
                                             displayName: operation.request.displayName,
-                                            ...(isTypeChanged && {
-                                                oldStepType: oldStep.type,
+                                            ...(isReplaced && oldStep && {
+                                                oldStepType: oldStepTypeDisplay,
+                                                oldDisplayName: oldStep.displayName,
                                                 replaced: true,
+                                                newStepType: newStepTypeDisplay,
                                             }),
                                         },
                                     })
