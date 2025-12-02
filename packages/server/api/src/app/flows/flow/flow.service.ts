@@ -416,6 +416,12 @@ export const flowService = (log: FastifyBaseLogger) => ({
                         
                         // Log activity based on operation type
                         try {
+                            // Get the updated flow version after the operation to get step positions
+                            const updatedVersion = await flowVersionService(log).getFlowVersionOrThrow({
+                                flowId: id,
+                                versionId: undefined,
+                            })
+                            
                             switch (operation.type) {
                                 case FlowOperationType.CHANGE_NAME: {
                                     await flowActivityService(log).create({
@@ -426,6 +432,21 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                         metadata: {
                                             oldDisplayName,
                                             displayName: operation.request,
+                                        },
+                                    })
+                                    break
+                                }
+                                case FlowOperationType.DUPLICATE_ACTION: {
+                                    // Log duplication as adding a step
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.STEP_ADDED,
+                                        metadata: {
+                                            stepName: operation.request.stepName,
+                                            operation: 'DUPLICATE',
+                                            sourceStepName: operation.request.stepName,
                                         },
                                     })
                                     break
@@ -458,6 +479,10 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                 }
                                 case FlowOperationType.UPDATE_ACTION:
                                 case FlowOperationType.UPDATE_TRIGGER: {
+                                    // Check if the step type changed (node replacement)
+                                    const oldStep = lastVersion.trigger.type === 'EMPTY' ? null : lastVersion.trigger.name === operation.request.name ? lastVersion.trigger : null
+                                    const isTypeChanged = oldStep && oldStep.type !== operation.request.type
+                                    
                                     await flowActivityService(log).create({
                                         projectId,
                                         flowId: id,
@@ -467,6 +492,10 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                             stepName: operation.request.name,
                                             stepType: operation.request.type,
                                             displayName: operation.request.displayName,
+                                            ...(isTypeChanged && {
+                                                oldStepType: oldStep.type,
+                                                replaced: true,
+                                            }),
                                         },
                                     })
                                     break

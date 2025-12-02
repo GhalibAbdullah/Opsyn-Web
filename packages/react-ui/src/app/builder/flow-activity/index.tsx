@@ -59,7 +59,9 @@ const FlowActivityList = () => {
         return allActivities
     }, [allActivities, activeCategory])
 
-    const getActionLabel = (actionType: string) => {
+    const getActionLabel = (actionType: string, metadata?: unknown) => {
+        const meta = metadata as Record<string, unknown> | null | undefined
+        
         switch (actionType) {
             case FlowActivityAction.CREATED:
                 return t('created')
@@ -76,17 +78,27 @@ const FlowActivityList = () => {
             case FlowActivityAction.NAME_CHANGED:
                 return t('renamed')
             case FlowActivityAction.STEP_ADDED:
+                // Check if it's a duplicate operation
+                if (meta?.operation === 'DUPLICATE') {
+                    return t('duplicated step')
+                }
                 return t('added step')
             case FlowActivityAction.STEP_REMOVED:
                 return t('removed step')
             case FlowActivityAction.STEP_UPDATED:
+                // Check if it's a replacement
+                if (meta?.replaced) {
+                    return t('replaced step')
+                }
                 return t('updated step')
             default:
                 return actionType.toLowerCase()
         }
     }
 
-    const getActionIcon = (actionType: string) => {
+    const getActionIcon = (actionType: string, metadata?: unknown) => {
+        const meta = metadata as Record<string, unknown> | null | undefined
+        
         switch (actionType) {
             case FlowActivityAction.CREATED:
                 return '✨'
@@ -101,10 +113,18 @@ const FlowActivityList = () => {
             case FlowActivityAction.NAME_CHANGED:
                 return '🏷️'
             case FlowActivityAction.STEP_ADDED:
+                // Use copy icon for duplicates
+                if (meta?.operation === 'DUPLICATE') {
+                    return '📋'
+                }
                 return '➕'
             case FlowActivityAction.STEP_REMOVED:
                 return '➖'
             case FlowActivityAction.STEP_UPDATED:
+                // Use swap icon for replacements
+                if (meta?.replaced) {
+                    return '🔀'
+                }
                 return '🔧'
             default:
                 return '📝'
@@ -186,7 +206,7 @@ const FlowActivityList = () => {
                                     className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                                 >
                                     <div className="text-xl mt-0.5">
-                                        {getActionIcon(activity.actionType)}
+                                        {getActionIcon(activity.actionType, activity.metadata)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1.5">
@@ -194,7 +214,7 @@ const FlowActivityList = () => {
                                                 variant="outline" 
                                                 className="text-xs font-medium"
                                             >
-                                                {getActionLabel(activity.actionType)}
+                                                {getActionLabel(activity.actionType, activity.metadata)}
                                             </Badge>
                                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
@@ -220,6 +240,30 @@ const FlowActivityList = () => {
                                          typeof stepInfo.stepType === 'string' && (
                                             <div className="text-xs text-muted-foreground mb-1">
                                                 Type: {stepInfo.stepType}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Show replacement info */}
+                                        {activity.actionType === FlowActivityAction.STEP_UPDATED &&
+                                         metadata && 
+                                         typeof metadata === 'object' &&
+                                         'replaced' in metadata &&
+                                         metadata.replaced && 
+                                         'oldStepType' in metadata && (
+                                            <div className="text-xs text-muted-foreground mb-1">
+                                                {String(metadata.oldStepType)} → {stepInfo?.stepType || String(metadata.stepType)}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Show source step for duplicates */}
+                                        {activity.actionType === FlowActivityAction.STEP_ADDED &&
+                                         metadata && 
+                                         typeof metadata === 'object' &&
+                                         'operation' in metadata &&
+                                         metadata.operation === 'DUPLICATE' &&
+                                         'sourceStepName' in metadata && (
+                                            <div className="text-xs text-muted-foreground mb-1">
+                                                From: {String(metadata.sourceStepName)}
                                             </div>
                                         )}
                                         
