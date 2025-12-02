@@ -547,13 +547,18 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                             pieceChanged = pieceNameChanged || actionNameChanged
                                             
                                             // Use piece and action name for better display
+                                            // Helper to clean piece name (remove @activepieces/piece- prefix)
+                                            const cleanPieceName = (name: string) => {
+                                                return name.replace('@activepieces/piece-', '').replace(/^piece-/, '')
+                                            }
+                                            
                                             if (pieceChanged) {
                                                 if (pieceNameChanged) {
-                                                    oldStepTypeDisplay = `PIECE (${oldPieceName})`
-                                                    newStepTypeDisplay = `PIECE (${newPieceName})`
+                                                    oldStepTypeDisplay = cleanPieceName(oldPieceName)
+                                                    newStepTypeDisplay = cleanPieceName(newPieceName)
                                                 } else if (actionNameChanged) {
-                                                    oldStepTypeDisplay = `${oldPieceName} [${oldActionName}]`
-                                                    newStepTypeDisplay = `${newPieceName} [${newActionName}]`
+                                                    oldStepTypeDisplay = cleanPieceName(oldPieceName)
+                                                    newStepTypeDisplay = cleanPieceName(newPieceName)
                                                 }
                                             }
                                         }
@@ -572,13 +577,18 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                             triggerChanged = pieceNameChanged || triggerNameChanged
                                             
                                             // Use piece and trigger name for better display
+                                            // Helper to clean piece name (remove @activepieces/piece- prefix)
+                                            const cleanPieceName = (name: string) => {
+                                                return name.replace('@activepieces/piece-', '').replace(/^piece-/, '')
+                                            }
+                                            
                                             if (triggerChanged) {
                                                 if (pieceNameChanged) {
-                                                    oldStepTypeDisplay = `PIECE_TRIGGER (${oldPieceName})`
-                                                    newStepTypeDisplay = `PIECE_TRIGGER (${newPieceName})`
+                                                    oldStepTypeDisplay = cleanPieceName(oldPieceName)
+                                                    newStepTypeDisplay = cleanPieceName(newPieceName)
                                                 } else if (triggerNameChanged) {
-                                                    oldStepTypeDisplay = `${oldPieceName} [${oldTriggerName}]`
-                                                    newStepTypeDisplay = `${newPieceName} [${newTriggerName}]`
+                                                    oldStepTypeDisplay = cleanPieceName(oldPieceName)
+                                                    newStepTypeDisplay = cleanPieceName(newPieceName)
                                                 }
                                             }
                                         }

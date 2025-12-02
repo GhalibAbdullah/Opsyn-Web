@@ -257,9 +257,14 @@ const FlowActivityList = () => {
                                          'oldStepType' in metadata && 
                                          'oldDisplayName' in metadata ? (
                                             <div className="text-xs text-amber-600 dark:text-amber-400 mb-1 font-medium">
-                                                Replaced "{String(metadata.oldDisplayName)}" ({String(metadata.oldStepType)}) 
+                                                Replaced "{String(metadata.oldDisplayName)}" 
                                                 <br />
-                                                → "{String(metadata.displayName)}" ({String(metadata.newStepType || metadata.stepType)})
+                                                → "{String(metadata.displayName)}"
+                                                {metadata.oldStepType !== metadata.newStepType && metadata.oldStepType !== metadata.stepType && (
+                                                    <span className="ml-1 text-muted-foreground">
+                                                        ({String(metadata.oldStepType)} → {String(metadata.newStepType || metadata.stepType)})
+                                                    </span>
+                                                )}
                                             </div>
                                         ) : null}
                                         
