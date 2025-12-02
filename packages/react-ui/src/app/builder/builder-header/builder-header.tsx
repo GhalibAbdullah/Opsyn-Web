@@ -1,7 +1,7 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronDown, History, Logs, MessageSquare } from 'lucide-react';
+import { ChevronDown, History, Logs, MessageSquare, Activity } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   createSearchParams,
@@ -211,6 +211,15 @@ export const BuilderHeader = () => {
               {t('Versions')}
             </Button>
           )}
+
+          <Button
+            variant="ghost"
+            className="gap-2 px-2"
+            onClick={() => setLeftSidebar(LeftSideBarType.ACTIVITY)}
+          >
+            <Activity className="w-4 h-4" />
+            {t('Activity')}
+          </Button>
 
           {canEditFlow && (
             <Button

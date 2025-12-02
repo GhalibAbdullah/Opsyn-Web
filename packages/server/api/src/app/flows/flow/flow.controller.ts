@@ -51,6 +51,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
         const newFlow = await flowService(request.log).create({
             projectId: request.principal.projectId,
             request: request.body,
+            userId,
         })
 
         eventsHooks.get(request.log).sendUserEventFromRequest(request, {
@@ -232,6 +233,7 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
         await flowService(request.log).delete({
             id: request.params.id,
             projectId: request.principal.projectId,
+            userId,
         })
         return reply.status(StatusCodes.NO_CONTENT).send()
     })

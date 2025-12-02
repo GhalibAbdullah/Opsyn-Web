@@ -9,6 +9,7 @@ import { flowWebsocketHandlers } from './flow/flow-websocket-handlers'
 import { flowRunService } from './flow-run/flow-run-service'
 import { sampleDataController } from './step-run/sample-data.controller'
 import { flowCommentController } from './flow-comment/flow-comment.controller'
+import { flowActivityController } from './flow-activity/flow-activity.controller'
 
 export const flowModule: FastifyPluginAsyncTypebox = async (app) => {
     await app.register(flowWorkerController, { prefix: '/v1/worker/flows' })
@@ -16,6 +17,7 @@ export const flowModule: FastifyPluginAsyncTypebox = async (app) => {
     await app.register(flowController, { prefix: '/v1/flows' })
     await app.register(sampleDataController, { prefix: '/v1/sample-data' })
     await app.register(flowCommentController, { prefix: '/v1/flows/:flowId/comments' })
+    await app.register(flowActivityController, { prefix: '/v1/flows/:flowId/activity' })
     websocketService.addListener(PrincipalType.USER, WebsocketServerEvent.TEST_FLOW_RUN, (socket) => {
         return async (data: TestFlowRunRequestBody, principal: UserPrincipal) => {
             assertProjectId(principal)

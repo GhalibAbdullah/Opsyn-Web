@@ -36,13 +36,15 @@ import { projectService } from '../../project/project-service'
 import { triggerSourceService } from '../../trigger/trigger-source/trigger-source-service'
 import { flowVersionService } from '../flow-version/flow-version.service'
 import { flowFolderService } from '../folder/folder.service'
+import { flowActivityService } from '../flow-activity/flow-activity.service'
+import { FlowActivityAction } from '@activepieces/shared'
 import { flowExecutionCache } from './flow-execution-cache'
 import { flowSideEffects } from './flow-service-side-effects'
 import { FlowEntity } from './flow.entity'
 import { flowRepo } from './flow.repo'
 
 export const flowService = (log: FastifyBaseLogger) => ({
-    async create({ projectId, request, externalId }: CreateParams): Promise<PopulatedFlow> {
+    async create({ projectId, request, externalId, userId }: CreateParams): Promise<PopulatedFlow> {
         const folderId = await getFolderIdFromRequest({ projectId, folderId: request.folderId, folderName: request.folderName, log })
         const newFlow: NewFlow = {
             id: apId(),
@@ -61,6 +63,17 @@ export const flowService = (log: FastifyBaseLogger) => ({
                 displayName: request.displayName,
             },
         )
+
+        // Log flow creation activity
+        await flowActivityService(log).create({
+            projectId,
+            flowId: savedFlow.id,
+            userId: userId ?? null,
+            actionType: FlowActivityAction.CREATED,
+            metadata: {
+                displayName: request.displayName,
+            },
+        }).catch((e) => log.error(e, '[FlowService#create] Failed to log activity'))
 
         telemetry(log).trackProject(savedFlow.projectId, {
             name: TelemetryEventName.CREATED_FLOW,
@@ -289,15 +302,35 @@ export const flowService = (log: FastifyBaseLogger) => ({
                             projectId,
                             newStatus: operation.request.status ?? FlowStatus.ENABLED,
                         })
+                        // Log publish activity
+                        await flowActivityService(log).create({
+                            projectId,
+                            flowId: id,
+                            userId: userId ?? null,
+                            actionType: FlowActivityAction.PUBLISHED,
+                        }).catch((e) => log.error(e, '[FlowService#update] Failed to log publish activity'))
                         break
                     }
 
                     case FlowOperationType.CHANGE_STATUS: {
+                        const flow = await this.getOneOrThrow({ id, projectId })
+                        const oldStatus = flow.status
                         await this.updateStatus({
                             id,
                             projectId,
                             newStatus: operation.request.status,
                         })
+                        // Log status change activity
+                        await flowActivityService(log).create({
+                            projectId,
+                            flowId: id,
+                            userId: userId ?? null,
+                            actionType: FlowActivityAction.STATUS_CHANGED,
+                            metadata: {
+                                oldStatus,
+                                status: operation.request.status,
+                            },
+                        }).catch((e) => log.error(e, '[FlowService#update] Failed to log status change activity'))
                         break
                     }
 
@@ -305,6 +338,16 @@ export const flowService = (log: FastifyBaseLogger) => ({
                         await flowRepo().update(id, {
                             folderId: operation.request.folderId,
                         })
+                        // Log folder change as update activity
+                        await flowActivityService(log).create({
+                            projectId,
+                            flowId: id,
+                            userId: userId ?? null,
+                            actionType: FlowActivityAction.UPDATED,
+                            metadata: {
+                                operation: 'CHANGE_FOLDER',
+                            },
+                        }).catch((e) => log.error(e, '[FlowService#update] Failed to log folder change activity'))
                         break
                     }
 
@@ -314,6 +357,16 @@ export const flowService = (log: FastifyBaseLogger) => ({
                             projectId,
                             metadata: operation.request.metadata,
                         })
+                        // Log metadata update activity
+                        await flowActivityService(log).create({
+                            projectId,
+                            flowId: id,
+                            userId: userId ?? null,
+                            actionType: FlowActivityAction.UPDATED,
+                            metadata: {
+                                operation: 'UPDATE_METADATA',
+                            },
+                        }).catch((e) => log.error(e, '[FlowService#update] Failed to log metadata update activity'))
                         break
                     }
                     default: {
@@ -350,6 +403,9 @@ export const flowService = (log: FastifyBaseLogger) => ({
                                 },
                             })
                         }
+                        
+                        const oldDisplayName = lastVersion.displayName
+                        
                         await flowVersionService(log).applyOperation({
                             userId,
                             projectId,
@@ -357,6 +413,94 @@ export const flowService = (log: FastifyBaseLogger) => ({
                             flowVersion: lastVersion,
                             userOperation: operation,
                         })
+                        
+                        // Log activity based on operation type
+                        try {
+                            switch (operation.type) {
+                                case FlowOperationType.CHANGE_NAME: {
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.NAME_CHANGED,
+                                        metadata: {
+                                            oldDisplayName,
+                                            displayName: operation.request,
+                                        },
+                                    })
+                                    break
+                                }
+                                case FlowOperationType.ADD_ACTION: {
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.STEP_ADDED,
+                                        metadata: {
+                                            stepName: operation.request.action?.name,
+                                            stepType: operation.request.action?.type,
+                                            displayName: operation.request.action?.displayName,
+                                        },
+                                    })
+                                    break
+                                }
+                                case FlowOperationType.DELETE_ACTION: {
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.STEP_REMOVED,
+                                        metadata: {
+                                            stepNames: operation.request.names,
+                                        },
+                                    })
+                                    break
+                                }
+                                case FlowOperationType.UPDATE_ACTION:
+                                case FlowOperationType.UPDATE_TRIGGER: {
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.STEP_UPDATED,
+                                        metadata: {
+                                            stepName: operation.request.name,
+                                            stepType: operation.request.type,
+                                            displayName: operation.request.displayName,
+                                        },
+                                    })
+                                    break
+                                }
+                                case FlowOperationType.DELETE_BRANCH: {
+                                    const stepNames = operation.request.stepName ? [operation.request.stepName] : []
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.STEP_REMOVED,
+                                        metadata: {
+                                            stepNames,
+                                            branchIndex: operation.request.branchIndex,
+                                        },
+                                    })
+                                    break
+                                }
+                                default: {
+                                    // For other operations, log a general update
+                                    await flowActivityService(log).create({
+                                        projectId,
+                                        flowId: id,
+                                        userId: userId ?? null,
+                                        actionType: FlowActivityAction.UPDATED,
+                                        metadata: {
+                                            operation: operation.type,
+                                        },
+                                    })
+                                }
+                            }
+                        } catch (e) {
+                            log.error(e, '[FlowService#update] Failed to log activity for operation: ' + operation.type)
+                        }
                     }
                 }
             },
@@ -450,7 +594,7 @@ export const flowService = (log: FastifyBaseLogger) => ({
         })
     },
 
-    async delete({ id, projectId }: DeleteParams): Promise<void> {
+    async delete({ id, projectId, userId }: DeleteParams): Promise<void> {
         await distributedLock(log).runExclusive({
             key: id,
             timeoutInSeconds: 10,
@@ -463,6 +607,17 @@ export const flowService = (log: FastifyBaseLogger) => ({
                 rejectedPromiseHandler(flowSideEffects(log).preDelete({
                     flowToDelete,
                 }), log)
+
+                // Log deletion activity before deleting
+                await flowActivityService(log).create({
+                    projectId,
+                    flowId: id,
+                    userId: userId ?? null,
+                    actionType: FlowActivityAction.DELETED,
+                    metadata: {
+                        displayName: flowToDelete.publishedVersionId,
+                    },
+                }).catch((e) => log.error(e, '[FlowService#delete] Failed to log delete activity'))
 
                 await flowRepo().delete({ id })
                 await flowExecutionCache(log).delete(id)
@@ -626,6 +781,7 @@ type CreateParams = {
     projectId: ProjectId
     request: CreateFlowRequest
     externalId?: string
+    userId?: UserId | null
 }
 
 type ListParams = {
@@ -690,6 +846,7 @@ type UpdatePublishedVersionIdParams = {
 type DeleteParams = {
     id: FlowId
     projectId: ProjectId
+    userId?: UserId | null
 }
 
 type NewFlow = Omit<Flow, 'created' | 'updated'>

@@ -44,6 +44,7 @@ import { FlowRunDetails } from './run-details';
 import { RunsList } from './run-list';
 import { StepSettingsContainer } from './step-settings';
 import { FlowCommentsList } from './flow-comments';
+import { FlowActivityList } from './flow-activity';
 
 const minWidthOfSidebar = 'min-w-[max(20vw,400px)]';
 const animateResizeClassName = `transition-all duration-200`;
@@ -293,6 +294,7 @@ const BuilderPage = () => {
             {leftSidebar === LeftSideBarType.RUN_DETAILS && <FlowRunDetails />}
             {leftSidebar === LeftSideBarType.VERSIONS && <FlowVersionsList />}
             {leftSidebar === LeftSideBarType.COMMENTS && <FlowCommentsList />}
+            {leftSidebar === LeftSideBarType.ACTIVITY && <FlowActivityList />}
           </div>
         </ResizablePanel>
 

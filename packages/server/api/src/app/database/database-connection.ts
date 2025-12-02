@@ -62,6 +62,7 @@ import { TriggerSourceEntity } from '../trigger/trigger-source/trigger-source-en
 import { UserEntity } from '../user/user-entity'
 import { UserInvitationEntity } from '../user-invitations/user-invitation.entity'
 import { WorkerMachineEntity } from '../workers/machine/machine-entity'
+import { FlowActivityEntity } from '../flows/flow-activity/flow-activity.entity'
 import { createPostgresDataSource } from './postgres-connection'
 import { createSqlLiteDataSource } from './sqlite-connection'
 
@@ -77,6 +78,7 @@ function getEntities(): EntitySchema<unknown>[] {
         FlagEntity,
         FlowEntity,
         FlowCommentEntity,
+        FlowActivityEntity,
         FlowVersionEntity,
         FlowRunEntity,
         ProjectEntity,
