@@ -9,6 +9,7 @@ import {
   Puzzle,
   Table2,
   Workflow,
+  Grid3x3,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -121,6 +122,15 @@ export function ProjectDashboardSidebar() {
   );
 
   const otherItems: SidebarItemType[] = [
+    {
+      type: 'link',
+      to: authenticationSession.appendProjectRoutePrefix('/integrations'),
+      label: t('Integrations'),
+      icon: Grid3x3,
+      hasPermission: checkAccess(Permission.READ_APP_CONNECTION),
+      show: true,
+      isSubItem: false,
+    },
     {
       type: 'link',
       to: authenticationSession.appendProjectRoutePrefix('/connections'),

@@ -35,6 +35,7 @@ import NotFoundPage from '../routes/404-page';
 import AuthenticatePage from '../routes/authenticate';
 import { ChangePasswordPage } from '../routes/change-password';
 import { AppConnectionsPage } from '../routes/connections';
+import IntegrationsPage from '../routes/integrations';
 import { EmbeddedConnectionDialog } from '../routes/embed/embedded-connection-dialog';
 import { ExplorePage } from '../routes/explore';
 import { FlowsPage } from '../routes/flows';
@@ -242,6 +243,18 @@ const routes = [
         <RoutePermissionGuard permission={Permission.READ_APP_CONNECTION}>
           <PageTitle title="Connections">
             <AppConnectionsPage />
+          </PageTitle>
+        </RoutePermissionGuard>
+      </ProjectDashboardLayout>
+    ),
+  }),
+  ...ProjectRouterWrapper({
+    path: '/projects/:id/integrations',
+    element: (
+      <ProjectDashboardLayout>
+        <RoutePermissionGuard permission={Permission.READ_APP_CONNECTION}>
+          <PageTitle title="Integrations">
+            <IntegrationsPage />
           </PageTitle>
         </RoutePermissionGuard>
       </ProjectDashboardLayout>

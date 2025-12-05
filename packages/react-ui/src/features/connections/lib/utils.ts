@@ -97,7 +97,7 @@ export const newConnectionUtils = {
     const projectId = authenticationSession.getProjectId();
     assertNotNullOrUndefined(projectId, 'projectId');
     if (!piece.auth) {
-      throw new Error(`Unsupported property type: ${piece.auth}`);
+      throw new Error(`Piece "${piece.displayName}" does not require authentication. This piece cannot be connected.`);
     }
 
     switch (piece.auth.type) {

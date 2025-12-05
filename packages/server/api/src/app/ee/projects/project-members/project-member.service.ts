@@ -8,6 +8,7 @@ import {
     ApEdition,
     ApId,
     apId,
+    AppConnectionScope,
     Cursor,
     DefaultProjectRole,
     ErrorCode,
@@ -30,6 +31,9 @@ import { system } from '../../../helper/system/system'
 import { projectService } from '../../../project/project-service'
 import { userService } from '../../../user/user-service'
 import { projectRoleService } from '../project-role/project-role.service'
+import { appConnectionService } from '../../../app-connection/app-connection-service/app-connection-service'
+import { appConnectionsRepo } from '../../../app-connection/app-connection-service/app-connection-service'
+import { APArrayContains } from '../../../database/database-connection'
 import {
     ProjectMemberEntity,
 } from './project-member.entity'
@@ -200,7 +204,76 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
         projectId: ProjectId,
         invitationId: ProjectMemberId,
     ): Promise<void> {
+        // Get the project member to retrieve userId and platformId before deletion
+        const projectMember = await repo().findOneBy({ projectId, id: invitationId })
+        
+        if (!projectMember) {
+            throw new ActivepiecesError({
+                code: ErrorCode.ENTITY_NOT_FOUND,
+                params: {
+                    entityType: 'project_member',
+                    entityId: invitationId,
+                    message: 'Project member not found',
+                },
+            })
+        }
+
+        const userId = projectMember.userId
+        const platformId = projectMember.platformId
+
+        // Delete the project member
         await repo().delete({ projectId, id: invitationId })
+
+        // Cleanup: Delete all connections owned by this user in this project
+        // This ensures that when a user is removed, their API keys/credentials are also removed
+        await this.deleteUserConnectionsFromProject({
+            userId,
+            projectId,
+            platformId,
+            log,
+        })
+    },
+
+    async deleteUserConnectionsFromProject({
+        userId,
+        projectId,
+        platformId,
+        log,
+    }: {
+        userId: UserId
+        projectId: ProjectId
+        platformId: PlatformId
+        log: FastifyBaseLogger
+    }): Promise<void> {
+        // Find all connections owned by this user that belong to this project
+        const userConnections = await appConnectionsRepo().find({
+            where: {
+                ownerId: userId,
+                platformId,
+                scope: AppConnectionScope.PROJECT,
+                ...APArrayContains('projectIds', [projectId]),
+            },
+        })
+
+        // Delete each connection
+        // Note: We delete the entire connection even if it's shared across multiple projects
+        // This is a security measure - when a user is removed, their credentials should be removed
+        for (const connection of userConnections) {
+            await appConnectionService(log).delete({
+                id: connection.id,
+                platformId,
+                scope: AppConnectionScope.PROJECT,
+                projectId,
+            })
+        }
+
+        if (userConnections.length > 0) {
+            log.info({
+                userId,
+                projectId,
+                deletedConnectionsCount: userConnections.length,
+            }, 'Deleted user connections after removing project member')
+        }
     },
 })
 

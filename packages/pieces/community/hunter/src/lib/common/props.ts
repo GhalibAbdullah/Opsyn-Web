@@ -14,23 +14,39 @@ export const campaignIdProp = Property.Dropdown({
                 options: [],
             };
         }
-        const resp = await hunterApiCall({
-            apiKey: auth as string,
-            endpoint: '/campaigns',
-            method: HttpMethod.GET,
-        });
-        const campaigns = (resp as any).data?.campaigns as Array<{
-            id: number;
-            name: string;
-        }>;
+        try {
+            const resp = await hunterApiCall({
+                apiKey: auth as string,
+                endpoint: '/campaigns',
+                method: HttpMethod.GET,
+            });
+            const campaigns = (resp as any)?.data?.campaigns as Array<{
+                id: number;
+                name: string;
+            }> | undefined;
 
-        return {
-            disabled: false,
-            options: campaigns.map((c) => ({
-                label: c.name,
-                value: c.id,
-            })),
-        };
+            if (!campaigns || campaigns.length === 0) {
+                return {
+                    disabled: false,
+                    placeholder: 'No campaigns found. Please create a campaign in Hunter first.',
+                    options: [],
+                };
+            }
+
+            return {
+                disabled: false,
+                options: campaigns.map((c) => ({
+                    label: c.name,
+                    value: c.id,
+                })),
+            };
+        } catch (error) {
+            return {
+                disabled: true,
+                placeholder: 'Failed to load campaigns. Please check your API key and try again.',
+                options: [],
+            };
+        }
     },
 });
 

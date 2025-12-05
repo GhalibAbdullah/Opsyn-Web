@@ -43,6 +43,16 @@ const SecretTextConnectionSettings = React.memo(
               <Input
                 {...field}
                 type="password"
+                autoComplete="new-password"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck="false"
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
+                name={`apikey-${authProperty.displayName?.toLowerCase().replace(/\s+/g, '-') || 'secret'}`}
+                id={`apikey-${authProperty.displayName?.toLowerCase().replace(/\s+/g, '-') || 'secret'}`}
+                role="textbox"
                 placeholder={
                   authProperty.description
                     ? undefined

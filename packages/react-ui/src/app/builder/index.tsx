@@ -226,57 +226,7 @@ const BuilderPage = () => {
         <BuilderHeader />
       </div>
       <div className={cn("relative flex-1 overflow-hidden")}>
-        {readonly && (
-          <div 
-            className="absolute inset-0 z-[9999] bg-transparent cursor-not-allowed"
-            style={{ pointerEvents: 'auto' }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onMouseUp={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onDoubleClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onDragStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onWheel={(e) => {
-              // Allow scrolling but prevent other interactions
-              e.stopPropagation();
-            }}
-          />
-        )}
-        <ResizablePanelGroup direction="horizontal" className={readonly ? "pointer-events-none" : ""}>
+        <ResizablePanelGroup direction="horizontal">
         <ResizablePanel
           id="left-sidebar"
           defaultSize={0}
@@ -363,10 +313,9 @@ const BuilderPage = () => {
           className={cn('min-w-0 bg-background z-30', {
             [minWidthOfSidebar]: rightSidebar !== RightSideBarType.NONE,
             [animateResizeClassName]: !isDraggingHandle,
-            'pointer-events-none': readonly,
           })}
         >
-          <div ref={rightSidePanelRef} className={cn("h-full w-full", readonly && "pointer-events-none")}>
+          <div ref={rightSidePanelRef} className="h-full w-full">
             {rightSidebar === RightSideBarType.PIECE_SETTINGS &&
               memorizedSelectedStep && (
                 <StepSettingsProvider

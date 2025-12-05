@@ -144,6 +144,11 @@ const CreateOrEditConnectionDialogContent = React.memo(
           <form
             onSubmit={() => console.log('submitted')}
             className="flex flex-col gap-4"
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
+            noValidate
           >
             <ScrollArea
               className="px-2"
@@ -168,6 +173,14 @@ const CreateOrEditConnectionDialogContent = React.memo(
                           required
                           id="displayName"
                           type="text"
+                          autoComplete="off"
+                          autoCapitalize="off"
+                          autoCorrect="off"
+                          spellCheck="false"
+                          data-1p-ignore
+                          data-lpignore="true"
+                          data-form-type="other"
+                          name="connection-name"
                           placeholder={t('Connection name')}
                         />
                       </FormControl>

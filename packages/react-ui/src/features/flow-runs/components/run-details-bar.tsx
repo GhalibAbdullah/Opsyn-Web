@@ -90,7 +90,7 @@ const RunDetailsBar = React.memo(
     };
 
     return (
-      <div className="absolute bottom-4 p-4 left-1/2 transform -translate-x-1/2 w-[480px] bg-background shadow-lg border rounded-lg z-[9999]">
+      <div className="absolute bottom-4 p-4 left-1/2 transform -translate-x-1/2 w-[480px] bg-background shadow-lg border rounded-lg z-[10001]">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Icon

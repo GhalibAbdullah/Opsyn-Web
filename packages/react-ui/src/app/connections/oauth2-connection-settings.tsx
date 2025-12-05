@@ -338,6 +338,15 @@ const OAuth2ConnectionSettingsForm = ({
                   <Input
                     {...field}
                     type="password"
+                    autoComplete="new-password"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    data-1p-ignore
+                    data-lpignore="true"
+                    data-form-type="other"
+                    name="oauth2-client-secret"
+                    role="textbox"
                     placeholder={t('Client Secret')}
                   />
                 </FormControl>
