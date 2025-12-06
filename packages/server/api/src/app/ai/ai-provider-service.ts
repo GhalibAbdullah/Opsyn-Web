@@ -20,6 +20,8 @@ import {
     SeekPage,
 } from '@activepieces/shared'
 import { FastifyRequest, RawServerBase, RequestGenericInterface } from 'fastify'
+import { getDatabaseType } from '../database/database-connection'
+import { DatabaseType } from '../helper/system/system'
 import { repoFactory } from '../core/db/repo-factory'
 import { encryptUtils } from '../helper/encryption'
 import { system } from '../helper/system/system'
@@ -33,10 +35,14 @@ const aiProviderRepo = repoFactory<AIProviderSchema>(AIProviderEntity)
 const isCloudEdition = system.getEdition() === ApEdition.CLOUD
 
 export const aiProviderService = {
-    async list(userPlatformId: PlatformId): Promise<SeekPage<AIProviderWithoutSensitiveData>> {
+    async list(userPlatformId: PlatformId, projectId?: string): Promise<SeekPage<AIProviderWithoutSensitiveData>> {
         const platformId = await this.getAIProviderPlatformId(userPlatformId)
 
-        const providers = await aiProviderRepo().findBy({ platformId })
+        // Filter by projectId if provided, otherwise get platform-level providers (backward compatibility)
+        const whereClause = projectId 
+            ? { platformId, projectId } as any
+            : { platformId, projectId: null } as any
+        const providers = await aiProviderRepo().findBy(whereClause)
 
         const aiProviders = providers.map((provider): AIProviderWithoutSensitiveData => ({
             id: provider.id,
@@ -59,7 +65,7 @@ export const aiProviderService = {
         })
     },
 
-    async upsert(platformId: PlatformId, request: CreateAIProviderRequest): Promise<void> {
+    async upsert(platformId: PlatformId, request: CreateAIProviderRequest, projectId?: string): Promise<void> {
         assertOnlyCloudPlatformCanEditOnCloud(platformId)
 
         if (request.useAzureOpenAI && system.getEdition() !== ApEdition.ENTERPRISE) {
@@ -71,41 +77,98 @@ export const aiProviderService = {
             })
         }
 
-        await aiProviderRepo().upsert({
-            id: apId(),
-            config: await encryptUtils.encryptObject({
-                apiKey: request.apiKey,
-                azureOpenAI: request.useAzureOpenAI ? {
-                    resourceName: request.resourceName,
-                } : undefined,
-            }),
-            provider: request.provider,
-            platformId,
-        }, ['provider', 'platformId'])
+        // Use projectId if provided, otherwise null (platform-level for backward compatibility)
+        const finalProjectId = projectId || null
+        const encryptedConfig = await encryptUtils.encryptObject({
+            apiKey: request.apiKey,
+            azureOpenAI: request.useAzureOpenAI ? {
+                resourceName: request.resourceName,
+            } : undefined,
+        })
+
+        // SQLite doesn't handle ON CONFLICT well with partial unique indexes
+        // So we do a manual upsert for SQLite
+        const dbType = getDatabaseType()
+        if (dbType === DatabaseType.SQLITE3) {
+            const existing = await aiProviderRepo().findOne({
+                where: {
+                    platformId,
+                    provider: request.provider,
+                    projectId: finalProjectId,
+                } as any,
+            })
+
+            if (existing) {
+                await aiProviderRepo().update(existing.id, {
+                    config: encryptedConfig,
+                })
+            }
+            else {
+                await aiProviderRepo().save({
+                    id: apId(),
+                    config: encryptedConfig,
+                    provider: request.provider,
+                    platformId,
+                    projectId: finalProjectId,
+                })
+            }
+        }
+        else {
+            // For PostgreSQL, use TypeORM's upsert with ON CONFLICT
+            const upsertData: any = {
+                id: apId(),
+                config: encryptedConfig,
+                provider: request.provider,
+                platformId,
+                projectId: finalProjectId,
+            }
+            // Unique constraint is (platformId, projectId, provider)
+            await aiProviderRepo().upsert(upsertData, ['platformId', 'projectId', 'provider'])
+        }
     },
 
-    async delete(platformId: PlatformId, provider: string): Promise<void> {
+    async delete(platformId: PlatformId, provider: string, projectId?: string): Promise<void> {
         assertOnlyCloudPlatformCanEditOnCloud(platformId)
 
         await aiProviderRepo().delete({
             platformId,
             provider,
-        })
+            projectId: projectId || null,
+        } as any)
     },
 
-    async getConfig(provider: string, platformId: PlatformId): Promise<AIProvider['config']> {
-        const aiProvider = await aiProviderRepo().findOneOrFail({
+    async getConfig(provider: string, platformId: PlatformId, projectId?: string): Promise<AIProvider['config']> {
+        // First try to get project-specific provider, then fall back to platform-level
+        let aiProvider = projectId ? await aiProviderRepo().findOne({
             where: {
                 provider,
                 platformId,
-            },
+                projectId,
+            } as any,
             select: {
                 config: {
                     iv: true,
                     data: true,
                 },
             },
-        })
+        }) : null
+
+        // Fall back to platform-level provider if project-specific not found
+        if (!aiProvider) {
+            aiProvider = await aiProviderRepo().findOneOrFail({
+                where: {
+                    provider,
+                    platformId,
+                    projectId: null,
+                } as any,
+                select: {
+                    config: {
+                        iv: true,
+                        data: true,
+                    },
+                },
+            })
+        }
 
         return encryptUtils.decryptObject(aiProvider.config)
     },

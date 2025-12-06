@@ -1,5 +1,5 @@
 import { AIProvider } from '@activepieces/common-ai'
-import { Platform } from '@activepieces/shared'
+import { Platform, Project } from '@activepieces/shared'
 import { Static, Type } from '@sinclair/typebox'
 import { EntitySchema } from 'typeorm'
 import { ApIdSchema, BaseColumnSchemaPart, JSON_COLUMN_TYPE } from '../database/database-common'
@@ -13,6 +13,8 @@ type AIProviderEncrypted = Static<typeof AIProviderEncrypted>
 
 export type AIProviderSchema = AIProviderEncrypted & {
     platform: Platform
+    project?: Project
+    projectId?: string | null
 }
 
 export const AIProviderEntity = new EntitySchema<AIProviderSchema>({
@@ -31,12 +33,23 @@ export const AIProviderEntity = new EntitySchema<AIProviderSchema>({
             ...ApIdSchema,
             nullable: false,
         },
+        projectId: {
+            ...ApIdSchema,
+            nullable: true, // Nullable for backward compatibility with existing records
+        } as any,
     },
     indices: [
         {
-            name: 'idx_ai_provider_platform_id_provider',
+            name: 'idx_ai_provider_platform_project_provider',
+            columns: ['platformId', 'projectId', 'provider'],
+            unique: true,
+            where: 'projectId IS NOT NULL',
+        },
+        {
+            name: 'idx_ai_provider_platform_provider_null',
             columns: ['platformId', 'provider'],
             unique: true,
+            where: 'projectId IS NULL',
         },
     ],
     relations: {
@@ -48,6 +61,17 @@ export const AIProviderEntity = new EntitySchema<AIProviderSchema>({
             joinColumn: {
                 name: 'platformId',
                 foreignKeyConstraintName: 'fk_ai_provider_platform_id',
+            },
+        },
+        project: {
+            type: 'many-to-one',
+            target: 'project',
+            cascade: true,
+            onDelete: 'CASCADE',
+            nullable: true,
+            joinColumn: {
+                name: 'projectId',
+                foreignKeyConstraintName: 'fk_ai_provider_project_id',
             },
         },
     },

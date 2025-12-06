@@ -162,6 +162,8 @@ import { RemoveTasksAndTasksLimitSqlite1761574814842 } from './migration/sqlite/
 import { DeleteLastChangelogDismissedAtSqlite1762018344394 } from './migration/sqlite/1762018344394-DeleteLastChangelogDismissedAtSqlite'
 import { AddFailedStepDurationSqlite1762949199414 } from './migration/sqlite/1762949199414-AddFailedStepDurationSqlite'
 import { AddProjectRoleToUserInvitationSqlite1768000000000 } from './migration/sqlite/1768000000000-AddProjectRoleToUserInvitationSqlite'
+import { AddProjectIdToAIProviderSqlite1769000000000 } from './migration/sqlite/1769000000000-AddProjectIdToAIProviderSqlite'
+import { PiecesProjectLimitsSqlite1712279318441 } from './migration/sqlite/1712279318441-PiecesProjectLimitsSqlite'
 
 const getSqliteDatabaseFilePath = (): string => {
     const apConfigDirectoryPath = system.getOrThrow(AppSystemProp.CONFIG_PATH)
@@ -219,6 +221,7 @@ const getMigrations = (): (new () => MigrationInterface)[] => {
         AddMissingInputUiInfoSqlite1711412511624,
         AddProjectUsageColumnToPieceSqlite1711768479150,
         AddTagsToPiecesSqlite1712180673961,
+        PiecesProjectLimitsSqlite1712279318441,
         RemoveUniqueEmailOnUser1713222892743,
         AddPlatformRole1713271221154,
         AddUniqueNameToFolderSqlite1713645171373,
@@ -340,6 +343,7 @@ const getMigrations = (): (new () => MigrationInterface)[] => {
         DeleteLastChangelogDismissedAtSqlite1762018344394,
         AddFailedStepDurationSqlite1762949199414,
         AddProjectRoleToUserInvitationSqlite1768000000000,
+        AddProjectIdToAIProviderSqlite1769000000000,
     ]
     const edition = system.getEdition()
     if (edition !== ApEdition.COMMUNITY) {

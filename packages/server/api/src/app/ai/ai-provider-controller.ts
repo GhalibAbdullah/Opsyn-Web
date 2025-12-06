@@ -7,16 +7,20 @@ import { aiProviderService } from './ai-provider-service'
 export const aiProviderController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/', ListAIProviders, async (request) => {
         const platformId = request.principal.platform.id
-        return aiProviderService.list(platformId)
+        const projectId = request.principal.projectId ?? undefined
+        return aiProviderService.list(platformId, projectId)
     })
     app.post('/', CreateAIProvider, async (request, reply) => {
         const platformId = request.principal.platform.id
-        await aiProviderService.upsert(platformId, request.body)
+        const projectId = request.principal.projectId ?? undefined
+        await aiProviderService.upsert(platformId, request.body, projectId)
         return reply.status(StatusCodes.NO_CONTENT).send()
     })
     app.delete('/:id', DeleteAIProvider, async (request) => {
         const platformId = request.principal.platform.id
-        return aiProviderService.delete(platformId, request.params.id)
+        const projectId = request.principal.projectId ?? undefined
+        // The :id param is actually the provider name (e.g., "google")
+        return aiProviderService.delete(platformId, request.params.id, projectId)
     })
 }
 

@@ -70,12 +70,19 @@ export const FilePieceMetadataService = (_log: FastifyBaseLogger): PieceMetadata
         },
         async get({
             name,
+            version,
             projectId,
+            platformId,
         }): Promise<PieceMetadataModel | undefined> {
             const piecesMetadata = await loadPiecesMetadata()
             const pieceMetadata = piecesMetadata.find((p) => p.name === name)
 
             if (isNil(pieceMetadata)) {
+                return undefined
+            }
+
+            // If version is specified and it's an exact version, validate it matches
+            if (version && EXACT_VERSION_REGEX.test(version) && pieceMetadata.version !== version) {
                 return undefined
             }
 
@@ -102,12 +109,17 @@ export const FilePieceMetadataService = (_log: FastifyBaseLogger): PieceMetadata
             })
 
             if (isNil(pieceMetadata)) {
+                const packages = system.getOrThrow(AppSystemProp.DEV_PIECES)?.split(',')
+                const availablePieces = (await loadPiecesMetadata()).map(p => p.name)
                 throw new ActivepiecesError({
                     code: ErrorCode.PIECE_NOT_FOUND,
                     params: {
                         pieceName: name,
                         pieceVersion: version,
-                        message: 'Pieces is not found in file system',
+                        message: `Piece "${name}" (version: ${version}) is not found in file system. ` +
+                            `Make sure the piece is built in dist/packages/pieces and included in AP_DEV_PIECES environment variable. ` +
+                            `Current AP_DEV_PIECES: ${packages?.join(', ') || 'not set'}. ` +
+                            `Available pieces: ${availablePieces.slice(0, 10).join(', ')}${availablePieces.length > 10 ? '...' : ''}`,
                     },
                 })
             }
