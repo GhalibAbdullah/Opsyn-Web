@@ -2,16 +2,31 @@ import { ApEdition, FilteredPieceBehavior, isNil, PiecesFilterType, Platform } f
 import { system } from '../../../helper/system/system'
 import { PieceMetadataSchema } from '../../../pieces/piece-metadata-entity'
 import { platformService } from '../../../platform/platform.service'
-import { projectLimitsService } from '../../projects/project-plan/project-plan.service'
 
 export const enterpriseFilteringUtils = {
     async filter(params: FilterParams): Promise<PieceMetadataSchema[]> {
         const edition = system.getEdition()
+        const { platformId, includeHidden, pieces, projectId } = params
+        
+        // If includeHidden is true, skip all filtering - return all pieces
+        // This is needed for the pieces management page where users need to see
+        // all pieces (including disabled ones) to toggle them
+        if (includeHidden) {
+            return pieces
+        }
+        
+        // Always allow project-level filtering (for all editions)
+        // ProjectPlanEntity is now available in Community Edition too
+        if (!isNil(projectId)) {
+            return filterBasedOnProject(projectId, pieces)
+        }
+        
+        // Platform-level filtering is enterprise-only
         if (![ApEdition.ENTERPRISE, ApEdition.CLOUD].includes(edition)) {
             return params.pieces
         }
-        const { platformId, includeHidden, pieces, projectId } = params
-        if (isNil(platformId) || includeHidden) {
+        
+        if (isNil(platformId)) {
             return pieces
         }
 
@@ -19,11 +34,7 @@ export const enterpriseFilteringUtils = {
         if (isNil(platformWithPlan)) {
             return pieces
         }
-        const platformFilteredPieces = await filterPiecesBasedPlatform(platformWithPlan, pieces)
-        if (isNil(projectId)) {
-            return platformFilteredPieces
-        }
-        return filterBasedOnProject(projectId, platformFilteredPieces)
+        return filterPiecesBasedPlatform(platformWithPlan, pieces)
     },
     async isFiltered({ piece, projectId, platformId }: IsFilteredParams): Promise<boolean> {
         const filteredPieces = await enterpriseFilteringUtils.filter({
@@ -52,19 +63,58 @@ async function filterBasedOnProject(
     projectId: string,
     pieces: PieceMetadataSchema[],
 ): Promise<PieceMetadataSchema[]> {
-    const { pieces: allowedPieces, piecesFilterType } = await projectLimitsService(system.globalLogger()).getOrCreateDefaultPlan(projectId)
+    const edition = system.getEdition()
+    const log = system.globalLogger()
+    // Use CE service for Community Edition, EE service for Enterprise/Cloud
+    let projectPlan: { pieces: string[], piecesFilterType: PiecesFilterType }
+    if (edition === ApEdition.COMMUNITY) {
+        const { projectPlanService } = require('../../../project/project-plan.service')
+        projectPlan = await projectPlanService(log).getOrCreateDefaultPlan(projectId)
+    } else {
+        const { projectLimitsService } = require('../../projects/project-plan/project-plan.service')
+        projectPlan = await projectLimitsService(log).getOrCreateDefaultPlan(projectId)
+    }
+    const { pieces: allowedPieces, piecesFilterType } = projectPlan
+
+    log.debug({
+        name: 'filterBasedOnProject',
+        projectId,
+        piecesFilterType,
+        allowedPiecesCount: allowedPieces.length,
+        allowedPieces: allowedPieces.slice(0, 10), // Log first 10 for debugging
+        totalPiecesBeforeFilter: pieces.length,
+    })
 
     const filterPredicate: Record<
     PiecesFilterType,
     (p: PieceMetadataSchema) => boolean
     > = {
         [PiecesFilterType.NONE]: () => true,
-        [PiecesFilterType.ALLOWED]: (p) =>
-            allowedPieces.includes(p.name),
+        [PiecesFilterType.ALLOWED]: (p) => {
+            const isAllowed = allowedPieces.includes(p.name)
+            if (!isAllowed) {
+                log.debug({
+                    name: 'filterBasedOnProject',
+                    message: `Piece ${p.name} filtered out`,
+                    pieceName: p.name,
+                    allowedPieces: allowedPieces,
+                })
+            }
+            return isAllowed
+        },
     }
 
     const predicate = filterPredicate[piecesFilterType]
-    return pieces.slice().filter(predicate)
+    const filtered = pieces.slice().filter(predicate)
+    
+    log.debug({
+        name: 'filterBasedOnProject',
+        projectId,
+        piecesFilterType,
+        totalPiecesAfterFilter: filtered.length,
+    })
+    
+    return filtered
 }
 
 /*

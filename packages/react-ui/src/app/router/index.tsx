@@ -13,7 +13,7 @@ import AnalyticsPage from '@/app/routes/platform/analytics';
 import { ApiKeysPage } from '@/app/routes/platform/security/api-keys';
 import { SigningKeysPage } from '@/app/routes/platform/security/signing-keys';
 import { SSOPage } from '@/app/routes/platform/security/sso';
-import AIProvidersPage from '@/app/routes/platform/setup/ai';
+import ProjectAIProvidersPage from '@/app/routes/settings/ai';
 import { BrandingPage } from '@/app/routes/platform/setup/branding';
 import { PlatformPiecesPage } from '@/app/routes/platform/setup/pieces';
 import { RedirectPage } from '@/app/routes/redirect';
@@ -371,6 +371,18 @@ const routes = [
       </ProjectDashboardLayout>
     ),
   }),
+  ...ProjectRouterWrapper({
+    path: projectSettingsRoutes.ai,
+    element: (
+      <ProjectDashboardLayout>
+        <PageTitle title="AI Providers">
+          <ProjectSettingsLayout>
+            <ProjectAIProvidersPage />
+          </ProjectSettingsLayout>
+        </PageTitle>
+      </ProjectDashboardLayout>
+    ),
+  }),
 
   ...ProjectRouterWrapper({
     path: routesThatRequireProjectId.mcps,
@@ -492,16 +504,6 @@ const routes = [
       <PlatformLayout>
         <PageTitle title="Users">
           <UsersPage />
-        </PageTitle>
-      </PlatformLayout>
-    ),
-  },
-  {
-    path: '/platform/setup/ai',
-    element: (
-      <PlatformLayout>
-        <PageTitle title="AI">
-          <AIProvidersPage />
         </PageTitle>
       </PlatformLayout>
     ),
@@ -631,7 +633,7 @@ const routes = [
     element: (
       <PlatformLayout>
         <PageTitle title="Platform Setup">
-          <Navigate to="/platform/setup/ai" replace />
+          <Navigate to="/platform/setup/branding" replace />
         </PageTitle>
       </PlatformLayout>
     ),

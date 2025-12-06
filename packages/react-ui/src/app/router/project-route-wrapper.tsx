@@ -282,4 +282,5 @@ export const ProjectRouterWrapper = ({
 export const projectSettingsRoutes = {
   pieces: '/settings/pieces',
   environments: '/settings/environments',
+  ai: '/settings/ai',
 } as const;

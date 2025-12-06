@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ToastAction } from '@/components/ui/toast';
 import { toast } from '@/components/ui/use-toast';
 import { flagsHooks } from '@/hooks/flags-hooks';
+import { authenticationSession } from '@/lib/authentication-session';
 import { PieceSelectorOperation, PieceSelectorPieceItem } from '@/lib/types';
 import { ApFlagId } from '@activepieces/shared';
 
@@ -49,13 +50,13 @@ const CreateAgentActionItem = ({
           toast({
             title: t('Connect to OpenAI'),
             description: t(
-              "To create an agent, you'll first need to connect to OpenAI in platform settings.",
+              "To create an agent, you'll first need to configure AI providers in project settings.",
             ),
             action: (
               <ToastAction
                 altText="Try again"
                 onClick={() => {
-                  navigate('/platform/setup/ai');
+                  navigate(authenticationSession.appendProjectRoutePrefix('/settings/ai'));
                 }}
               >
                 {t('Set Up')}

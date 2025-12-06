@@ -1,6 +1,6 @@
 import { typeboxResolver } from '@hookform/resolvers/typebox';
 import { Type } from '@sinclair/typebox';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,14 +32,9 @@ type ManagePiecesDialogProps = {
 export const ManagePiecesDialog = React.memo(
   ({ onSuccess }: ManagePiecesDialogProps) => {
     const [open, setOpen] = useState(false);
-    const { pieces: visiblePieces, isLoading: isLoadingVisiblePieces } =
+    const { pieces: visiblePieces, isLoading: isLoadingVisiblePieces, refetch: refetchVisiblePieces } =
       piecesHooks.usePieces({ searchQuery: '', includeHidden: false });
-    useEffect(() => {
-      form.setValue(
-        'pieces',
-        (visiblePieces ?? []).map((p) => p.name),
-      );
-    }, [isLoadingVisiblePieces]);
+    
     const form = useForm<{
       pieces: string[];
     }>({
@@ -49,24 +44,55 @@ export const ManagePiecesDialog = React.memo(
         }),
       ),
       defaultValues: {
-        pieces: (visiblePieces ?? []).map((p) => p.name),
+        pieces: [],
       },
     });
 
+    // Only reset form when dialog opens, not when loading state changes
+    useEffect(() => {
+      if (open && !isLoadingVisiblePieces && visiblePieces) {
+        form.setValue(
+          'pieces',
+          (visiblePieces ?? []).map((p) => p.name),
+        );
+      }
+    }, [open, isLoadingVisiblePieces, visiblePieces]);
+
     const { toast } = useToast();
+    const queryClient = useQueryClient();
     const { pieces: allPieces, isLoading: isLoadingAllPieces } =
       piecesHooks.usePieces({ searchQuery: '', includeHidden: true });
 
     const { mutate, isPending } = useMutation({
       mutationFn: () => {
-        return projectApi.update(authenticationSession.getProjectId()!, {
+        const pieces = form.getValues().pieces;
+        const projectId = authenticationSession.getProjectId()!;
+        const requestBody = {
           plan: {
             piecesFilterType: PiecesFilterType.ALLOWED,
-            pieces: form.getValues().pieces,
+            pieces: pieces ?? [],
           },
+        };
+        console.log('[ManagePiecesDialog] Saving pieces:', {
+          projectId,
+          piecesCount: pieces.length,
+          pieces: pieces.slice(0, 10),
+          piecesFilterType: PiecesFilterType.ALLOWED,
         });
+        // Always send pieces array, even if empty, to ensure it's saved
+        return projectApi.update(projectId, requestBody);
       },
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Invalidate pieces query cache to force refetch with updated filter
+        await queryClient.invalidateQueries({ queryKey: ['pieces'] });
+        // Also invalidate pieces-metadata cache used by flow builder
+        await queryClient.invalidateQueries({ queryKey: ['pieces-metadata'] });
+        // Also invalidate steps metadata cache used by flow builder piece selector
+        await queryClient.invalidateQueries({ queryKey: ['steps-metadata'] });
+        // Also invalidate current project query to refresh project data
+        await queryClient.invalidateQueries({ queryKey: ['current-project'] });
+        // Refetch visible pieces to ensure form shows updated list when reopened
+        await refetchVisiblePieces();
         onSuccess();
         toast({
           title: t('Success'),

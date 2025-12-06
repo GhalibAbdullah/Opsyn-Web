@@ -60,6 +60,7 @@ export const stepsHooks = {
       queryFn: async () => {
         const pieces = await piecesApi.list({
           searchQuery,
+          includeHidden: false, // Explicitly exclude hidden pieces to respect project filter
           suggestionType:
             type === 'action' ? SuggestionType.ACTION : SuggestionType.TRIGGER,
           locale: i18n.language as LocalesEnum,

@@ -21,6 +21,7 @@ import {
   FlowTrigger,
   FlowTriggerType,
   isNil,
+  PiecesFilterType,
 } from '@activepieces/shared';
 
 import { formUtils } from '../../../features/pieces/lib/form-utils';
@@ -90,7 +91,27 @@ const StepSettingsContainer = () => {
       if (deepEqual(cleanedNewValues, cleanedCurrentValues)) {
         return result;
       }
-      const valid = Object.keys(result.errors).length === 0;
+      
+      // Check if piece is disabled
+      let isPieceDisabled = false;
+      if (
+        (cleanedNewValues.type === FlowActionType.PIECE ||
+          cleanedNewValues.type === FlowTriggerType.PIECE) &&
+        project?.plan
+      ) {
+        const pieceName = 'pieceName' in cleanedNewValues.settings
+          ? cleanedNewValues.settings.pieceName
+          : undefined;
+        if (pieceName) {
+          // If filter type is ALLOWED, check if piece is in the allowed list
+          if (project.plan.piecesFilterType === PiecesFilterType.ALLOWED) {
+            isPieceDisabled = !project.plan.pieces.includes(pieceName);
+          }
+          // If filter type is NONE, all pieces are enabled
+        }
+      }
+      
+      const valid = Object.keys(result.errors).length === 0 && !isPieceDisabled;
       //We need to copy the object because the form is using the same object reference
       currentValuesRef.current = JSON.parse(JSON.stringify(cleanedNewValues));
       if (cleanedNewValues.type === FlowTriggerType.PIECE) {

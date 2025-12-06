@@ -111,17 +111,6 @@ export default function DashboardPage() {
               </CardHeader>
             </Card>
           </Link>
-          <Link to="/platform/setup/ai">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
-              <CardHeader>
-                <Settings className="h-8 w-8 mb-2 text-primary" />
-                <CardTitle className="text-base">{t('AI Providers')}</CardTitle>
-                <CardDescription className="text-sm">
-                  {t('Configure AI providers')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
         </div>
       </div>
 

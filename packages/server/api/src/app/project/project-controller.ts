@@ -1,5 +1,6 @@
 import { EndpointScope, ListProjectRequestForUserQueryParams, PiecesFilterType, PrincipalType, Project, ProjectPlan, ProjectUsage, ProjectWithLimits, SeekPage, UpdateProjectRequestInCommunity } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
+import { FastifyBaseLogger } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { paginationHelper } from '../helper/pagination/pagination-utils'
 import { projectService } from './project-service'
@@ -100,17 +101,81 @@ export const userProjectController: FastifyPluginAsyncTypebox = async (fastify) 
                 id: Type.String(),
             }),
             response: {
-                [StatusCodes.OK]: Project,
+                [StatusCodes.OK]: ProjectWithLimits,
             },
         },
     }, async (request) => {
-        return projectService.getOneOrThrow(request.params.id)
+        const project = await projectService.getOneOrThrow(request.params.id)
+        return projectToProjectWithLimitsWithRealPlan(project, fastify.log)
     })
+}
+
+async function projectToProjectWithLimitsWithRealPlan(project: Project, log: FastifyBaseLogger): Promise<ProjectWithLimits> {
+    const { projectPlanService } = await import('./project-plan.service')
+    const plan = await projectPlanService(log).getOrCreateDefaultPlan(project.id)
+    
+    const stubUsage: ProjectUsage = {
+        aiCredits: 0,
+        nextLimitResetDate: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days from now
+    }
+
+    const stubAnalytics = {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalFlows: 0,
+        activeFlows: 0,
+    }
+
+    // Remove 'deleted' field if it exists
+    const { deleted, ...projectWithoutDeleted } = project
+
+    return {
+        ...projectWithoutDeleted,
+        plan: plan,
+        usage: stubUsage,
+        analytics: stubAnalytics,
+    }
 }
 
 export const projectController: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.post('/:id', UpdateProjectRequest, async (request) => {
-        return projectService.update(request.params.id, request.body)
+        const projectId = request.params.id
+        const updateRequest = request.body
+        
+        fastify.log.debug({
+            name: 'projectController.update',
+            projectId,
+            hasPlan: !!updateRequest.plan,
+            planData: updateRequest.plan ? {
+                piecesCount: updateRequest.plan.pieces?.length ?? 'not provided',
+                piecesFilterType: updateRequest.plan.piecesFilterType ?? 'not provided',
+            } : 'not provided',
+        })
+        
+        // Update the project entity
+        await projectService.update(projectId, updateRequest)
+        
+        // If plan is provided, update it using the project plan service
+        if (updateRequest.plan) {
+            const { projectPlanService } = await import('./project-plan.service')
+            await projectPlanService(fastify.log).upsert(
+                {
+                    pieces: updateRequest.plan.pieces,
+                    piecesFilterType: updateRequest.plan.piecesFilterType,
+                    aiCredits: updateRequest.plan.aiCredits ?? null,
+                },
+                projectId,
+            )
+            fastify.log.debug({
+                name: 'projectController.update',
+                projectId,
+                message: 'Plan updated successfully',
+            })
+        }
+        
+        // Return project with real plan (not stub)
+        const project = await projectService.getOneOrThrow(projectId)
+        return projectToProjectWithLimitsWithRealPlan(project, fastify.log)
     })
 }
 
@@ -125,7 +190,7 @@ const UpdateProjectRequest = {
             id: Type.String(),
         }),
         response: {
-            [StatusCodes.OK]: Project,
+            [StatusCodes.OK]: ProjectWithLimits,
         },
         body: UpdateProjectRequestInCommunity,
     },

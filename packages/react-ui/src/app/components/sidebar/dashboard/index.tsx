@@ -1,5 +1,6 @@
 import { t } from 'i18next';
 import {
+  Bot,
   Compass,
   GitBranch,
   Link2,
@@ -167,6 +168,13 @@ export function ProjectDashboardSidebar() {
       icon: GitBranch,
       type: 'link',
       show: checkAccess(Permission.READ_PROJECT_RELEASE),
+    },
+    {
+      type: 'link',
+      to: authenticationSession.appendProjectRoutePrefix('/settings/ai'),
+      label: t('AI Providers'),
+      icon: Bot,
+      show: true,
     },
   ];
 

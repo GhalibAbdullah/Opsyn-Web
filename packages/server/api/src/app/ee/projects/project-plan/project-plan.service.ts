@@ -28,14 +28,46 @@ export const projectLimitsService = (log: FastifyBaseLogger) => ({
         projectId: string,
     ): Promise<ProjectPlan> {
         const projectPlan = await this.getOrCreateDefaultPlan(projectId)
-        await projectPlanRepo().update(projectPlan.id, {
+        const updateData: Partial<ProjectPlan> = {
             ...spreadIfNotUndefined('aiCredits', planLimits.aiCredits),
             ...spreadIfDefined('name', planLimits.nickname),
             ...spreadIfDefined('locked', planLimits.locked),
-            ...spreadIfDefined('pieces', planLimits.pieces),
-            ...spreadIfDefined('piecesFilterType', planLimits.piecesFilterType),
+        }
+        
+        // Always update pieces if provided (even if empty array) to ensure filtering works
+        if (planLimits.pieces !== undefined) {
+            updateData.pieces = planLimits.pieces
+        }
+        
+        // Always update piecesFilterType if provided
+        if (planLimits.piecesFilterType !== undefined) {
+            updateData.piecesFilterType = planLimits.piecesFilterType
+        }
+        
+        log.debug({
+            name: 'projectLimitsService.upsert',
+            projectId,
+            updateData: {
+                piecesCount: updateData.pieces?.length ?? 'not provided',
+                piecesFilterType: updateData.piecesFilterType ?? 'not provided',
+                pieces: updateData.pieces?.slice(0, 10) ?? 'not provided',
+            },
         })
-        return projectPlanRepo().findOneByOrFail({ projectId })
+        
+        await projectPlanRepo().update(projectPlan.id, updateData)
+        const updated = await projectPlanRepo().findOneByOrFail({ projectId })
+        
+        log.debug({
+            name: 'projectLimitsService.upsert',
+            projectId,
+            afterUpdate: {
+                piecesCount: updated.pieces.length,
+                piecesFilterType: updated.piecesFilterType,
+                pieces: updated.pieces.slice(0, 10),
+            },
+        })
+        
+        return updated
     },
     async getPlanWithPlatformLimits(projectId: string): Promise<ProjectPlan> {
         const projectPlan = await this.getOrCreateDefaultPlan(projectId)

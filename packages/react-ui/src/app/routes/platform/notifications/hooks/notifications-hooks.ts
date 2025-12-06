@@ -6,6 +6,7 @@ import semver from 'semver';
 import { useSocket } from '@/components/socket-provider';
 import { aiProviderApi } from '@/features/platform-admin/lib/ai-provider-api';
 import { flagsHooks } from '@/hooks/flags-hooks';
+import { authenticationSession } from '@/lib/authentication-session';
 import { ApEdition, ApFlagId } from '@activepieces/shared';
 
 export interface Message {
@@ -78,10 +79,10 @@ export const notificationHooks = {
         allMessages.push({
           title: t('Your Universal AI needs a quick setup'),
           description: t(
-            "We noticed you haven't set up any AI providers yet. To unlock Universal AI pieces for your team, you'll need to configure some provider credentials first.",
+            "We noticed you haven't set up any AI providers yet. To unlock Universal AI pieces, you'll need to configure provider credentials in project settings.",
           ),
           actionText: t('Configure'),
-          actionLink: '/platform/setup/ai',
+          actionLink: authenticationSession.appendProjectRoutePrefix('/settings/ai'),
         });
       }
 

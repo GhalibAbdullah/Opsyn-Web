@@ -97,13 +97,6 @@ export function PlatformSidebar() {
       items: [
         {
           type: 'link',
-          to: '/platform/setup/ai',
-          label: t('AI'),
-          isSubItem: true,
-          show: true,
-        },
-        {
-          type: 'link',
           to: '/platform/setup/branding',
           label: t('Branding'),
           isSubItem: true,

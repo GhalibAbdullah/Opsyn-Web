@@ -3,6 +3,7 @@ import {
 } from '@activepieces/ee-shared'
 import {
     ActivepiecesError,
+    ApEdition,
     assertNotNullOrUndefined,
     Cursor,
     ErrorCode,
@@ -56,20 +57,69 @@ export const platformProjectService = (log: FastifyBaseLogger) => ({
     async update({
         projectId,
         request,
+        userId,
     }: UpdateParams): Promise<ProjectWithLimits> {
         await projectService.update(projectId, request)
         if (!isNil(request.plan)) {
+            log.debug({
+                name: 'platformProjectService.update',
+                projectId,
+                receivedPlan: {
+                    piecesCount: request.plan.pieces?.length ?? 'not provided',
+                    piecesFilterType: request.plan.piecesFilterType ?? 'not provided',
+                    pieces: request.plan.pieces?.slice(0, 10) ?? 'not provided',
+                },
+            })
             const project = await projectService.getOneOrThrow(projectId)
             const platform = await platformService.getOneWithPlanOrThrow(project.platformId)
-            if (platform.plan.manageProjectsEnabled) {
-                await projectLimitsService(log).upsert(
-                    {
-                        ...spreadIfDefined('pieces', request.plan.pieces),
-                        ...spreadIfDefined('piecesFilterType', request.plan.piecesFilterType),
+            // Allow project owners to update their project plan even without enterprise feature
+            const isProjectOwner = !isNil(userId) && project.ownerId === userId
+            log.debug({
+                name: 'platformProjectService.update',
+                projectId,
+                authorization: {
+                    manageProjectsEnabled: platform.plan.manageProjectsEnabled,
+                    isProjectOwner,
+                    willUpdate: platform.plan.manageProjectsEnabled || isProjectOwner,
+                },
+            })
+            if (platform.plan.manageProjectsEnabled || isProjectOwner) {
+                const edition = system.getEdition()
+                if (edition === ApEdition.COMMUNITY) {
+                    // Use CE service for Community Edition
+                    const { projectPlanService } = require('../../project/project-plan.service')
+                    await projectPlanService(log).upsert(
+                        {
+                            pieces: request.plan.pieces,
+                            piecesFilterType: request.plan.piecesFilterType,
+                            aiCredits: request.plan.aiCredits ?? null,
+                        },
+                        projectId,
+                    )
+                } else {
+                    // Use EE service for Enterprise/Cloud
+                    const planLimits: any = {
                         aiCredits: request.plan.aiCredits ?? null,
-                    },
-                    projectId,
-                )
+                    }
+                    // Always update pieces if provided (even if empty array) to ensure filtering works
+                    if (request.plan.pieces !== undefined) {
+                        planLimits.pieces = request.plan.pieces
+                    }
+                    // Always update piecesFilterType if provided
+                    if (request.plan.piecesFilterType !== undefined) {
+                        planLimits.piecesFilterType = request.plan.piecesFilterType
+                    }
+                    log.debug({
+                        name: 'platformProjectService.update',
+                        projectId,
+                        planLimits: {
+                            piecesCount: planLimits.pieces?.length ?? 'not provided',
+                            piecesFilterType: planLimits.piecesFilterType ?? 'not provided',
+                            pieces: planLimits.pieces?.slice(0, 10) ?? 'not provided',
+                        },
+                    })
+                    await projectLimitsService(log).upsert(planLimits, projectId)
+                }
             }
         }
         return this.getWithPlanAndUsageOrThrow(projectId)
@@ -238,6 +288,7 @@ type UpdateParams = {
     projectId: ProjectId
     request: UpdateProjectPlatformRequest
     platformId?: PlatformId
+    userId?: string
 }
 
 type AssertAllProjectFlowsAreDisabledParams = {

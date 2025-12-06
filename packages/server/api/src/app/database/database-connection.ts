@@ -27,7 +27,7 @@ import { OAuthAppEntity } from '../ee/oauth-apps/oauth-app.entity'
 import { PlatformPlanEntity } from '../ee/platform/platform-plan/platform-plan.entity'
 import { ProjectMemberEntity as CEProjectMemberEntity } from '../project-members/project-member.entity'
 import { ProjectMemberEntity as EEProjectMemberEntity } from '../ee/projects/project-members/project-member.entity'
-import { ProjectPlanEntity } from '../ee/projects/project-plan/project-plan.entity'
+// ProjectPlanEntity is imported conditionally based on edition
 import { GitRepoEntity } from '../ee/projects/project-release/git-sync/git-sync.entity'
 import { ProjectReleaseEntity } from '../ee/projects/project-release/project-release.entity'
 import { ProjectRoleEntity } from '../ee/projects/project-role/project-role.entity'
@@ -113,9 +113,11 @@ function getEntities(): EntitySchema<unknown>[] {
     switch (edition) {
         case ApEdition.CLOUD:
         case ApEdition.ENTERPRISE:
+            // Import EE version for Enterprise/Cloud
+            const { ProjectPlanEntity: EEProjectPlanEntity } = require('../ee/projects/project-plan/project-plan.entity')
             entities.push(
                 EEProjectMemberEntity,
-                ProjectPlanEntity,
+                EEProjectPlanEntity,
                 CustomDomainEntity,
                 SigningKeyEntity,
                 OAuthAppEntity,
@@ -138,6 +140,9 @@ function getEntities(): EntitySchema<unknown>[] {
             entities.push(
                 CEProjectMemberEntity,
             )
+            // Import CE version of ProjectPlanEntity (not EE version)
+            const { ProjectPlanEntity: CEProjectPlanEntity } = require('../project/project-plan.entity')
+            entities.push(CEProjectPlanEntity)
             break
         default:
             throw new Error(`Unsupported edition: ${edition}`)

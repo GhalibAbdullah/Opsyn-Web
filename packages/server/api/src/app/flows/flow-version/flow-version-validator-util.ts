@@ -3,6 +3,8 @@ import {
     PropertyType,
 } from '@activepieces/pieces-framework'
 import {
+    ActivepiecesError,
+    ErrorCode,
     FlowActionType,
     FlowOperationRequest,
     FlowOperationType,
@@ -143,27 +145,42 @@ async function validateAction(
         return { valid: false }
     }
 
-    const piece = await pieceMetadataService(log).getOrThrow({
-        projectId,
-        platformId,
-        name: settings.pieceName,
-        version: settings.pieceVersion,
-    })
+    try {
+        const piece = await pieceMetadataService(log).getOrThrow({
+            projectId,
+            platformId,
+            name: settings.pieceName,
+            version: settings.pieceVersion,
+        })
 
-    if (isNil(piece)) {
-        return { valid: false }
-    }
+        if (isNil(piece)) {
+            return { valid: false }
+        }
 
-    const action = piece.actions[settings.actionName]
-    if (isNil(action)) {
-        return { valid: false }
-    }
+        const action = piece.actions[settings.actionName]
+        if (isNil(action)) {
+            return { valid: false }
+        }
 
-    const props = action.props
-    if (!isNil(piece.auth) && action.requireAuth !== false) {
-        props.auth = piece.auth
+        const props = action.props
+        if (!isNil(piece.auth) && action.requireAuth !== false) {
+            props.auth = piece.auth
+        }
+        return validateProps(props, settings.input)
+    } catch (error) {
+        // If piece is not found (including when it's filtered/disabled), mark as invalid
+        if (error instanceof ActivepiecesError && error.error.code === ErrorCode.ENTITY_NOT_FOUND) {
+            log.debug({
+                name: 'validateAction',
+                message: 'Piece not found or disabled',
+                pieceName: settings.pieceName,
+                projectId,
+            })
+            return { valid: false }
+        }
+        // Re-throw other errors
+        throw error
     }
-    return validateProps(props, settings.input)
 }
 
 async function validateTrigger(
@@ -181,24 +198,39 @@ async function validateTrigger(
         return { valid: false }
     }
 
-    const piece = await pieceMetadataService(log).getOrThrow({
-        projectId,
-        platformId,
-        name: settings.pieceName,
-        version: settings.pieceVersion,
-    })
-    if (isNil(piece)) {
-        return { valid: false }
+    try {
+        const piece = await pieceMetadataService(log).getOrThrow({
+            projectId,
+            platformId,
+            name: settings.pieceName,
+            version: settings.pieceVersion,
+        })
+        if (isNil(piece)) {
+            return { valid: false }
+        }
+        const trigger = piece.triggers[settings.triggerName]
+        if (isNil(trigger)) {
+            return { valid: false }
+        }
+        const props = trigger.props
+        if (!isNil(piece.auth) && trigger.requireAuth !== false) {
+            props.auth = piece.auth
+        }
+        return validateProps(props, settings.input)
+    } catch (error) {
+        // If piece is not found (including when it's filtered/disabled), mark as invalid
+        if (error instanceof ActivepiecesError && error.error.code === ErrorCode.ENTITY_NOT_FOUND) {
+            log.debug({
+                name: 'validateTrigger',
+                message: 'Piece not found or disabled',
+                pieceName: settings.pieceName,
+                projectId,
+            })
+            return { valid: false }
+        }
+        // Re-throw other errors
+        throw error
     }
-    const trigger = piece.triggers[settings.triggerName]
-    if (isNil(trigger)) {
-        return { valid: false }
-    }
-    const props = trigger.props
-    if (!isNil(piece.auth) && trigger.requireAuth !== false) {
-        props.auth = piece.auth
-    }
-    return validateProps(props, settings.input)
 }
 
 function validateProps(

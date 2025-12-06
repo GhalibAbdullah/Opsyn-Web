@@ -9,15 +9,59 @@ export class PiecesProjectLimits1712279318440 implements MigrationInterface {
     name = 'PiecesProjectLimits1712279318440'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        const edition = system.getEdition()
+        const tableExists = await queryRunner.hasTable('project_plan')
+        
+        // For Community Edition, create the table if it doesn't exist
+        if (edition === ApEdition.COMMUNITY && !tableExists) {
+            log.info({ name: 'PiecesProjectLimits1712279318440' }, 'Creating project_plan table for Community Edition')
+            await queryRunner.query(`
+                CREATE TABLE "project_plan" (
+                    "id" character varying(21) NOT NULL,
+                    "created" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                    "updated" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                    "projectId" character varying(21) NOT NULL,
+                    "name" character varying NOT NULL,
+                    "pieces" character varying array NOT NULL DEFAULT ARRAY[]::varchar[],
+                    "piecesFilterType" character varying NOT NULL DEFAULT 'NONE',
+                    "locked" boolean NOT NULL DEFAULT false,
+                    "aiCredits" integer,
+                    CONSTRAINT "REL_4f52e89612966d95843e4158bb" UNIQUE ("projectId"),
+                    CONSTRAINT "PK_759d33fce71c95de832df935841" PRIMARY KEY ("id")
+                )
+            `)
+            await queryRunner.query(`
+                CREATE UNIQUE INDEX "idx_plan_project_id" ON "project_plan" ("projectId")
+            `)
+            return
+        }
+        
+        // For Enterprise/Cloud, modify existing table
         if (isNotOneOfTheseEditions([ApEdition.CLOUD, ApEdition.ENTERPRISE])) {
             return
         }
+        
+        if (!tableExists) {
+            log.warn({ name: 'PiecesProjectLimits1712279318440' }, 'project_plan table does not exist, skipping migration')
+            return
+        }
+        
         log.info({
             name: 'PiecesProjectLimits1712279318440' },
         'up')
-        await queryRunner.query(`
-            ALTER TABLE "project_plan" RENAME COLUMN "flowPlanName" TO "name"
+        
+        // Check if flowPlanName column exists before renaming
+        const hasFlowPlanName = await queryRunner.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='project_plan' AND column_name='flowPlanName'
         `)
+        
+        if (hasFlowPlanName.length > 0) {
+            await queryRunner.query(`
+                ALTER TABLE "project_plan" RENAME COLUMN "flowPlanName" TO "name"
+            `)
+        }
         await queryRunner.query(`
             ALTER TABLE "project_plan" DROP COLUMN "stripeCustomerId"
         `)

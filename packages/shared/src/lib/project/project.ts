@@ -83,6 +83,11 @@ export const UpdateProjectRequestInCommunity = Type.Object({
         pattern: SAFE_STRING_PATTERN,
     })),
     metadata: Type.Optional(Metadata),
+    plan: Type.Optional(Type.Object({
+        pieces: Type.Optional(Type.Array(Type.String({}))),
+        piecesFilterType: Type.Optional(Type.Enum(PiecesFilterType)),
+        aiCredits: Type.Optional(Type.Number({})),
+    })),
 })
 
 export type UpdateProjectRequestInCommunity = Static<typeof UpdateProjectRequestInCommunity>
