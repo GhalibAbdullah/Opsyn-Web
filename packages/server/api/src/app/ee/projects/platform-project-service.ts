@@ -99,7 +99,7 @@ export const platformProjectService = (log: FastifyBaseLogger) => ({
                 } else {
                     // Use EE service for Enterprise/Cloud
                     const planLimits: any = {
-                        aiCredits: request.plan.aiCredits ?? null,
+                            aiCredits: request.plan.aiCredits ?? null,
                     }
                     // Always update pieces if provided (even if empty array) to ensure filtering works
                     if (request.plan.pieces !== undefined) {

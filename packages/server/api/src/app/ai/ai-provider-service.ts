@@ -80,10 +80,10 @@ export const aiProviderService = {
         // Use projectId if provided, otherwise null (platform-level for backward compatibility)
         const finalProjectId = projectId || null
         const encryptedConfig = await encryptUtils.encryptObject({
-            apiKey: request.apiKey,
-            azureOpenAI: request.useAzureOpenAI ? {
-                resourceName: request.resourceName,
-            } : undefined,
+                apiKey: request.apiKey,
+                azureOpenAI: request.useAzureOpenAI ? {
+                    resourceName: request.resourceName,
+                } : undefined,
         })
 
         // SQLite doesn't handle ON CONFLICT well with partial unique indexes
@@ -118,8 +118,8 @@ export const aiProviderService = {
             const upsertData: any = {
                 id: apId(),
                 config: encryptedConfig,
-                provider: request.provider,
-                platformId,
+            provider: request.provider,
+            platformId,
                 projectId: finalProjectId,
             }
             // Unique constraint is (platformId, projectId, provider)
@@ -138,28 +138,14 @@ export const aiProviderService = {
     },
 
     async getConfig(provider: string, platformId: PlatformId, projectId?: string): Promise<AIProvider['config']> {
-        // First try to get project-specific provider, then fall back to platform-level
-        let aiProvider = projectId ? await aiProviderRepo().findOne({
-            where: {
-                provider,
-                platformId,
-                projectId,
-            } as any,
-            select: {
-                config: {
-                    iv: true,
-                    data: true,
-                },
-            },
-        }) : null
-
-        // Fall back to platform-level provider if project-specific not found
-        if (!aiProvider) {
-            aiProvider = await aiProviderRepo().findOneOrFail({
+        // If projectId is provided, only look for project-specific provider (no fallback to platform-level)
+        // This ensures that when a project-specific provider is deleted, it doesn't fall back to another project's key
+        if (projectId) {
+            const aiProvider = await aiProviderRepo().findOneOrFail({
                 where: {
                     provider,
                     platformId,
-                    projectId: null,
+                    projectId,
                 } as any,
                 select: {
                     config: {
@@ -168,7 +154,23 @@ export const aiProviderService = {
                     },
                 },
             })
+            return encryptUtils.decryptObject(aiProvider.config)
         }
+
+        // If no projectId, look for platform-level provider (backward compatibility)
+        const aiProvider = await aiProviderRepo().findOneOrFail({
+            where: {
+                provider,
+                platformId,
+                projectId: null,
+            } as any,
+            select: {
+                config: {
+                    iv: true,
+                    data: true,
+                },
+            },
+        })
 
         return encryptUtils.decryptObject(aiProvider.config)
     },
