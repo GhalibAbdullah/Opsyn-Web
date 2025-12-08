@@ -75,7 +75,6 @@ export function PlatformSidebar() {
       to: '/platform/projects',
       label: t('Projects'),
       icon: LayoutGrid,
-      locked: !platform.plan.manageProjectsEnabled,
       isSubItem: false,
       show: true,
     },

@@ -176,45 +176,45 @@ const BuilderPage = () => {
   const [hasCanvasBeenInitialised, setHasCanvasBeenInitialised] =
     useState(false);
 
-  // Block all interactions in readonly mode using event capture
+  // In readonly mode allow inspection but block destructive interactions (drag/drop/typing/context menu)
   useEffect(() => {
     if (!readonly) return;
 
     const middlePanelElement = middlePanelRef.current;
     if (!middlePanelElement) return;
 
+    const blockedTypes = new Set([
+      'dragstart',
+      'drag',
+      'dragend',
+      'drop',
+      'contextmenu',
+      'keydown',
+      'keypress',
+    ]);
+
     const blockEvent = (e: Event) => {
+      if (!blockedTypes.has(e.type)) {
+        return;
+      }
       const target = e.target as HTMLElement;
-      // Allow events from header (outside builder content)
-      if (target.closest('[class*="builder-header"]') || target.closest('header')) {
+      if (!middlePanelElement.contains(target)) {
         return;
       }
-      // Allow scroll events
-      if (e.type === 'wheel' || e.type === 'scroll') {
-        return;
-      }
-      // Check if event is within builder content
-      if (middlePanelElement.contains(target)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-      }
+      e.preventDefault();
+      e.stopPropagation();
+      // don't call stopImmediatePropagation on key events globally to avoid breaking other shortcuts
     };
 
-    const events = [
-      'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu',
-      'dragstart', 'drag', 'dragend', 'drop',
-      'touchstart', 'touchend', 'touchmove',
-      'keydown', 'keyup', 'keypress'
-    ];
-    
-    events.forEach(eventType => {
-      document.addEventListener(eventType, blockEvent, { capture: true, passive: false });
+    blockedTypes.forEach((eventType) => {
+      document.addEventListener(eventType, blockEvent, {
+        capture: true,
+        passive: false,
+      });
     });
 
     return () => {
-      events.forEach(eventType => {
+      blockedTypes.forEach((eventType) => {
         document.removeEventListener(eventType, blockEvent, { capture: true });
       });
     };
@@ -257,8 +257,8 @@ const BuilderPage = () => {
           }
         />
 
-        <ResizablePanel defaultSize={100} order={2} id="flow-canvas" className={readonly ? "pointer-events-none" : ""}>
-          <div ref={middlePanelRef} className={cn("relative h-full w-full", readonly && "pointer-events-none")}>
+        <ResizablePanel defaultSize={100} order={2} id="flow-canvas">
+          <div ref={middlePanelRef} className="relative h-full w-full">
             <FlowCanvas
               setHasCanvasBeenInitialised={setHasCanvasBeenInitialised}
             ></FlowCanvas>

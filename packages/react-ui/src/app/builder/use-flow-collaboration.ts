@@ -39,6 +39,11 @@ export const useFlowCollaboration = (flowId: string | undefined) => {
         return;
       }
 
+      // Skip operations we originated (prevents double-apply in the same tab)
+      if (data.userId === currentUser?.id) {
+        return;
+      }
+
       // Get current flow version from ref to avoid stale closure
       const currentFlowVersion = flowVersionRef.current;
 

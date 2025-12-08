@@ -16,10 +16,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { appConnectionsQueries } from '@/features/connections/lib/app-connections-hooks';
 import { piecesHooks } from '@/features/pieces/lib/pieces-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
-import { AppConnectionStatus, PieceCategory } from '@activepieces/shared';
+import { AppConnectionStatus, PieceCategory, Permission } from '@activepieces/shared';
 import { PieceMetadataModelSummary } from '@activepieces/pieces-framework';
 
 import { IntegrationCard } from './integration-card';
+import { useAuthorization } from '@/hooks/authorization-hooks';
 
 type FilterStatus = 'all' | 'connected' | 'not_connected';
 type ViewMode = 'grid' | 'list';
@@ -31,6 +32,8 @@ function IntegrationsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   
   const projectId = authenticationSession.getProjectId()!;
+  const { checkAccess } = useAuthorization();
+  const canWriteConnections = checkAccess(Permission.WRITE_APP_CONNECTION);
 
   // Fetch all available pieces
   const { pieces, isLoading: piecesLoading } = piecesHooks.usePieces({});
@@ -209,6 +212,7 @@ function IntegrationsPage() {
                 piece={piece}
                 connections={connections}
                 onConnectionCreated={refetchConnections}
+                canWriteConnections={canWriteConnections}
               />
             ))}
           </div>

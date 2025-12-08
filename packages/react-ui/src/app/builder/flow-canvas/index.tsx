@@ -135,9 +135,6 @@ export const FlowCanvas = React.memo(
     const inGrabPanningMode = !isShiftKeyPressed && panningMode === 'grab';
     const onSelectionChange = useCallback(
       (ev: OnSelectionChangeParams) => {
-        if (readonly) {
-          return;
-        }
         const selectedNodes = ev.nodes.map((n) => n.id);
         // If comments sidebar is open and we have a selected step, preserve it even if React Flow cleared selection
         if (selectedNodes.length === 0 && selectedStep) {
@@ -218,9 +215,6 @@ export const FlowCanvas = React.memo(
     );
 
     const onSelectionEnd = useCallback(() => {
-      if (readonly) {
-        return;
-      }
       const selectedSteps = selectedNodes.map((node) =>
         flowStructureUtil.getStepOrThrow(node, flowVersion.trigger),
       );
@@ -251,56 +245,6 @@ export const FlowCanvas = React.memo(
         ref={containerRef}
         className="size-full relative overflow-hidden z-30"
       >
-        {readonly && (
-          <div
-            className="absolute inset-0 z-[10000] bg-transparent cursor-not-allowed"
-            style={{ pointerEvents: 'auto' }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onMouseUp={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onDoubleClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onDragStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-            onWheel={(e) => {
-              // Allow scrolling
-              e.stopPropagation();
-            }}
-          />
-        )}
         <FlowDragLayer cursorPosition={cursorPosition}>
           <CanvasContextMenu contextMenuType={contextMenuType}>
             <ReactFlow
@@ -326,25 +270,31 @@ export const FlowCanvas = React.memo(
               elevateEdgesOnSelect={false}
               maxZoom={1.5}
               minZoom={0.5}
-              panOnDrag={readonly ? false : (inGrabPanningMode ? [0, 1] : [1])}
+              panOnDrag={inGrabPanningMode ? [0, 1] : [1]}
               zoomOnDoubleClick={false}
-              panOnScroll={!readonly}
+              panOnScroll={true}
               panOnScrollMode={PanOnScrollMode.Free}
               fitView={false}
               nodesConnectable={false}
-              elementsSelectable={!readonly}
+              elementsSelectable={true}
               nodesDraggable={false}
-              nodesFocusable={false}
+              nodesFocusable={true}
               onNodeDrag={(event) => {
                 if (readonly) {
                   return;
                 }
                 setCursorPosition({ x: event.clientX, y: event.clientY });
               }}
-              selectionKeyCode={readonly ? null : (inGrabPanningMode ? 'Shift' : null)}
-              multiSelectionKeyCode={readonly ? null : (inGrabPanningMode ? 'Shift' : null)}
-              selectionOnDrag={readonly ? false : (inGrabPanningMode ? false : true)}
-              selectNodesOnDrag={!readonly}
+              selectionKeyCode={inGrabPanningMode ? 'Shift' : null}
+              multiSelectionKeyCode={inGrabPanningMode ? 'Shift' : null}
+              selectionOnDrag={inGrabPanningMode ? false : true}
+              selectNodesOnDrag={true}
+              onNodeClick={(_, node) => {
+                const stepName = node.id;
+                selectStepByName(stepName);
+                storeApi.getState().addSelectedNodes([stepName]);
+                setSelectedNodes([stepName]);
+              }}
               onNodesDelete={readonly ? undefined : undefined}
               onEdgesDelete={readonly ? undefined : undefined}
               deleteKeyCode={readonly ? null : 'Delete'}

@@ -42,6 +42,7 @@ type CreateFolderDialogProps = {
     options?: RefetchOptions,
   ) => Promise<QueryObserverResult<FolderDto[], Error>>;
   className?: string;
+  disabled?: boolean;
 };
 
 const CreateFolderFormSchema = Type.Object({
@@ -57,6 +58,7 @@ export const CreateFolderDialog = ({
   updateSearchParams,
   refetchFolders,
   className,
+  disabled = false,
 }: CreateFolderDialogProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const form = useForm<CreateFolderFormSchema>({
@@ -64,7 +66,8 @@ export const CreateFolderDialog = ({
   });
 
   const { checkAccess } = useAuthorization();
-  const userHasPermissionToUpdateFolders = checkAccess(Permission.WRITE_FOLDER);
+  // Align with backend: folder create/update requires WRITE_FLOW
+  const userHasPermissionToUpdateFolders = checkAccess(Permission.WRITE_FLOW);
   const { mutate, isPending } = useMutation<
     FolderDto,
     Error,
@@ -110,7 +113,7 @@ export const CreateFolderDialog = ({
           <DialogTrigger asChild>
             <Button
               variant="ghost"
-              disabled={!userHasPermissionToUpdateFolders}
+              disabled={!userHasPermissionToUpdateFolders || disabled}
               size="icon"
               className={cn(className)}
             >

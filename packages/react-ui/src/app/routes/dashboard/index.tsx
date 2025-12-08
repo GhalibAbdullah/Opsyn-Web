@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Plus, Settings, Key, Users, LayoutGrid } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { projectApi } from '@/lib/project-api';
 import { authenticationSession } from '@/lib/authentication-session';
 import { AccountSettingsDialog } from '@/app/components/account-settings';
+import { cn } from '@/lib/utils';
 
 import { NewProjectDialog } from '../platform/projects/new-project-dialog';
 
@@ -18,6 +19,9 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [navigatingProjectId, setNavigatingProjectId] = useState<string | null>(
+    null,
+  );
 
   // Debug: Log when component mounts/renders
   useEffect(() => {
@@ -36,22 +40,31 @@ export default function DashboardPage() {
     // Refetch projects list
     await refetch();
     
-    // If a project was created, switch to it
+    // If a project was created, navigate to it with retry flag
+    // The route wrapper will handle switching and retry logic
+    // We navigate immediately - the route wrapper's guard will show loading
+    // and retry logic will handle any timing issues with project accessibility
     if (project) {
-      try {
-        await authenticationSession.switchToProject(project.id);
-        navigate(`/projects/${project.id}/flows`);
-      } catch (error) {
-        toast({
-          title: t('Project Created'),
-          description: t('Project created successfully. Please select it to continue.'),
-        });
-      }
+      // Navigate with fromNewProject flag to trigger retry logic in route wrapper
+      // This ensures we show a loading screen and retry if validation fails
+      // The route wrapper will switch to the project and retry if needed
+      navigate(`/projects/${project.id}/flows?fromNewProject=true`);
     }
   };
 
-  const projects = projectsData?.data || [];
+  // Deduplicate projects by ID (in case of any cache or backend issues)
+  const projects = useMemo(() => {
+    const projectsArray = projectsData?.data || [];
+    const uniqueProjects = new Map<string, typeof projectsArray[0]>();
+    projectsArray.forEach((project) => {
+      if (!uniqueProjects.has(project.id)) {
+        uniqueProjects.set(project.id, project);
+      }
+    });
+    return Array.from(uniqueProjects.values());
+  }, [projectsData?.data]);
   const hasProjects = projects.length > 0;
+  const isNavigatingProject = Boolean(navigatingProjectId);
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
@@ -131,21 +144,46 @@ export default function DashboardPage() {
               </Button>
             </NewProjectDialog>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={cn('grid gap-4 md:grid-cols-2 lg:grid-cols-3', {
+              'pointer-events-none opacity-60': isNavigatingProject,
+            })}
+          >
             {projects.map((project) => (
               <Card
                 key={project.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className={cn(
+                  'cursor-pointer hover:shadow-lg transition-shadow',
+                  {
+                    'cursor-wait':
+                      navigatingProjectId &&
+                      navigatingProjectId === project.id,
+                  },
+                )}
                 onClick={async () => {
+                  if (isNavigatingProject) {
+                    return;
+                  }
+                  const targetUrl = `/projects/${project.id}/flows`;
+                  setNavigatingProjectId(project.id);
+
+                  // Navigate immediately so the URL reflects the chosen project
+                  navigate(targetUrl);
+
                   try {
                     await authenticationSession.switchToProject(project.id);
-                    navigate(`/projects/${project.id}/flows`);
+                    // Ensure we land on the target page once the session is switched
+                    navigate(targetUrl, { replace: true });
                   } catch (error) {
                     toast({
                       title: t('Error'),
                       description: t('Failed to switch project'),
                       variant: 'destructive',
                     });
+                    // Return user to dashboard if switching failed
+                    navigate('/dashboard', { replace: true });
+                  } finally {
+                    setNavigatingProjectId(null);
                   }
                 }}
               >

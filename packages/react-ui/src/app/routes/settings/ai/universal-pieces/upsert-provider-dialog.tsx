@@ -113,7 +113,11 @@ export const UpsertAIProviderDialog = ({
         )}
 
         <Form {...form}>
-          <form className="grid space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="grid space-y-4"
+            autoComplete="off"
+            onSubmit={(e) => e.preventDefault()}
+          >
             {showAzureOpenAI && (
               <FormField
                 name="useAzureOpenAI"
@@ -194,6 +198,14 @@ export const UpsertAIProviderDialog = ({
                   <div className="flex gap-2 items-center justify-center">
                     <Input
                       autoFocus
+                      type="password"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      inputMode="none"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
                       {...field}
                       required
                       id="apiKey"

@@ -25,8 +25,10 @@ export const flowCommentHooks = {
         const queryClient = useQueryClient();
         const socket = useSocket();
 
+        const commentQueryKey = createFlowCommentQueryKey(flowId || '', queryParams)
+
         const query = useQuery<SeekPage<FlowCommentWithUser>>({
-            queryKey: createFlowCommentQueryKey(flowId || '', queryParams),
+            queryKey: commentQueryKey,
             queryFn: async () => {
                 if (!flowId) {
                     throw new Error('Flow ID is required');
@@ -46,7 +48,7 @@ export const flowCommentHooks = {
             const handleCommentCreated = (data: { flowId: string; commentId: string }) => {
                 if (data.flowId === flowId) {
                     queryClient.invalidateQueries({
-                        queryKey: ['flow-comments', flowId],
+                        queryKey: commentQueryKey,
                     });
                 }
             };
@@ -54,7 +56,7 @@ export const flowCommentHooks = {
             const handleCommentChanged = (data: { flowId: string; commentId: string; content: string }) => {
                 if (data.flowId === flowId) {
                     queryClient.invalidateQueries({
-                        queryKey: ['flow-comments', flowId],
+                        queryKey: commentQueryKey,
                     });
                 }
             };
@@ -62,7 +64,7 @@ export const flowCommentHooks = {
             const handleCommentDeleted = (data: { flowId: string; commentId: string }) => {
                 if (data.flowId === flowId) {
                     queryClient.invalidateQueries({
-                        queryKey: ['flow-comments', flowId],
+                        queryKey: commentQueryKey,
                     });
                 }
             };

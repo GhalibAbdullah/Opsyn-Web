@@ -29,6 +29,8 @@ import { CreateFolderDialog } from '@/features/folders/component/create-folder-d
 import { FolderActions } from '@/features/folders/component/folder-actions';
 import { foldersHooks } from '@/features/folders/lib/folders-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
+import { useAuthorization } from '@/hooks/authorization-hooks';
+import { Permission } from '@activepieces/shared';
 import { cn } from '@/lib/utils';
 import {
   FolderDto,
@@ -46,6 +48,8 @@ export function FlowsNavigation() {
   const navigate = useNavigate();
   const { flowId: currentFlowId } = useParams();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { checkAccess } = useAuthorization();
+  const canWriteFlows = checkAccess(Permission.WRITE_FLOW);
 
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [previousFlowCount, setPreviousFlowCount] = useState<number>(0);
@@ -174,6 +178,7 @@ export function FlowsNavigation() {
         <CreateFolderDialog
           refetchFolders={refetchFolders}
           updateSearchParams={() => {}}
+          disabled={!canWriteFlows}
         />
       </SidebarGroupLabel>
       <ScrollArea ref={scrollAreaRef} showGradient>
@@ -186,6 +191,7 @@ export function FlowsNavigation() {
               isOpen={openFolders.has('default')}
               onToggle={(isOpen) => handleFolderToggle('default', isOpen)}
               refetch={refetchFlows}
+            canWriteFlows={canWriteFlows}
             />
 
             {sortedFolders.map((folder) => (
@@ -199,6 +205,7 @@ export function FlowsNavigation() {
                 onToggle={(isOpen) => handleFolderToggle(folder.id, isOpen)}
                 refetch={refetchFlows}
                 refetchFolders={refetchFolders}
+            canWriteFlows={canWriteFlows}
               />
             ))}
           </SidebarMenu>
@@ -215,6 +222,7 @@ interface FolderProps {
   isOpen: boolean;
   onToggle: (isOpen: boolean) => void;
   refetch: () => void;
+  canWriteFlows: boolean;
 }
 
 function DefaultFolder({
@@ -224,6 +232,7 @@ function DefaultFolder({
   isOpen,
   onToggle,
   refetch,
+  canWriteFlows,
 }: FolderProps) {
   return (
     <Collapsible
@@ -242,6 +251,7 @@ function DefaultFolder({
                 variant="small"
                 className="opacity-0 group-hover/item:opacity-100"
                 refetch={refetch}
+            canWriteFlows={canWriteFlows}
               />
             </div>
           </SidebarMenuButton>
@@ -256,6 +266,7 @@ function DefaultFolder({
                   isActive={isFlowActive(flow.id)}
                   onClick={() => onFlowClick(flow.id)}
                   refetch={refetch}
+                  canWriteFlows={canWriteFlows}
                 />
               ))}
             </SidebarMenuSub>
@@ -280,6 +291,7 @@ function RegularFolder({
   onToggle,
   refetch,
   refetchFolders,
+  canWriteFlows,
 }: RegularFolderProps) {
   return (
     <Collapsible
@@ -299,6 +311,7 @@ function RegularFolder({
                 variant="small"
                 className="group-hover/item:opacity-100 opacity-0"
                 refetch={refetch}
+                canWriteFlows={canWriteFlows}
               />
               <FolderActions
                 hideFlowCount={true}
@@ -318,6 +331,7 @@ function RegularFolder({
                   isActive={isFlowActive(flow.id)}
                   onClick={() => onFlowClick(flow.id)}
                   refetch={refetch}
+                  canWriteFlows={canWriteFlows}
                 />
               ))}
             </SidebarMenuSub>
@@ -333,9 +347,10 @@ interface FlowItemProps {
   isActive: boolean;
   onClick: () => void;
   refetch: () => void;
+  canWriteFlows: boolean;
 }
 
-function FlowItem({ flow, isActive, onClick, refetch }: FlowItemProps) {
+function FlowItem({ flow, isActive, onClick, refetch, canWriteFlows }: FlowItemProps) {
   const { flowId } = useParams();
   const queryClient = useQueryClient();
 
@@ -352,7 +367,7 @@ function FlowItem({ flow, isActive, onClick, refetch }: FlowItemProps) {
         <FlowActionMenu
           insideBuilder={false}
           flow={flow}
-          readonly={false}
+          readonly={!canWriteFlows}
           flowVersion={flow.version}
           onRename={refetch}
           onMoveTo={refetch}

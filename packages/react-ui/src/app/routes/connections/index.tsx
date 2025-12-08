@@ -123,6 +123,9 @@ function AppConnectionsPage() {
   const userHasPermissionToWriteAppConnection = checkAccess(
     Permission.WRITE_APP_CONNECTION,
   );
+  const userHasPermissionToReadAppConnection = checkAccess(
+    Permission.READ_APP_CONNECTION,
+  );
 
   const { data: owners } = appConnectionsQueries.useConnectionsOwners();
 
@@ -178,8 +181,12 @@ function AppConnectionsPage() {
             table.getIsSomePageRowsSelected()
           }
           variant="secondary"
+          disabled={!userHasPermissionToWriteAppConnection}
           onCheckedChange={(value) => {
             const isChecked = !!value;
+            if (!userHasPermissionToWriteAppConnection) {
+              return;
+            }
             table.toggleAllPageRowsSelected(isChecked);
 
             if (isChecked) {
@@ -218,9 +225,12 @@ function AppConnectionsPage() {
           <Checkbox
             variant="secondary"
             checked={isChecked}
-            disabled={isPlatformConnection}
+            disabled={isPlatformConnection || !userHasPermissionToWriteAppConnection}
             onCheckedChange={(value) => {
               const isChecked = !!value;
+              if (!userHasPermissionToWriteAppConnection) {
+                return;
+              }
               let newSelectedRows = [...selectedRows];
               if (isChecked) {
                 const exists = newSelectedRows.some(
@@ -412,7 +422,10 @@ function AppConnectionsPage() {
   ];
 
   const bulkActions: BulkAction<AppConnectionWithoutSensitiveData>[] = useMemo(
-    () => [
+    () =>
+      !userHasPermissionToWriteAppConnection
+        ? []
+        : [
       {
         render: (_, resetSelection) => {
           return (

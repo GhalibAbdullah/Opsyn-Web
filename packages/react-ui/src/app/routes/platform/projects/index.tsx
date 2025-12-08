@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { t } from 'i18next';
-import { CheckIcon, Lock, Package, Pencil, Plus, Trash } from 'lucide-react';
+import { CheckIcon, Package, Pencil, Plus, Trash } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -27,7 +27,8 @@ import { EditProjectDialog } from '@/features/projects/components/edit-project-d
 import { platformHooks } from '@/hooks/platform-hooks';
 import { projectHooks } from '@/hooks/project-hooks';
 import { projectApi } from '@/lib/project-api';
-import { formatUtils, validationUtils } from '@/lib/utils';
+import { authenticationSession } from '@/lib/authentication-session';
+import { cn, formatUtils, validationUtils } from '@/lib/utils';
 import { isNil, ProjectWithLimits } from '@activepieces/shared';
 
 import { NewProjectDialog } from './new-project-dialog';
@@ -39,11 +40,8 @@ const columns: ColumnDef<RowDataWithActions<ProjectWithLimits>>[] = [
       <DataTableColumnHeader column={column} title={t('Name')} />
     ),
     cell: ({ row }) => {
-      const locked = row.original.plan.locked;
-
       return (
         <div className="text-left flex items-center justify-start ">
-          {locked && <Lock className="size-3 mr-1.5" strokeWidth={2.5} />}
           {row.original.displayName}
         </div>
       );
@@ -152,6 +150,9 @@ export default function ProjectsPage() {
   const [editDialogInitialValues, setEditDialogInitialValues] =
     useState<any>(null);
   const [editDialogProjectId, setEditDialogProjectId] = useState<string>('');
+  const [navigatingProjectId, setNavigatingProjectId] = useState<string | null>(
+    null,
+  );
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -361,6 +362,8 @@ export default function ProjectsPage() {
   ];
 
   // Allow all users to access projects - no feature lock
+  const isNavigatingProject = Boolean(navigatingProjectId);
+
   return (
     <div className="flex flex-col w-full">
       <DashboardPageHeader
@@ -388,41 +391,66 @@ export default function ProjectsPage() {
           </Button>
         </NewProjectDialog>
       </DashboardPageHeader>
-      <DataTable
-        emptyStateTextTitle={t('No projects found')}
-        emptyStateTextDescription={t(
-          'Start by creating projects to manage your automation teams',
+      <div className="relative">
+        {isNavigatingProject && (
+          <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
+            <span className="text-sm text-muted-foreground">
+              {t('Switching project...')}
+            </span>
+          </div>
         )}
-        emptyStateIcon={<Package className="size-14" />}
-        onRowClick={async (project) => {
-          try {
-            await setCurrentProject(queryClient, project);
-            // Navigate directly to the project flows page instead of root
-            // This avoids the default route logic that might redirect to dashboard
-            navigate(`/projects/${project.id}/flows`);
-          } catch (error) {
-            // If switching fails, show error but stay on platform admin page
-            toast({
-              title: t('Error'),
-              description: t('Failed to switch to project. You may not have access to this project.'),
-              variant: 'destructive',
-            });
-          }
-        }}
-        filters={[
-          {
-            type: 'input',
-            title: t('Name'),
-            accessorKey: 'displayName',
-            icon: CheckIcon,
-          },
-        ]}
-        columns={columnsWithCheckbox}
-        page={data}
-        isLoading={isLoading}
-        bulkActions={bulkActions}
-        actions={actions}
-      />
+        <div
+          className={cn({
+            'pointer-events-none opacity-60': isNavigatingProject,
+          })}
+        >
+          <DataTable
+            emptyStateTextTitle={t('No projects found')}
+            emptyStateTextDescription={t(
+              'Start by creating projects to manage your automation teams',
+            )}
+            emptyStateIcon={<Package className="size-14" />}
+            onRowClick={async (project) => {
+              if (isNavigatingProject) {
+                return;
+              }
+              const targetUrl = `/projects/${project.id}/flows`;
+              setNavigatingProjectId(project.id);
+              try {
+                // Switch token first to avoid cross-project data leakage
+                await authenticationSession.switchToProject(project.id);
+                // Clear caches so data is fetched fresh for the new project
+                await queryClient.clear();
+                // Navigate after switch to ensure fresh fetches use the new token
+                navigate(targetUrl, { replace: true });
+              } catch (error) {
+                // If switching fails, show error but stay on platform admin page
+                toast({
+                  title: t('Error'),
+                  description: t('Failed to switch to project. You may not have access to this project.'),
+                  variant: 'destructive',
+                });
+                navigate('/platform/projects', { replace: true });
+              } finally {
+                setNavigatingProjectId(null);
+              }
+            }}
+            filters={[
+              {
+                type: 'input',
+                title: t('Name'),
+                accessorKey: 'displayName',
+                icon: CheckIcon,
+              },
+            ]}
+            columns={columnsWithCheckbox}
+            page={data}
+            isLoading={isLoading}
+            bulkActions={bulkActions}
+            actions={actions}
+          />
+        </div>
+      </div>
       <EditProjectDialog
         open={editDialogOpen}
         onClose={() => {

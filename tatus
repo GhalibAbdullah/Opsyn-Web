@@ -1,0 +1,34 @@
+warning: in the working copy of 'packages/server/api/src/app/ee/flags/enterprise-flags.hooks.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/packages/server/api/src/app/ee/flags/enterprise-flags.hooks.ts b/packages/server/api/src/app/ee/flags/enterprise-flags.hooks.ts[m
+[1mindex 0a6dc83f98..308a9cc91b 100644[m
+[1m--- a/packages/server/api/src/app/ee/flags/enterprise-flags.hooks.ts[m
+[1m+++ b/packages/server/api/src/app/ee/flags/enterprise-flags.hooks.ts[m
+[36m@@ -7,7 +7,6 @@[m [mimport { platformUtils } from '../../platform/platform.utils'[m
+ import { federatedAuthnService } from '../authentication/federated-authn/federated-authn-service'[m
+ import { domainHelper } from '../custom-domains/domain-helper'[m
+ import { appearanceHelper } from '../helper/appearance-helper'[m
+[31m-import { aiProviderService } from '../../ai/ai-provider-service'[m
+ [m
+ export const enterpriseFlagsHooks: FlagsServiceHooks = {[m
+     async modify({ flags, request }) {[m
+[36m@@ -58,20 +57,6 @@[m [mexport const enterpriseFlagsHooks: FlagsServiceHooks = {[m
+         })[m
+         modifiedFlags[ApFlagId.THIRD_PARTY_AUTH_PROVIDER_REDIRECT_URL] = await federatedAuthnService(request.log).getThirdPartyRedirectUrl(platformId)[m
+         [m
+[31m-        // Override AGENTS_CONFIGURED flag with project-aware check[m
+[31m-        // Check if any AI provider with function calling support is configured for this platform/project[m
+[31m-        try {[m
+[31m-            let projectId: string | null = null[m
+[31m-            if (request.principal.type === PrincipalType.USER || request.principal.type === PrincipalType.SERVICE || request.principal.type === PrincipalType.ENGINE) {[m
+[31m-                projectId = request.principal.projectId ?? null[m
+[31m-            }[m
+[31m-            modifiedFlags[ApFlagId.AGENTS_CONFIGURED] = await aiProviderService.isAgentConfigured(platformId, projectId)[m
+[31m-        } catch (error) {[m
+[31m-            // If checking agent configuration fails, fall back to the default flag value[m
+[31m-            // This prevents the flags endpoint from failing and blocking page load[m
+[31m-            request.log?.warn({ error }, 'Failed to check agent configuration, using default flag value')[m
+[31m-        }[m
+[31m-        [m
+         return modifiedFlags[m
+     },[m
+ }[m

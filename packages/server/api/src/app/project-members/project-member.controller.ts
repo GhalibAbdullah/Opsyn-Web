@@ -103,6 +103,12 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
             role: request.body.role,
         })
 
+        // If the new role is not OWNER, revoke project AI providers for safety
+        if (request.body.role !== 'OWNER') {
+            const { aiProviderService } = await import('../ai/ai-provider-service')
+            await aiProviderService.deleteAllForProject(request.principal.platform.id, request.principal.projectId!)
+        }
+
         // Broadcast project members changed event
         if (globalApp?.io) {
             globalApp.io.to(request.principal.projectId!).emit(WebsocketClientEvent.PROJECT_MEMBERS_CHANGED, {
@@ -137,6 +143,10 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
             id: request.params.id,
             projectId: request.principal.projectId!,
         })
+        
+        // Revoke AI providers when a member is removed (ensures owner removal also clears keys)
+        const { aiProviderService } = await import('../ai/ai-provider-service')
+        await aiProviderService.deleteAllForProject(request.principal.platform.id, request.principal.projectId!)
         
         // Broadcast project members changed event
         if (globalApp?.io) {

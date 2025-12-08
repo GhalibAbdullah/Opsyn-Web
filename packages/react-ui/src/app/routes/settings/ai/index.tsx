@@ -5,8 +5,9 @@ import { DashboardPageHeader } from '@/app/components/dashboard-page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { aiProviderApi } from '@/features/platform-admin/lib/ai-provider-api';
 import { flagsHooks } from '@/hooks/flags-hooks';
+import { useAuthorization } from '@/hooks/authorization-hooks';
 import { SUPPORTED_AI_PROVIDERS } from '@activepieces/common-ai';
-import { ApFlagId, ApEdition } from '@activepieces/shared';
+import { ApFlagId, ApEdition, Permission } from '@activepieces/shared';
 
 import { AIProviderCard } from './universal-pieces/ai-provider-card';
 
@@ -20,8 +21,8 @@ export default function AIProvidersPage() {
     queryFn: () => aiProviderApi.list(),
   });
   const { data: flags } = flagsHooks.useFlags();
-  // Allow all users to write - no restrictions
-  const allowWrite = true;
+  const { checkAccess } = useAuthorization();
+  const allowWrite = checkAccess(Permission.WRITE_PROJECT);
   const edition = flags?.[ApFlagId.EDITION];
 
   const { mutate: deleteProvider, isPending: isDeleting } = useMutation({
@@ -31,7 +32,7 @@ export default function AIProvidersPage() {
     },
   });
 
-  // Allow all users to configure AI providers - no admin restriction
+  // Owner-only: allowWrite reflects permission; readers can only view (or see empty)
   return (
     <div className="flex flex-col w-full gap-4">
       <DashboardPageHeader

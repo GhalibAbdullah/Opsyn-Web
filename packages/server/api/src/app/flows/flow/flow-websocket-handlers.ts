@@ -5,9 +5,13 @@ import { userIdentityService } from '../../authentication/user-identity/user-ide
 import { userService } from '../../user/user-service'
 import { websocketService } from '../../core/websockets.service'
 import { app } from '../../server'
+import { flowService } from './flow.service'
 
-// Track active editors per flow: flowId -> Set<userId>
-const activeEditors = new Map<string, Set<string>>()
+// Track active editors per flow: flowId -> userId -> Set<socketId>
+const activeEditors = new Map<string, Map<string, Set<string>>>()
+
+// Track which flows a socket is in: socketId -> Set<flowId>
+const socketFlowMembership = new Map<string, Set<string>>()
 
 // Track user info for active editors: userId -> { userId, userName, userEmail }
 const editorInfoCache = new Map<string, FlowEditorInfo>()
@@ -15,24 +19,75 @@ const editorInfoCache = new Map<string, FlowEditorInfo>()
 export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
     const getFlowRoom = (flowId: string): string => `flow:${flowId}`
 
+    const getUserIdsForFlow = (flowId: string): Set<string> | undefined => {
+        const usersMap = activeEditors.get(flowId)
+        if (!usersMap) {
+            return undefined
+        }
+        return new Set(usersMap.keys())
+    }
+
+    const addSocketMembership = (socketId: string, flowId: string): void => {
+        if (!socketFlowMembership.has(socketId)) {
+            socketFlowMembership.set(socketId, new Set())
+        }
+        socketFlowMembership.get(socketId)!.add(flowId)
+    }
+
+    const removeSocketMembership = (socketId: string, flowId: string, userId: string): void => {
+        const flows = socketFlowMembership.get(socketId)
+        if (flows) {
+            flows.delete(flowId)
+            if (flows.size === 0) {
+                socketFlowMembership.delete(socketId)
+            }
+        }
+
+        const flowUsers = activeEditors.get(flowId)
+        if (flowUsers) {
+            const sockets = flowUsers.get(userId)
+            if (sockets) {
+                sockets.delete(socketId)
+                if (sockets.size === 0) {
+                    flowUsers.delete(userId)
+                }
+            }
+            if (flowUsers.size === 0) {
+                activeEditors.delete(flowId)
+            }
+        }
+    }
+
     const broadcastEditorsChanged = async (flowId: string): Promise<void> => {
         if (!app?.io) {
             log.warn('Socket.IO not available, cannot broadcast editors changed')
             return
         }
-        const userIds = activeEditors.get(flowId)
+        const roomName = getFlowRoom(flowId)
+        const room = app.io.sockets.adapter.rooms.get(roomName)
+        const socketsInRoom = room ? new Set(room.keys()) : new Set<string>()
+
+        const userIds = getUserIdsForFlow(flowId)
         if (!userIds || userIds.size === 0) {
             // No editors, broadcast empty array
-            app.io.to(getFlowRoom(flowId)).emit(WebsocketClientEvent.FLOW_EDITORS_CHANGED, {
+            app.io.to(roomName).emit(WebsocketClientEvent.FLOW_EDITORS_CHANGED, {
                 flowId,
                 editors: [],
             } as FlowEditorsChanged)
             return
         }
 
-        // Get editor info for all active editors
+        // Get editor info for all active editors that still have a socket in the room
         const editors: FlowEditorInfo[] = []
         for (const userId of userIds) {
+            const socketsForUser = activeEditors.get(flowId)?.get(userId)
+            const hasSocketInRoom = socketsForUser ? [...socketsForUser].some((sid) => socketsInRoom.has(sid)) : false
+            if (!hasSocketInRoom) {
+                // Clean up stale membership
+                activeEditors.get(flowId)?.delete(userId)
+                continue
+            }
+
             let editorInfo = editorInfoCache.get(userId)
             if (!editorInfo) {
                 // Fetch user info if not cached
@@ -54,9 +109,7 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
         }
 
         // Broadcast to all clients in the flow room
-        const roomName = getFlowRoom(flowId)
-        const room = app.io.sockets.adapter.rooms.get(roomName)
-        const socketsInRoom = room ? room.size : 0
+        const socketsInRoomCount = socketsInRoom.size
         const payload = {
             flowId,
             editors,
@@ -65,7 +118,7 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
             flowId, 
             editorsCount: editors.length, 
             roomName,
-            socketsInRoom,
+            socketsInRoom: socketsInRoomCount,
         }, 'Broadcasting editors changed to room (all users in room should receive this)')
         app.io.to(roomName).emit(WebsocketClientEvent.FLOW_EDITORS_CHANGED, payload)
     }
@@ -80,6 +133,22 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
                 const { flowId } = data
                 const userId = principal.id
 
+                if (!principal.projectId) {
+                    log.warn({ flowId, userId }, 'User principal missing projectId, rejecting join')
+                    return
+                }
+
+                // Ensure flow belongs to the same project (prevents cross-project leakage)
+                try {
+                    await flowService(log).getOnePopulatedOrThrow({
+                        id: flowId,
+                        projectId: principal.projectId,
+                    })
+                } catch (error) {
+                    log.warn({ flowId, userId, projectId: principal.projectId, error }, 'Flow join rejected (flow not in project or not found)')
+                    return
+                }
+
                 log.info({ flowId, userId }, 'Flow editor joined')
 
                 // Join the flow-specific room
@@ -89,11 +158,14 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
                 const socketsInRoom = room ? room.size : 0
                 log.debug({ flowId, userId, roomName, socketsInRoom }, 'User joined flow room')
 
-                // Add to active editors tracking
+                // Add to active editors tracking per socket
                 if (!activeEditors.has(flowId)) {
-                    activeEditors.set(flowId, new Set())
+                    activeEditors.set(flowId, new Map())
                 }
-                activeEditors.get(flowId)!.add(userId)
+                const userSockets = activeEditors.get(flowId)!.get(userId) ?? new Set<string>()
+                userSockets.add(socket.id)
+                activeEditors.get(flowId)!.set(userId, userSockets)
+                addSocketMembership(socket.id, flowId)
 
                 // Cache user info if not already cached (must complete before broadcasting)
                 if (!editorInfoCache.has(userId)) {
@@ -118,7 +190,7 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
                 // This is important because the badge component might set up its listener
                 // after the broadcast happens, or there might be a timing issue with room joins
                 // We use a small delay to give the frontend time to set up its listener
-                const userIds = activeEditors.get(flowId)
+                const userIds = getUserIdsForFlow(flowId)
                 if (userIds && userIds.size > 0) {
                     const editors: FlowEditorInfo[] = []
                     for (const uid of userIds) {
@@ -155,14 +227,8 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
                 // Leave the flow-specific room
                 await socket.leave(getFlowRoom(flowId))
 
-                // Remove from active editors tracking
-                const editors = activeEditors.get(flowId)
-                if (editors) {
-                    editors.delete(userId)
-                    if (editors.size === 0) {
-                        activeEditors.delete(flowId)
-                    }
-                }
+                // Remove from active editors tracking for this socket
+                removeSocketMembership(socket.id, flowId, userId)
 
                 // Broadcast editors changed
                 await broadcastEditorsChanged(flowId)
@@ -187,10 +253,22 @@ export const flowWebsocketHandlers = (log: FastifyBaseLogger) => {
         // Clean up on disconnect (optional, but good practice)
         handleDisconnect: (socket: Socket) => {
             return async (): Promise<void> => {
-                // Note: Socket.IO automatically removes socket from rooms on disconnect
-                // But we should clean up our tracking if needed
-                // This is a simplified version - in production you might want to track socket->flowId mapping
-                log.info('Socket disconnected, cleaning up flow editor tracking')
+                log.info({ socketId: socket.id }, 'Socket disconnected, cleaning up flow editor tracking')
+                const flows = socketFlowMembership.get(socket.id)
+                if (flows) {
+                    for (const flowId of flows) {
+                        // Remove socket membership; userId is unknown here, so remove from all users that contain this socket
+                        const usersMap = activeEditors.get(flowId)
+                        if (usersMap) {
+                            for (const [userId, sockets] of usersMap.entries()) {
+                                if (sockets.has(socket.id)) {
+                                    removeSocketMembership(socket.id, flowId, userId)
+                                }
+                            }
+                        }
+                        await broadcastEditorsChanged(flowId)
+                    }
+                }
             }
         },
     }

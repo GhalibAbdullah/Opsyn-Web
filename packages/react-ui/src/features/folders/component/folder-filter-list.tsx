@@ -88,7 +88,8 @@ const FolderItem = ({
 const FolderFilterList = ({ refresh }: { refresh: number }) => {
   const location = useLocation();
   const { checkAccess } = useAuthorization();
-  const userHasPermissionToUpdateFolders = checkAccess(Permission.WRITE_FOLDER);
+  // Align with backend: folder create/update guarded by WRITE_FLOW
+  const userHasPermissionToUpdateFolders = checkAccess(Permission.WRITE_FLOW);
   const [searchParams, setSearchParams] = useSearchParams(location.search);
   const selectedFolderId = searchParams.get(folderIdParamName);
   const [
@@ -166,6 +167,7 @@ const FolderFilterList = ({ refresh }: { refresh: number }) => {
             <CreateFolderDialog
               refetchFolders={refetchFolders}
               updateSearchParams={updateSearchParams}
+              disabled={!userHasPermissionToUpdateFolders}
             />
           </PermissionNeededTooltip>
         </div>

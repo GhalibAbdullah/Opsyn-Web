@@ -16,6 +16,25 @@ const AcceptInvitation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const switchToProjectWithRetry = async (projectId: string): Promise<boolean> => {
+    const attempts = 8;
+    const baseDelayMs = 300;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        await authenticationSession.switchToProject(projectId);
+        return true;
+      } catch (error) {
+        const delayMs = baseDelayMs * Math.pow(1.5, attempt);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        if (attempt === attempts - 1) {
+          console.warn('Failed to switch to project after retries', { error, projectId });
+        }
+      }
+    }
+    return false;
+  };
+
   const { mutate, isPending } = useMutation({
     mutationFn: async (token: string) => {
       const email = searchParams.get('email');
@@ -41,26 +60,9 @@ const AcceptInvitation = () => {
         if (projectId) {
           // Invalidate the switch-to-project query to ensure the project switch works
           await queryClient.invalidateQueries({ queryKey: ['switch-to-project', projectId] });
-          
-          // Add a delay to allow the member to become visible in the database
-          // This handles transaction isolation issues where the member might not be immediately visible
-          // The backend retry logic can take up to ~2 seconds, but transaction isolation can take longer
-          // We'll wait 5 seconds and then navigate - the route wrapper will retry if needed
-          setTimeout(async () => {
-            try {
-              // Try to switch to the project first to update the token
-              // This will also verify the user has access to the project
-              await authenticationSession.switchToProject(projectId);
-              // Add a flag in the URL to indicate we're coming from invitation acceptance
-              // This helps the route wrapper be more patient with retries
-              navigate(`/projects/${projectId}/flows?fromInvitation=true`);
-            } catch (error) {
-              // If switching fails, still try to navigate with the flag
-              // The route wrapper will retry and wait for the member to become visible
-              console.warn('Failed to switch to project, navigating anyway (will retry):', error);
-              navigate(`/projects/${projectId}/flows?fromInvitation=true`);
-            }
-          }, 5000);
+
+          const switched = await switchToProjectWithRetry(projectId);
+          navigate(`/projects/${projectId}/flows?fromInvitation=true${switched ? '' : '&pendingSwitch=true'}`);
         } else {
           navigate('/sign-in');
         }

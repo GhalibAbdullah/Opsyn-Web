@@ -38,6 +38,7 @@ type CreateFlowDropdownProps = {
   variant?: 'default' | 'small';
   className?: string;
   folderId: string;
+  canWriteFlows?: boolean;
 };
 
 export const CreateFlowDropdown = ({
@@ -45,9 +46,11 @@ export const CreateFlowDropdown = ({
   variant = 'default',
   className,
   folderId,
+  canWriteFlows,
 }: CreateFlowDropdownProps) => {
   const { checkAccess } = useAuthorization();
-  const doesUserHavePermissionToWriteFlow = checkAccess(Permission.WRITE_FLOW);
+  const doesUserHavePermissionToWriteFlow =
+    canWriteFlows ?? checkAccess(Permission.WRITE_FLOW);
   const [refresh, setRefresh] = useState(0);
   const navigate = useNavigate();
   const { embedState } = useEmbedding();

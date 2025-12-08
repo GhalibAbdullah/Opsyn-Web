@@ -151,16 +151,7 @@ const StepSettingsContainer = () => {
         onChange={(e) => e.preventDefault()}
         className="w-full h-full relative"
       >
-        {readonly && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-[9999] flex items-center justify-center pointer-events-auto">
-            <div className="text-muted-foreground text-sm font-medium">
-              {t('Read-only mode')}
-            </div>
-          </div>
-        )}
-        <div className={cn("w-full h-full", {
-          "pointer-events-none": readonly,
-        })}>
+        <div className="w-full h-full">
         <div ref={sidebarHeaderContainerRef}>
           <SidebarHeader onClose={() => exitStepSettings()}>
             <EditableStepName

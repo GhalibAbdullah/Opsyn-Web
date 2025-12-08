@@ -14,22 +14,26 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import PieceIconWithPieceName from '@/features/pieces/components/piece-icon-from-name';
-import { AppConnectionWithoutSensitiveData } from '@activepieces/shared';
+import { AppConnectionWithoutSensitiveData, Permission } from '@activepieces/shared';
 import { PieceMetadataModelSummary } from '@activepieces/pieces-framework';
+import { useAuthorization } from '@/hooks/authorization-hooks';
 
 type IntegrationCardProps = {
   piece: PieceMetadataModelSummary;
   connections: AppConnectionWithoutSensitiveData[];
   onConnectionCreated: () => void;
+  canWriteConnections?: boolean;
 };
 
-export function IntegrationCard({ piece, connections, onConnectionCreated }: IntegrationCardProps) {
+export function IntegrationCard({ piece, connections, onConnectionCreated, canWriteConnections }: IntegrationCardProps) {
   const [showConnectionDialog, setShowConnectionDialog] = useState(false);
   
   const pieceConnections = connections.filter(c => c.pieceName === piece.name);
   const isConnected = pieceConnections.length > 0;
   const connectionCount = pieceConnections.length;
   const hasAuth = !!piece.auth;
+  const { checkAccess } = useAuthorization();
+  const allowWrite = typeof canWriteConnections === 'boolean' ? canWriteConnections : checkAccess(Permission.WRITE_APP_CONNECTION);
 
   return (
     <>
@@ -86,6 +90,7 @@ export function IntegrationCard({ piece, connections, onConnectionCreated }: Int
               className="w-full"
               variant={isConnected ? 'outline' : 'default'}
               onClick={() => setShowConnectionDialog(true)}
+              disabled={!allowWrite}
             >
               <Plus className="h-4 w-4 mr-2" />
               {isConnected ? t('Add Another Connection') : t('Connect')}
@@ -103,7 +108,7 @@ export function IntegrationCard({ piece, connections, onConnectionCreated }: Int
         </CardFooter>
       </Card>
 
-      {showConnectionDialog && hasAuth && (
+      {showConnectionDialog && hasAuth && allowWrite && (
         <CreateOrEditConnectionDialog
           piece={piece}
           reconnectConnection={null}

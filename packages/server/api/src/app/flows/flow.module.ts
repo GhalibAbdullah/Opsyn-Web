@@ -49,5 +49,8 @@ export const flowModule: FastifyPluginAsyncTypebox = async (app) => {
     websocketService.addListener(PrincipalType.USER, WebsocketServerEvent.FLOW_EDITOR_LEFT, (socket) => {
         return flowHandlers.handleEditorLeft(socket)
     })
+    websocketService.addListener(PrincipalType.USER, WebsocketServerEvent.DISCONNECT, (socket) => {
+        return flowHandlers.handleDisconnect(socket)
+    })
 
 }

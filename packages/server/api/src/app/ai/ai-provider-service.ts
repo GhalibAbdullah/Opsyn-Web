@@ -59,10 +59,59 @@ export const aiProviderService = {
         }
     },
 
-    async isAgentConfigured(): Promise<boolean> {
-        return aiProviderRepo().existsBy({
-            provider: 'openai',
-        })
+    async isAgentConfigured(platformId?: PlatformId, projectId?: string | null): Promise<boolean> {
+        // Get list of providers that support function calling (required for agents)
+        const providersWithFunctionCalling = SUPPORTED_AI_PROVIDERS.filter(provider =>
+            provider.languageModels.some(model => model.functionCalling === true)
+        ).map(provider => provider.provider)
+
+        if (providersWithFunctionCalling.length === 0) {
+            return false
+        }
+
+        // If platformId is provided, check providers for that platform/project
+        if (platformId) {
+            const resolvedPlatformId = await this.getAIProviderPlatformId(platformId)
+
+            // First, check project-specific providers if projectId is provided
+            if (projectId) {
+                const projectProviders = await aiProviderRepo().findBy({
+                    platformId: resolvedPlatformId,
+                    projectId,
+                } as any)
+                
+                // Check if any configured project provider supports function calling
+                const projectProviderNames = projectProviders.map(p => p.provider)
+                if (projectProviderNames.some(p => providersWithFunctionCalling.includes(p))) {
+                    return true
+                }
+            }
+
+            // Also check platform-level providers (projectId = null)
+            const platformProviders = await aiProviderRepo().findBy({
+                platformId: resolvedPlatformId,
+                projectId: null,
+            } as any)
+            
+            const platformProviderNames = platformProviders.map(p => p.provider)
+            if (platformProviderNames.some(p => providersWithFunctionCalling.includes(p))) {
+                return true
+            }
+
+            return false
+        }
+
+        // If no platformId, check globally (backward compatibility)
+        for (const providerName of providersWithFunctionCalling) {
+            const exists = await aiProviderRepo().existsBy({
+                provider: providerName,
+            } as any)
+            if (exists) {
+                return true
+            }
+        }
+
+        return false
     },
 
     async upsert(platformId: PlatformId, request: CreateAIProviderRequest, projectId?: string): Promise<void> {
@@ -137,11 +186,18 @@ export const aiProviderService = {
         } as any)
     },
 
+    async deleteAllForProject(platformId: PlatformId, projectId: string): Promise<void> {
+        await aiProviderRepo().delete({
+            platformId,
+            projectId,
+        } as any)
+    },
+
     async getConfig(provider: string, platformId: PlatformId, projectId?: string): Promise<AIProvider['config']> {
         // If projectId is provided, only look for project-specific provider (no fallback to platform-level)
         // This ensures that when a project-specific provider is deleted, it doesn't fall back to another project's key
         if (projectId) {
-            const aiProvider = await aiProviderRepo().findOneOrFail({
+            const aiProvider = await aiProviderRepo().findOne({
                 where: {
                     provider,
                     platformId,
@@ -154,11 +210,20 @@ export const aiProviderService = {
                     },
                 },
             })
+            
+            if (!aiProvider) {
+                // Throw a clear error that will return 401 (UNAUTHORIZED) - non-retryable
+                throw new ActivepiecesError({
+                    code: ErrorCode.INVALID_API_KEY,
+                    params: {},
+                })
+            }
+            
             return encryptUtils.decryptObject(aiProvider.config)
         }
 
         // If no projectId, look for platform-level provider (backward compatibility)
-        const aiProvider = await aiProviderRepo().findOneOrFail({
+        const aiProvider = await aiProviderRepo().findOne({
             where: {
                 provider,
                 platformId,
@@ -171,6 +236,14 @@ export const aiProviderService = {
                 },
             },
         })
+
+        if (!aiProvider) {
+            // Throw a clear error that will return 401 (UNAUTHORIZED) - non-retryable
+            throw new ActivepiecesError({
+                code: ErrorCode.INVALID_API_KEY,
+                params: {},
+            })
+        }
 
         return encryptUtils.decryptObject(aiProvider.config)
     },
