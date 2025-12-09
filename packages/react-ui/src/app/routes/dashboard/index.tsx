@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { Plus, Settings, Key, Users, LayoutGrid } from 'lucide-react';
+import { Plus, Settings, Key, Users, LayoutGrid, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useMemo } from 'react';
 
@@ -11,6 +11,8 @@ import { projectApi } from '@/lib/project-api';
 import { authenticationSession } from '@/lib/authentication-session';
 import { AccountSettingsDialog } from '@/app/components/account-settings';
 import { cn } from '@/lib/utils';
+import { ApStorage } from '@/lib/ap-browser-storage';
+import { ONBOARDING_STORAGE_KEY, OnboardingDialog } from '@/features/onboarding';
 
 import { NewProjectDialog } from '../platform/projects/new-project-dialog';
 
@@ -22,14 +24,12 @@ export default function DashboardPage() {
   const [navigatingProjectId, setNavigatingProjectId] = useState<string | null>(
     null,
   );
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const OnboardingDialogComponent = OnboardingDialog as any;
+  const projectId = authenticationSession.getProjectId();
 
-  // Debug: Log when component mounts/renders
-  useEffect(() => {
-    console.log('📊 Dashboard mounted/rendered');
-    return () => {
-      console.log('📊 Dashboard unmounting');
-    };
-  }, []);
+  const ONBOARDING_COMPLETED = 'completed';
+  const ONBOARDING_DISMISSED = 'dismissed';
 
   const { data: projectsData, isLoading, refetch } = useQuery({
     queryKey: ['projects'],
@@ -66,8 +66,56 @@ export default function DashboardPage() {
   const hasProjects = projects.length > 0;
   const isNavigatingProject = Boolean(navigatingProjectId);
 
+  useEffect(() => {
+    const storage = ApStorage.getInstance();
+    const storedState = storage.getItem(ONBOARDING_STORAGE_KEY);
+    const normalizedState =
+      typeof storedState === 'string' ? storedState.toLowerCase() : '';
+    const onboardingCompleted =
+      normalizedState === ONBOARDING_COMPLETED ||
+      normalizedState === ONBOARDING_DISMISSED;
+
+    // Show onboarding unless explicitly completed/dismissed.
+    if (!onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const markOnboardingCompleted = () => {
+    const storage = ApStorage.getInstance();
+    storage.setItem(ONBOARDING_STORAGE_KEY, ONBOARDING_COMPLETED);
+    setShowOnboarding(false);
+  };
+
+  const markOnboardingDismissed = () => {
+    const storage = ApStorage.getInstance();
+    storage.setItem(ONBOARDING_STORAGE_KEY, ONBOARDING_DISMISSED);
+    setShowOnboarding(false);
+  };
+
+  const handleSkipOnboarding = () => {
+    const storage = ApStorage.getInstance();
+    storage.removeItem(ONBOARDING_STORAGE_KEY);
+    setShowOnboarding(false);
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-6 max-w-6xl relative">
+      <OnboardingDialogComponent
+        open={showOnboarding}
+        onClose={handleSkipOnboarding}
+        onComplete={markOnboardingCompleted}
+        onSkip={handleSkipOnboarding}
+        onDontShowAgain={markOnboardingDismissed}
+      />
+
+      {isNavigatingProject && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">{t('Loading project...')}</p>
+        </div>
+      )}
+
       {/* Header with User Profile */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -166,13 +214,8 @@ export default function DashboardPage() {
                   }
                   const targetUrl = `/projects/${project.id}/flows`;
                   setNavigatingProjectId(project.id);
-
-                  // Navigate immediately so the URL reflects the chosen project
-                  navigate(targetUrl);
-
                   try {
                     await authenticationSession.switchToProject(project.id);
-                    // Ensure we land on the target page once the session is switched
                     navigate(targetUrl, { replace: true });
                   } catch (error) {
                     toast({
@@ -180,7 +223,6 @@ export default function DashboardPage() {
                       description: t('Failed to switch project'),
                       variant: 'destructive',
                     });
-                    // Return user to dashboard if switching failed
                     navigate('/dashboard', { replace: true });
                   } finally {
                     setNavigatingProjectId(null);

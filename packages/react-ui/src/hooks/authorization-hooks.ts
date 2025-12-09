@@ -97,10 +97,6 @@ export const useAuthorization = () => {
   });
 
   const checkAccess = (permission: Permission) => {
-    if (isLoading) {
-      return false;
-    }
-
     if (edition === ApEdition.COMMUNITY) {
       const roleName =
         (projectRole as any)?.role?.toUpperCase?.() ??
@@ -113,7 +109,7 @@ export const useAuthorization = () => {
     return projectRole?.permissions?.includes(permission) ?? false;
   };
 
-  return { checkAccess };
+  return { checkAccess, isLoading };
 };
 
 export const useShowPlatformAdminDashboard = () => {
