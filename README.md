@@ -1,16 +1,10 @@
 <h1 align="center">
-  <a
-    target="_blank"
-    href="https://github.com/Z-vren/opsyn-final"
-  >
-    <img
-      align="center"
-      alt="OpSyn"
-      src="https://github.com/Z-vren/opsyn-final/assets/logo"
-      style="width:100%;"
-    />
-    
-  </a>
+  <img
+    align="center"
+    alt="OpSyn"
+    src="./packages/react-ui/src/assets/img/custom/opsyn-logo.svg"
+    style="max-width: 360px; width: 100%; height: auto;"
+  />
 </h1>
 
 
