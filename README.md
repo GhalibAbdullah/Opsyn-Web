@@ -5,6 +5,7 @@
     src="./packages/react-ui/src/assets/img/custom/opsyn-favicon.svg"
     style="max-width: 120px; width: 100%; height: auto;"
   />
+  <p align="center" style="margin-top: 8px;"><strong>OpSyn</strong></p>
 </h1>
 
 
