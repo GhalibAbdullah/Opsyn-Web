@@ -37,7 +37,7 @@ export function IntegrationCard({ piece, connections, onConnectionCreated, canWr
 
   return (
     <>
-      <Card className="flex flex-col h-full hover:shadow-lg transition-shadow">
+      <Card className="flex flex-col h-full hover:shadow-lg transition-shadow relative">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">

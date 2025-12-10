@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BlockingOverlay } from '@/components/ui/blocking-overlay';
 import { appConnectionsQueries } from '@/features/connections/lib/app-connections-hooks';
 import { piecesHooks } from '@/features/pieces/lib/pieces-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
@@ -34,11 +35,12 @@ function IntegrationsPage() {
   const projectId = authenticationSession.getProjectId()!;
   const { checkAccess } = useAuthorization();
   const canWriteConnections = checkAccess(Permission.WRITE_APP_CONNECTION);
+  const canReadConnections = checkAccess(Permission.READ_APP_CONNECTION);
 
   // Fetch all available pieces
   const { pieces, isLoading: piecesLoading } = piecesHooks.usePieces({});
 
-  // Fetch user's connections
+  // Fetch user's connections - only enabled if user has READ permission
   const {
     data: connectionsData,
     isLoading: connectionsLoading,
@@ -50,6 +52,7 @@ function IntegrationsPage() {
       status: [AppConnectionStatus.ACTIVE],
     },
     extraKeys: [projectId],
+    enabled: canReadConnections,
   });
 
   const connections = connectionsData?.data || [];
@@ -104,7 +107,7 @@ function IntegrationsPage() {
   }, [pieces, connections]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full relative">
       <DashboardPageHeader
         title={t('Integrations')}
         description={t('Connect and manage your app integrations')}
@@ -116,7 +119,11 @@ function IntegrationsPage() {
         </div>
       </DashboardPageHeader>
 
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4 p-4 relative">
+        <BlockingOverlay
+          blocked={!canWriteConnections}
+          message={t('Viewers cannot create connections. Contact your project admin to upgrade your permissions.')}
+        />
         {/* Filters Section */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">

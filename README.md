@@ -29,13 +29,7 @@
    <a
     href="https://github.com/Z-vren/opsyn-final/blob/main/LICENSE"
     target="_blank"
-  ><b>License</b></a>&nbsp;&nbsp;&nbsp;🔥&nbsp;&nbsp;&nbsp;
-  <a
-    href="https://github.com/Z-vren/opsyn-final/blob/main/SECURITY.md"
-    target="_blank"
-  >
-    <b>Security</b>
-  </a>
+  ><b>License</b></a>
 </p>
 
 <br>
@@ -68,6 +62,7 @@ OpSyn is an open-source workflow automation platform designed to be **extensible
 
 ### 🔒 **Security & Access Control**
 - **Role-Based Permissions**: Granular permissions system (OWNER, EDITOR, VIEWER) for project access
+- **Connection Visibility**: Project members with READ_APP_CONNECTION permission can view all project connections (not just owners)
 - **Automatic Cleanup**: When a user is removed from a project, their connections and associated data are automatically removed
 - **Platform-Level Security**: Each platform operates in isolation with its own security policies
 - **Self-Hosted**: Deploy on your own infrastructure for maximum security and data control
@@ -75,7 +70,7 @@ OpSyn is an open-source workflow automation platform designed to be **extensible
 
 ### 🔌 **Integration Management**
 - **200+ Pre-built Pieces**: Connect with Google Sheets, OpenAI, Discord, RSS, and many more services
-- **Enable/Disable Pieces**: Control which integrations are available in your platform or projects
+- **Enable/Disable Pieces**: Project owners can control which integrations are available in their projects (Community Edition)
 - **Custom Pieces**: Create your own TypeScript-based pieces with hot-reloading support
 - **Connection Management**: Centralized management of all API connections and credentials
 - **Connection Scoping**: Connections can be project-specific or platform-wide
@@ -112,15 +107,15 @@ OpSyn is an open-source workflow automation platform designed to be **extensible
 - [x] **Flow Analytics**: Track execution metrics and performance
 - [x] **Workflow Comments**: Collaborate with inline comments
 - [x] **Real-Time Collaboration**: Multiple users working simultaneously
-- [x] **Languages Translations**: Multi-language support
-- [x] **Customizable Templates**: Share and reuse workflow templates
+- [x] **Languages Translations**: Multi-language support (English, Spanish, French, German, Chinese, Japanese, Dutch, Portuguese)
+- [x] **HTTP Actions**: Make API calls directly from workflows using the HTTP piece
 - [x] **200+ Pieces**: Extensive library of integrations
 
 ## 🔌 Integration Management
 
 OpSyn provides powerful integration management capabilities:
 
-- **Enable/Disable Pieces**: Control which integrations are available at the platform or project level
+- **Enable/Disable Pieces**: Project owners can control which integrations are available in their projects (Community Edition). Platform-level piece management available in Enterprise Edition.
 - **Connection Management**: Centralized management of API credentials and connections
 - **Connection Scoping**: Project-specific or platform-wide connection sharing
 - **Custom Pieces**: Build your own TypeScript-based integrations
@@ -128,6 +123,7 @@ OpSyn provides powerful integration management capabilities:
 
 ## 🔒 Security Features
 
+- **Connection Visibility**: Project members with appropriate permissions can view all project connections, enabling better collaboration
 - **Automatic Data Cleanup**: When users are removed from projects, their connections and associated data are automatically removed
 - **Role-Based Access Control**: Granular permissions for different user roles
 - **Platform Isolation**: Complete data separation between platforms

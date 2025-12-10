@@ -21,6 +21,7 @@ import { ApAvatar } from '@/components/custom/ap-avatar';
 import { CopyTextTooltip } from '@/components/custom/clipboard/copy-text-tooltip';
 import { PermissionNeededTooltip } from '@/components/custom/permission-needed-tooltip';
 import { ConfirmationDeleteDialog } from '@/components/delete-dialog';
+import { BlockingOverlay } from '@/components/ui/blocking-overlay';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -76,6 +77,13 @@ function AppConnectionsPage() {
   }));
   const projectId = authenticationSession.getProjectId()!;
 
+  const userHasPermissionToWriteAppConnection = checkAccess(
+    Permission.WRITE_APP_CONNECTION,
+  );
+  const userHasPermissionToReadAppConnection = checkAccess(
+    Permission.READ_APP_CONNECTION,
+  );
+
   const searchParams = new URLSearchParams(location.search);
   const cursor = searchParams.get(CURSOR_QUERY_PARAM) ?? undefined;
   const limit = searchParams.get(LIMIT_QUERY_PARAM)
@@ -99,6 +107,7 @@ function AppConnectionsPage() {
       displayName,
     },
     extraKeys: [location.search, projectId],
+    enabled: userHasPermissionToReadAppConnection,
   });
 
   const { mutateAsync: deleteConnections } =
@@ -119,13 +128,6 @@ function AppConnectionsPage() {
       previous: connections.previous,
     };
   }, [connections, location.search]);
-
-  const userHasPermissionToWriteAppConnection = checkAccess(
-    Permission.WRITE_APP_CONNECTION,
-  );
-  const userHasPermissionToReadAppConnection = checkAccess(
-    Permission.READ_APP_CONNECTION,
-  );
 
   const { data: owners } = appConnectionsQueries.useConnectionsOwners();
 
@@ -509,23 +511,29 @@ function AppConnectionsPage() {
     [userHasPermissionToWriteAppConnection, selectedRows, showDeleteDialog],
   );
   return (
-    <div className="flex-col w-full">
+    <div className="flex-col w-full relative">
       <DashboardPageHeader
         title={t('Connections')}
         description={t('Manage project connections to external systems.')}
       />
-      <DataTable
-        emptyStateTextTitle={t('No connections found')}
-        emptyStateTextDescription={t(
-          'Come back later when you create a automation to manage your connections',
-        )}
-        emptyStateIcon={<Globe className="size-14" />}
-        columns={columns}
-        page={filteredData}
-        isLoading={connectionsLoading}
-        filters={filters}
-        bulkActions={bulkActions}
-      />
+      <div className="relative">
+        <BlockingOverlay
+          blocked={!userHasPermissionToWriteAppConnection}
+          message={t('Viewers cannot create or manage connections. Contact your project admin to upgrade your permissions.')}
+        />
+        <DataTable
+          emptyStateTextTitle={t('No connections found')}
+          emptyStateTextDescription={t(
+            'Come back later when you create a automation to manage your connections',
+          )}
+          emptyStateIcon={<Globe className="size-14" />}
+          columns={columns}
+          page={filteredData}
+          isLoading={connectionsLoading}
+          filters={filters}
+          bulkActions={bulkActions}
+        />
+      </div>
     </div>
   );
 }
