@@ -1,7 +1,7 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { CheckIcon, Package, Trash } from 'lucide-react';
+import { CheckIcon, Package, Trash, RotateCcw } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -74,6 +74,82 @@ const ProjectPiecesPage = () => {
     });
     return allowedPieces;
   }, [project?.plan, allPieces]);
+
+  // Check if we're in ALLOWED mode (pieces are being filtered)
+  const isFilteringActive = project?.plan?.piecesFilterType === PiecesFilterType.ALLOWED;
+
+  // Reset all pieces to enabled (set filter type to NONE)
+  const resetAllPiecesMutation = useMutation({
+    mutationFn: async () => {
+      const projectId = authenticationSession.getProjectId()!;
+      console.log('[ResetAllPieces] Resetting to NONE (all pieces enabled)');
+      
+      await projectApi.update(projectId, {
+        plan: {
+          piecesFilterType: PiecesFilterType.NONE,
+          pieces: [],
+        },
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pieces'] });
+      await queryClient.invalidateQueries({ queryKey: ['pieces-metadata'] });
+      await queryClient.invalidateQueries({ queryKey: ['steps-metadata'] });
+      await queryClient.invalidateQueries({ queryKey: ['current-project'] });
+      flowsHooks.invalidateFlowsQuery(queryClient);
+      await refetchProject();
+      await refetch();
+      
+      toast({
+        title: t('Success'),
+        description: t('All pieces have been enabled'),
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error instanceof Error ? error.message : t('Failed to reset pieces'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Enable all pieces (set all pieces to enabled in ALLOWED mode)
+  const enableAllPiecesMutation = useMutation({
+    mutationFn: async () => {
+      const projectId = authenticationSession.getProjectId()!;
+      const allPieceNames = allPieces?.map(p => p.name) || [];
+      console.log('[EnableAllPieces] Enabling all pieces:', allPieceNames.length);
+      
+      await projectApi.update(projectId, {
+        plan: {
+          piecesFilterType: PiecesFilterType.ALLOWED,
+          pieces: allPieceNames,
+        },
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pieces'] });
+      await queryClient.invalidateQueries({ queryKey: ['pieces-metadata'] });
+      await queryClient.invalidateQueries({ queryKey: ['steps-metadata'] });
+      await queryClient.invalidateQueries({ queryKey: ['current-project'] });
+      flowsHooks.invalidateFlowsQuery(queryClient);
+      await refetchProject();
+      await refetch();
+      
+      toast({
+        title: t('Success'),
+        description: t('All pieces have been enabled'),
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('Error'),
+        description: error instanceof Error ? error.message : t('Failed to enable all pieces'),
+        variant: 'destructive',
+      });
+    },
+  });
 
   const togglePieceMutation = useMutation({
     mutationFn: async ({ pieceName, enabled }: { pieceName: string; enabled: boolean }) => {
@@ -270,12 +346,48 @@ const ProjectPiecesPage = () => {
     return baseColumns;
   }, [canManagePieces, enabledPieces, togglePieceMutation]);
 
+  // Count enabled pieces
+  const enabledCount = enabledPieces.size;
+  const totalCount = allPieces?.length || 0;
+  const disabledCount = totalCount - enabledCount;
+
   return (
     <div className="w-fullj flex-col">
       <DashboardPageHeader
         title={t('Pieces')}
         description={t('Enable or disable pieces for your project')}
-      />
+      >
+        {canManagePieces && (
+          <div className="flex items-center gap-2">
+            {isFilteringActive && (
+              <span className="text-sm text-muted-foreground">
+                {t('{{enabled}} of {{total}} enabled', { enabled: enabledCount, total: totalCount })}
+              </span>
+            )}
+            {isFilteringActive && disabledCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => enableAllPiecesMutation.mutate()}
+                disabled={enableAllPiecesMutation.isPending || resetAllPiecesMutation.isPending}
+              >
+                {t('Enable All')}
+              </Button>
+            )}
+            {isFilteringActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetAllPiecesMutation.mutate()}
+                disabled={resetAllPiecesMutation.isPending || enableAllPiecesMutation.isPending}
+              >
+                <RotateCcw className="size-4 mr-2" />
+                {t('Reset Filters')}
+              </Button>
+            )}
+          </div>
+        )}
+      </DashboardPageHeader>
       {!canManagePieces && (
         <LockedAlert
           title={t('Control Pieces')}

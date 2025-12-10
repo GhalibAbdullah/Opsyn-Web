@@ -9,7 +9,10 @@ export const aiProviderController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/', ListAIProviders, async (request) => {
         const platformId = request.principal.platform.id
         const projectId = request.principal.projectId ?? undefined
-        await assertOwner(projectId, request.principal.id)
+        // Only check ownership for USER principals, ENGINE principals should be able to list providers
+        if (request.principal.type === PrincipalType.USER) {
+            await assertOwner(projectId, request.principal.id)
+        }
         return aiProviderService.list(platformId, projectId)
     })
     app.post('/', CreateAIProvider, async (request, reply) => {
