@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
-import { determineDefaultRoute } from '@/lib/utils';
+import { determineDefaultRoute, determineProjectDefaultRoute } from '@/lib/utils';
 
 export const DefaultRoute = () => {
   const token = authenticationSession.getToken();
@@ -18,5 +18,9 @@ export const DefaultRoute = () => {
       ></Navigate>
     );
   }
-  return <Navigate to={determineDefaultRoute(checkAccess)} replace></Navigate>;
+  const isProjectRoute = location.pathname.startsWith('/projects/');
+  const target = isProjectRoute
+    ? determineProjectDefaultRoute(checkAccess)
+    : determineDefaultRoute();
+  return <Navigate to={target} replace></Navigate>;
 };

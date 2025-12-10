@@ -28,6 +28,8 @@ import { projectApi } from '@/lib/project-api';
 import { cn, determineDefaultRoute } from '@/lib/utils';
 import { ApEdition, ApFlagId } from '@activepieces/shared';
 
+import { OpSynLogoIcon } from '@/components/ui/opsyn-logo';
+
 import { ApSidebareGroup, SidebarGeneralItemType } from '../ap-sidebar-group';
 import { ApSidebarItem } from '../ap-sidebar-item';
 import { SidebarUser } from '../sidebar-user';
@@ -39,8 +41,7 @@ export function PlatformSidebar() {
   const navigate = useNavigate();
   const { platform } = platformHooks.useCurrentPlatform();
   const { data: edition } = flagsHooks.useFlag<ApEdition>(ApFlagId.EDITION);
-  const { checkAccess } = useAuthorization();
-  const defaultRoute = determineDefaultRoute(checkAccess);
+  const defaultRoute = determineDefaultRoute();
   const branding = flagsHooks.useWebsiteBranding();
 
   const handleExitPlatformAdmin = async () => {
@@ -217,13 +218,9 @@ export function PlatformSidebar() {
             to={defaultRoute}
             className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
           >
-            <img
-              src={branding.logos.logoIconUrl}
-              alt={t('home')}
-              className="h-5 w-5 object-contain"
-            />
+            <OpSynLogoIcon className="h-5 w-5" aria-label={t('home')} />
           </Link>
-          <h1 className="truncate font-semibold">{branding.websiteName}</h1>
+          <h1 className="truncate font-semibold">OpSyn</h1>
         </div>
       </SidebarHeader>
 

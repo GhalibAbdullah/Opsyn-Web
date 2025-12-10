@@ -226,12 +226,15 @@ export const useTimeAgo = (date: Date) => {
   return timeAgo;
 };
 
-export const determineDefaultRoute = (
+// Default "home" route for authenticated users
+export const determineDefaultRoute = () => '/dashboard';
+
+// Default route when inside a project context (flows-first fallback)
+export const determineProjectDefaultRoute = (
   checkAccess: (permission: Permission) => boolean,
 ) => {
   const projectId = authenticationSession.getProjectId();
   if (isNil(projectId)) {
-    // No project - redirect to dashboard to create one
     return '/dashboard';
   }
   if (checkAccess(Permission.READ_FLOW)) {

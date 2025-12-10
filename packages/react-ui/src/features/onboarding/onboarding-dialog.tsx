@@ -326,7 +326,7 @@ export const OnboardingDialog = ({
   const getStepTitle = () => {
     switch (currentStep) {
       case 'welcome':
-        return t('Welcome to Activepieces');
+        return t('Welcome to OpSyn');
       case 'project-name':
         return t('Create Your Project');
       case 'flow-name':
@@ -334,7 +334,7 @@ export const OnboardingDialog = ({
       case 'complete':
         return t('You\'re All Set!');
       default:
-        return t('Welcome to Activepieces');
+        return t('Welcome to OpSyn');
     }
   };
 

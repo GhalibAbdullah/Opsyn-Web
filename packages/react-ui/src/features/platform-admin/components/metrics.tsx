@@ -102,7 +102,7 @@ export function Metrics({ report }: MetricsProps) {
             totalusers: report.totalUsers,
           })
         : null,
-      iconColor: 'text-indigo-700',
+      iconColor: 'text-blue-700',
     },
     {
       icon: Puzzle,
@@ -116,7 +116,7 @@ export function Metrics({ report }: MetricsProps) {
       title: t('Flows with AI'),
       value: report?.activeFlowsWithAI,
       description: t('The number of enabled flows that use AI pieces'),
-      iconColor: 'text-purple-700',
+      iconColor: 'text-blue-500',
     },
   ];
 

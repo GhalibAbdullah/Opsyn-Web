@@ -78,6 +78,8 @@ import {
   projectSettingsRoutes,
   TokenCheckerWrapper,
 } from './project-route-wrapper';
+import { determineProjectDefaultRoute } from '@/lib/utils';
+import { useAuthorization } from '@/hooks/authorization-hooks';
 
 const SettingsRerouter = () => {
   const { hash } = useLocation();
@@ -86,6 +88,13 @@ const SettingsRerouter = () => {
     <Navigate to={`/settings/${fragmentWithoutHash}`} replace />
   ) : (
     <Navigate to="/settings/team" replace />
+  );
+};
+
+const ProjectHomeRedirect = () => {
+  const { checkAccess } = useAuthorization();
+  return (
+    <Navigate to={determineProjectDefaultRoute(checkAccess)} replace />
   );
 };
 
@@ -666,7 +675,7 @@ const routes = [
     path: '/projects/:projectId',
     element: (
       <TokenCheckerWrapper>
-        <DefaultRoute></DefaultRoute>
+        <ProjectHomeRedirect />
       </TokenCheckerWrapper>
     ),
   },

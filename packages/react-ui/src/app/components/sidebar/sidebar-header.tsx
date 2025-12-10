@@ -1,4 +1,5 @@
 import { t } from 'i18next';
+import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { useEmbedding } from '@/components/embed-provider';
@@ -9,10 +10,11 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar-shadcn';
 import { ProjectSwitcher } from '@/features/projects/components/project-switcher';
-import { useAuthorization } from '@/hooks/authorization-hooks';
 import { flagsHooks } from '@/hooks/flags-hooks';
 import { cn, determineDefaultRoute } from '@/lib/utils';
 import { ApEdition, ApFlagId } from '@activepieces/shared';
+
+import { OpSynLogoIcon } from '@/components/ui/opsyn-logo';
 
 export const AppSidebarHeader = () => {
   const { embedState } = useEmbedding();
@@ -20,8 +22,7 @@ export const AppSidebarHeader = () => {
   const branding = flagsHooks.useWebsiteBranding();
   const showSwitcher =
     edition !== ApEdition.COMMUNITY && !embedState.isEmbedded;
-  const { checkAccess } = useAuthorization();
-  const defaultRoute = determineDefaultRoute(checkAccess);
+  const defaultRoute = determineDefaultRoute();
 
   return (
     <SidebarHeader>
@@ -29,14 +30,17 @@ export const AppSidebarHeader = () => {
         {showSwitcher ? (
           <SidebarMenuItem className="flex items-center justify-center gap-1">
             <Link
+              to="/dashboard"
+              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+              title={t('home')}
+            >
+              <Home className="h-4 w-4" />
+            </Link>
+            <Link
               to={defaultRoute}
               className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
             >
-              <img
-                src={branding.logos.logoIconUrl}
-                alt={t('home')}
-                className="h-5 w-5 object-contain"
-              />
+              <OpSynLogoIcon className="h-5 w-5" aria-label={t('home')} />
             </Link>
             <ProjectSwitcher />
           </SidebarMenuItem>
@@ -45,11 +49,10 @@ export const AppSidebarHeader = () => {
             to={defaultRoute}
             className={cn(buttonVariants({ variant: 'ghost' }))}
           >
-            <img
-              src={branding.logos.fullLogoUrl}
-              alt={t('home')}
-              className="object-contain w-40"
-            />
+            <div className="flex items-center justify-center w-40">
+              <OpSynLogoIcon className="h-6 w-6 mr-2" />
+              <span className="font-semibold tracking-tight">OpSyn</span>
+            </div>
           </Link>
         )}
       </SidebarMenu>

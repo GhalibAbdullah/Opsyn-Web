@@ -3,6 +3,7 @@ import * as RippleHook from 'use-ripple-hook';
 
 import { flagsHooks } from '@/hooks/flags-hooks';
 import { colorsUtils } from '@/lib/color-util';
+import OpSynFavicon from '../assets/img/custom/opsyn-favicon.svg';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -54,33 +55,40 @@ export function ThemeProvider({
 
     const resolvedTheme = theme === 'system' ? 'light' : theme;
     root.classList.remove('light', 'dark');
-    document.title = branding.websiteName;
+    document.title = 'OpSyn';
+
+    // Force OpSyn blue primary palette regardless of backend branding colors
+    const primaryDefault = '#2563EB';
+    const primaryLight = '#DBEAFE';
+    const primaryDark = '#1D4ED8';
+
     document.documentElement.style.setProperty(
       '--primary',
-      colorsUtils.hexToHslString(branding.colors.primary.default),
+      colorsUtils.hexToHslString(primaryDefault),
     );
 
-    setFavicon(branding.logos.favIconUrl);
+    // Always use the OpSyn favicon instead of backend-provided favIconUrl
+    setFavicon(OpSynFavicon);
     switch (resolvedTheme) {
       case 'light': {
         document.documentElement.style.setProperty(
           '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
+          colorsUtils.hexToHslString(primaryLight),
         );
         document.documentElement.style.setProperty(
           '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
+          colorsUtils.hexToHslString(primaryDark),
         );
         break;
       }
       case 'dark': {
         document.documentElement.style.setProperty(
           '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
+          colorsUtils.hexToHslString(primaryDark),
         );
         document.documentElement.style.setProperty(
           '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
+          colorsUtils.hexToHslString(primaryLight),
         );
         break;
       }
