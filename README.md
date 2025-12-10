@@ -2,8 +2,8 @@
   <img
     align="center"
     alt="OpSyn"
-    src="./packages/react-ui/src/assets/img/custom/opsyn-logo.svg"
-    style="max-width: 360px; width: 100%; height: auto;"
+    src="./packages/react-ui/src/assets/img/custom/opsyn-favicon.svg"
+    style="max-width: 120px; width: 100%; height: auto;"
   />
 </h1>
 
