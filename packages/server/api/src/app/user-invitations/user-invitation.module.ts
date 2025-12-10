@@ -155,7 +155,11 @@ const invitationController: FastifyPluginAsyncTypebox = async (app) => {
                             
                             if (!isNil(existingMember)) {
                                 app.log.info({ userId: user.id, projectId, email }, '[accept] User already a project member, returning success')
-                                await reply.status(StatusCodes.OK).send({ registered: true })
+                                await reply.status(StatusCodes.OK).send({ 
+                                    registered: true,
+                                    platformId,
+                                    projectId,
+                                })
                                 return
                             }
                         }
@@ -164,8 +168,15 @@ const invitationController: FastifyPluginAsyncTypebox = async (app) => {
                 
                 // If we can't verify membership, return success anyway to be idempotent
                 // The invitation was already accepted, so returning success is safe
-                app.log.warn({ email, projectId }, '[accept] Invitation not found and cannot verify membership, but assuming success (idempotent)')
-                await reply.status(StatusCodes.OK).send({ registered: true })
+                // Try to get platformId from query params or principal
+                const platformId = (request.query as { platformId?: string })?.platformId || 
+                    ('platform' in request.principal && request.principal.platform ? request.principal.platform.id : undefined)
+                app.log.warn({ email, projectId, platformId }, '[accept] Invitation not found and cannot verify membership, but assuming success (idempotent)')
+                await reply.status(StatusCodes.OK).send({ 
+                    registered: true,
+                    platformId,
+                    projectId,
+                })
                 return
             }
             

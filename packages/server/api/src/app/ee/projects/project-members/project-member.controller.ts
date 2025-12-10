@@ -40,7 +40,16 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
         })
     })
 
-
+    // Self-service: allow a user to leave the current project by removing their own membership.
+    // This does NOT allow them to delete the project or remove other members.
+    app.delete('/self', DeleteSelfProjectMemberRequest, async (request, reply) => {
+        assertProjectId(request.principal)
+        await projectMemberService(request.log).deleteSelf({
+            projectId: request.principal.projectId,
+            userId: request.principal.id,
+        })
+        await reply.status(StatusCodes.NO_CONTENT).send()
+    })
 
     app.post('/:id', UpdateProjectMemberRoleRequest, async (req) => {
         assertProjectId(req.principal)
@@ -117,5 +126,20 @@ const DeleteProjectMemberRequest = {
         params: Type.Object({
             id: Type.String(),
         }),
+    },
+}
+
+const DeleteSelfProjectMemberRequest = {
+    config: {
+        // Any authenticated user can remove THEIR OWN membership from the current project.
+        // Permissions for removing OTHER members remain enforced on the /:id route above.
+        allowedPrincipals: [PrincipalType.USER] as const,
+    },
+    schema: {
+        tags: ['project-members'],
+        security: [SERVICE_KEY_SECURITY_OPENAPI],
+        response: {
+            [StatusCodes.NO_CONTENT]: Type.Never(),
+        },
     },
 }

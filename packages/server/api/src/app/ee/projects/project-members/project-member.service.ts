@@ -275,6 +275,34 @@ export const projectMemberService = (log: FastifyBaseLogger) => ({
             }, 'Deleted user connections after removing project member')
         }
     },
+
+    async deleteSelf({
+        projectId,
+        userId,
+    }: {
+        projectId: ProjectId
+        userId: UserId
+    }): Promise<void> {
+        // Find explicit project member record (owners may be treated as virtual members and have no row)
+        const member = await repo().findOneBy({
+            projectId,
+            userId,
+        })
+
+        if (!member) {
+            throw new ActivepiecesError({
+                code: ErrorCode.ENTITY_NOT_FOUND,
+                params: {
+                    entityType: 'project_member',
+                    entityId: userId,
+                    message: 'Project member not found - you may be the project owner or not a member',
+                },
+            })
+        }
+
+        // Reuse existing delete logic so we also clean up connections, etc.
+        await this.delete(projectId, member.id)
+    },
 })
 
 type ListParams = {

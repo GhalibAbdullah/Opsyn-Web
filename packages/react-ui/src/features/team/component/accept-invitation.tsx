@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { HttpStatusCode } from 'axios';
 import { t } from 'i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { LoadingSpinner } from '@/components/ui/spinner';
 import { INTERNAL_ERROR_TOAST, toast } from '@/components/ui/use-toast';
 import { authenticationSession } from '@/lib/authentication-session';
+import { authenticationApi } from '@/lib/authentication-api';
 
 import { api } from '../../../lib/api';
 import { userInvitationApi } from '../lib/user-invitation';
@@ -16,6 +17,7 @@ const AcceptInvitation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const hasAttemptedAcceptRef = useRef(false);
   const switchToProjectWithRetry = async (projectId: string): Promise<boolean> => {
     const attempts = 8;
     const baseDelayMs = 300;
@@ -39,12 +41,12 @@ const AcceptInvitation = () => {
     mutationFn: async (token: string) => {
       const email = searchParams.get('email');
       const projectId = searchParams.get('projectId');
-      const { registered } = await userInvitationApi.accept(token, email || undefined, projectId || undefined);
-      return registered;
+      const result = await userInvitationApi.accept(token, email || undefined, projectId || undefined);
+      return result;
     },
-    onSuccess: async (registered) => {
+    onSuccess: async (result) => {
       setIsInvitationLinkValid(true);
-      if (!registered) {
+      if (!result.registered) {
         setTimeout(() => {
           const email = searchParams.get('email');
           navigate(`/sign-up?email=${email}`);
@@ -56,8 +58,22 @@ const AcceptInvitation = () => {
         
         // If user is already registered, try to get project ID from the invitation
         // and redirect to the project, otherwise go to sign-in
-        const projectId = searchParams.get('projectId');
-        if (projectId) {
+        const projectId = result.projectId || searchParams.get('projectId');
+        const platformId = result.platformId;
+        
+        if (projectId && platformId) {
+          // Check if we need to switch platforms first
+          const currentPlatformId = authenticationSession.getPlatformId();
+          if (currentPlatformId !== platformId) {
+            try {
+              // Switch to the correct platform first
+              const switchResult = await authenticationApi.switchPlatform({ platformId });
+              authenticationSession.saveResponse(switchResult, false);
+            } catch (error) {
+              console.warn('Failed to switch platform, continuing anyway', { error, platformId });
+            }
+          }
+          
           // Invalidate the switch-to-project query to ensure the project switch works
           await queryClient.invalidateQueries({ queryKey: ['switch-to-project', projectId] });
 
@@ -104,6 +120,12 @@ const AcceptInvitation = () => {
     },
   });
   useEffect(() => {
+    // Guard against React StrictMode double-invoking effects in development
+    if (hasAttemptedAcceptRef.current) {
+      return;
+    }
+    hasAttemptedAcceptRef.current = true;
+
     const invitationToken = searchParams.get('token');
     if (!invitationToken) {
       setIsInvitationLinkValid(false);
@@ -111,13 +133,14 @@ const AcceptInvitation = () => {
     }
     // URL decode the token in case it was encoded
     const decodedToken = decodeURIComponent(invitationToken);
-    console.log('Token from URL:', { 
-      raw: invitationToken.substring(0, 50) + '...', 
+    console.log('Token from URL:', {
+      raw: invitationToken.substring(0, 50) + '...',
       decoded: decodedToken.substring(0, 50) + '...',
-      length: decodedToken.length 
+      length: decodedToken.length,
     });
     mutate(decodedToken);
-  }, [mutate, searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return isPending ? (
     <div className="w-screen h-screen flex justify-center items-center">

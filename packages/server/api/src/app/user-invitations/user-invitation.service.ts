@@ -335,7 +335,7 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
         }
     },
     
-    async accept({ invitationId, platformId }: AcceptParams): Promise<{ registered: boolean }> {
+    async accept({ invitationId, platformId }: AcceptParams): Promise<{ registered: boolean; platformId?: string; projectId?: string }> {
         const invitation = await this.getOneOrThrow({ id: invitationId, platformId })
         
         // If already accepted, check if user is already provisioned and return success
@@ -362,6 +362,8 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
                         log.info({ invitationId, userId: user.id, projectId: invitation.projectId }, '[accept] User already a project member, returning success')
                         return {
                             registered: true,
+                            platformId: invitation.platformId,
+                            projectId: invitation.projectId,
                         }
                     }
                 }
@@ -372,6 +374,8 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
             })
             return {
                 registered: true,
+                platformId: invitation.platformId,
+                projectId: invitation.projectId ?? undefined,
             }
         }
         
@@ -390,6 +394,8 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
         })
         return {
             registered: true,
+            platformId: invitation.platformId,
+            projectId: invitation.projectId ?? undefined,
         }
     },
     async hasAnyAcceptedInvitations({
@@ -423,11 +429,49 @@ async function getOrCreateUser(identity: UserIdentity, platformId: string): Prom
         platformId,
     })
     if (isNil(user)) {
-        return userService.create({
-            identityId: identity.id,
-            platformId,
-            platformRole: PlatformRole.MEMBER,
-        })
+        try {
+            return await userService.create({
+                identityId: identity.id,
+                platformId,
+                platformRole: PlatformRole.MEMBER,
+            })
+        } catch (error: any) {
+            // Handle race condition: if two requests try to create the same user simultaneously,
+            // the second one will hit a UNIQUE constraint. In that case, fetch and return the existing user.
+            const message: string = error?.message ?? ''
+            const driverMessage: string = error?.driverError?.message ?? ''
+            const isUniqueConstraintError =
+                error?.code === 'SQLITE_CONSTRAINT' ||
+                error?.errno === 19 ||
+                error?.code === '23505' ||
+                (error?.driverError &&
+                    (error.driverError.code === 'SQLITE_CONSTRAINT' ||
+                        error.driverError.code === '23505')) ||
+                message.includes('UNIQUE constraint failed: user.platformId, user.identityId') ||
+                driverMessage.includes('UNIQUE constraint failed: user.platformId, user.identityId')
+            
+            if (isUniqueConstraintError) {
+                // User was created by another concurrent request - fetch and return it
+                const existingUser = await userService.getOneByIdentityAndPlatform({
+                    identityId: identity.id,
+                    platformId,
+                })
+                if (!isNil(existingUser)) {
+                    return existingUser
+                }
+                // If still not found after retry, wait a bit and try once more (transaction isolation)
+                await new Promise(resolve => setTimeout(resolve, 100))
+                const retryUser = await userService.getOneByIdentityAndPlatform({
+                    identityId: identity.id,
+                    platformId,
+                })
+                if (!isNil(retryUser)) {
+                    return retryUser
+                }
+            }
+            // Re-throw if it's not a constraint error or if we still can't find the user
+            throw error
+        }
     }
     return user
 }

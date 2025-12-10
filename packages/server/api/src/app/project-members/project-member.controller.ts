@@ -119,6 +119,36 @@ export const projectMemberController: FastifyPluginAsyncTypebox = async (
         return member
     })
 
+    // Self-service: allow a user to leave the current project by removing their own membership.
+    // This does NOT allow them to delete the project or remove other members.
+    app.delete('/self', DeleteSelfProjectMemberRequest, async (request, reply) => {
+        const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
+        if (!userId) {
+            throw new Error('User ID not found')
+        }
+        if (!request.principal.projectId) {
+            throw new ActivepiecesError({
+                code: ErrorCode.VALIDATION,
+                params: {
+                    message: 'Project ID is required',
+                },
+            })
+        }
+        await projectMemberService(request.log).deleteSelf({
+            projectId: request.principal.projectId,
+            userId,
+        })
+        
+        // Broadcast project members changed event
+        if (globalApp?.io) {
+            globalApp.io.to(request.principal.projectId).emit(WebsocketClientEvent.PROJECT_MEMBERS_CHANGED, {
+                projectId: request.principal.projectId,
+            })
+        }
+        
+        await reply.status(StatusCodes.NO_CONTENT).send()
+    })
+
     app.delete('/:id', DeleteProjectMemberRequest, async (request, reply) => {
         const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
         if (!userId) {
@@ -232,6 +262,20 @@ const UpdateProjectMemberRoleRequest = {
         }),
         response: {
             [StatusCodes.OK]: Type.Any(), // ProjectMember type
+        },
+    },
+}
+
+const DeleteSelfProjectMemberRequest = {
+    config: {
+        // Any authenticated user can remove THEIR OWN membership from the current project.
+        // Permissions for removing OTHER members remain enforced on the /:id route above.
+        allowedPrincipals: [PrincipalType.USER] as const,
+    },
+    schema: {
+        tags: ['project-members'],
+        response: {
+            [StatusCodes.NO_CONTENT]: Type.Never(),
         },
     },
 }

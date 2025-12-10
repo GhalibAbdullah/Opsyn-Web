@@ -1,11 +1,15 @@
 import { t } from 'i18next';
-import { Trash } from 'lucide-react';
+import { LogOut, Trash } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { PermissionNeededTooltip } from '@/components/custom/permission-needed-tooltip';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuthorization } from '@/hooks/authorization-hooks';
 import { projectHooks } from '@/hooks/project-hooks';
 import { ProjectMemberWithUser } from '@/lib/project-member-types';
+import { authenticationSession } from '@/lib/authentication-session';
+import { projectApi } from '@/lib/project-api';
 import { Permission } from '@activepieces/shared';
 
 import { ConfirmationDeleteDialog } from '../../../components/delete-dialog';
@@ -25,15 +29,36 @@ export function ProjectMemberCard({
   onUpdate,
 }: ProjectMemberCardProps) {
   const { refetch } = projectMembersHooks.useProjectMembers();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { checkAccess } = useAuthorization();
   const userHasPermissionToRemoveMember = checkAccess(
     Permission.WRITE_PROJECT_MEMBER,
   );
   const { project } = projectHooks.useCurrentProject();
+  const currentUserId = authenticationSession.getCurrentUserId();
+  const isCurrentUser = member.user.id === currentUserId;
+  const isOwner = project?.ownerId === member.userId;
+
   const deleteMember = async () => {
     await projectMembersApi.delete(member.id);
     refetch();
     onUpdate();
+  };
+
+  const leaveProject = async () => {
+    // Delete current user's membership on the backend via self-service endpoint
+    await projectMembersApi.leaveCurrentProject();
+
+    // Clear cached project data so lists refresh without this project
+    await queryClient.invalidateQueries({ queryKey: ['projects'], exact: false });
+    await queryClient.invalidateQueries({
+      queryKey: ['current-project'],
+      exact: false,
+    });
+
+    // Always take the user to a project-less dashboard view
+    navigate('/dashboard', { replace: true });
   };
 
   return (
@@ -57,7 +82,8 @@ export function ProjectMemberCard({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {project!.ownerId !== member.userId && (
+        {/* Admin actions for managing OTHER members (cannot act on owner) */}
+        {!isOwner && !isCurrentUser && (
           <PermissionNeededTooltip
             hasPermission={userHasPermissionToRemoveMember}
           >
@@ -85,6 +111,22 @@ export function ProjectMemberCard({
               </Button>
             </ConfirmationDeleteDialog>
           </PermissionNeededTooltip>
+        )}
+
+        {/* Self-service "Leave project" for non-owners viewing themselves */}
+        {!isOwner && isCurrentUser && (
+          <ConfirmationDeleteDialog
+            title={t('Leave project')}
+            message={t(
+              'Are you sure you want to leave this project? You will lose access until you are invited again.',
+            )}
+            mutationFn={leaveProject}
+            entityName={project?.displayName ?? t('this project')}
+          >
+            <Button variant="ghost" className="size-8 p-0 text-destructive">
+              <LogOut className="size-4" />
+            </Button>
+          </ConfirmationDeleteDialog>
         )}
       </div>
     </div>
