@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 
+import { FlowRunNotificationListener } from '@/components/flow-run-notification-listener';
 import { SocketProvider } from '@/components/socket-provider';
 import { useTelemetry } from '@/components/telemetry-provider';
 import { flagsHooks } from '@/hooks/flags-hooks';
@@ -27,5 +28,10 @@ export const AllowOnlyLoggedInUserOnlyGuard = ({
   flagsHooks.useFlags();
   // Note: useCurrentProject is called conditionally in components that need it
   // Platform routes don't require a project, so we don't call it here
-  return <SocketProvider>{children}</SocketProvider>;
+  return (
+    <SocketProvider>
+      <FlowRunNotificationListener />
+      {children}
+    </SocketProvider>
+  );
 };

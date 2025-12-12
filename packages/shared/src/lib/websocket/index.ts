@@ -7,6 +7,7 @@ export enum WebsocketClientEvent {
     TEST_STEP_PROGRESS = 'TEST_STEP_PROGRESS',
     REFRESH_PIECE = 'REFRESH_PIECE',
     FLOW_RUN_PROGRESS = 'FLOW_RUN_PROGRESS',
+    FLOW_RUN_FINISHED_NOTIFICATION = 'FLOW_RUN_FINISHED_NOTIFICATION',
     TODO_CHANGED = 'TODO_CHANGED',
     TODO_ACTIVITY_CHANGED = 'TODO_ACTIVITY_CHANGED',
     TODO_ACTIVITY_CREATED = 'TODO_ACTIVITY_CREATED',
@@ -79,6 +80,18 @@ export const FlowEditorsChanged = Type.Object({
 })
 
 export type FlowEditorsChanged = Static<typeof FlowEditorsChanged>
+
+export const FlowRunFinishedNotification = Type.Object({
+    flowRunId: Type.String(),
+    flowId: Type.String(),
+    flowDisplayName: Type.String(),
+    status: Type.String(),
+    failedStepName: Type.Optional(Type.String()),
+    errorMessage: Type.Optional(Type.String()),
+    finishTime: Type.String(),
+})
+
+export type FlowRunFinishedNotification = Static<typeof FlowRunFinishedNotification>
 
 export enum WebsocketServerEvent {
     TEST_FLOW_RUN = 'TEST_FLOW_RUN',
