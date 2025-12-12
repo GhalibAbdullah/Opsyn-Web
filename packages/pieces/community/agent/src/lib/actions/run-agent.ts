@@ -133,7 +133,7 @@ export const runAgent = createAction({
       result.status = AgentTaskStatus.FAILED
       result.message = `Failed to initialize stream: ${error instanceof Error ? error.message : JSON.stringify(error)}`
       context.output.update({ data: { ...result } })
-      return result
+      throw new Error(result.message ?? 'Agent stream initialization failed')
     }
 
     let currentText = ''
@@ -272,7 +272,7 @@ export const runAgent = createAction({
                 ...result
             }
         })
-        return result
+        throw new Error(result.message ?? 'Agent execution failed')
     }
 
     if (currentText.length > 0) {
@@ -290,20 +290,25 @@ export const runAgent = createAction({
       ...result
     }})
 
+    // Note: We don't throw here even if status is FAILED because this represents
+    // a "logical" failure (agent didn't complete its task), not an execution error.
+    // The agent still ran successfully - it just didn't use mark_as_complete tool.
     return result
     }
     catch (outerError) {
       // Catch any errors that happen outside the inner try-catch
+      // These are actual execution errors (API errors, exceptions) that should fail the flow
       const errorResult: AgentResult = {
         prompt: context.propsValue?.prompt || '',
         steps: [],
         status: AgentTaskStatus.FAILED,
         message: outerError instanceof Error 
-          ? `Unexpected error: ${outerError.message}${outerError.stack ? '\n' + outerError.stack : ''}`
+          ? outerError.message
           : JSON.stringify(outerError, null, 2),
       }
       context.output.update({ data: errorResult })
-      return errorResult
+      // Re-throw to mark the flow run as failed
+      throw outerError
     }
   }
 });
