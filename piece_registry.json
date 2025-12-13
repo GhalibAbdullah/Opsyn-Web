@@ -1,0 +1,1523 @@
+{
+  "@activepieces/piece-google-sheets": {
+    "name": "@activepieces/piece-google-sheets",
+    "version": "0.12.20",
+    "triggers": [
+      {
+        "name": "new-worksheet",
+        "displayName": "New Worksheet",
+        "file": "new-worksheet.ts"
+      },
+      {
+        "name": "new-spreadsheet",
+        "displayName": "New Spreadsheet",
+        "file": "new-spreadsheet.ts"
+      },
+      {
+        "name": "Test Document",
+        "displayName": "Test Document",
+        "file": "new-spreadsheet.ts"
+      },
+      {
+        "name": "googlesheets_new_row_added",
+        "displayName": "New Row Added",
+        "file": "new-row-added-webhook.ts"
+      },
+      {
+        "name": "google-sheets-new-or-updated-row",
+        "displayName": "New or Updated Row",
+        "file": "new-or-updated-row.trigger.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "create-spreadsheet",
+        "displayName": "Create Spreadsheet",
+        "file": "create-spreadsheet.ts"
+      },
+      {
+        "name": "find-worksheet",
+        "displayName": "Find Worksheet(s)",
+        "file": "find-worksheet.ts"
+      },
+      {
+        "name": "insert_row",
+        "displayName": "Insert Row",
+        "file": "insert-row.action.ts"
+      },
+      {
+        "name": "delete_row",
+        "displayName": "Delete Row",
+        "file": "delete-row.action.ts"
+      },
+      {
+        "name": "find_rows",
+        "displayName": "Find Rows",
+        "file": "find-rows.ts"
+      },
+      {
+        "name": "create-worksheet",
+        "displayName": "Create Worksheet",
+        "file": "create-worksheet.ts"
+      },
+      {
+        "name": "find_row_by_num",
+        "displayName": "Get Row",
+        "file": "find-row-by-num.ts"
+      },
+      {
+        "name": "get_next_rows",
+        "displayName": "Get next row(s)",
+        "file": "get-rows.ts"
+      },
+      {
+        "name": "find_spreadsheets",
+        "displayName": "Find Spreadsheet(s)",
+        "file": "find-spreadsheets.ts"
+      },
+      {
+        "name": "google-sheets-insert-multiple-rows",
+        "displayName": "Insert Multiple Rows",
+        "file": "insert-multiple-rows.action.ts"
+      },
+      {
+        "name": "clear_sheet",
+        "displayName": "Clear Sheet",
+        "file": "clear-sheet.ts"
+      },
+      {
+        "name": "update-multiple-rows",
+        "displayName": "Update Multiple Rows",
+        "file": "update-multiple-rows.ts"
+      },
+      {
+        "name": "export_sheet",
+        "displayName": "Export Sheet",
+        "file": "export-sheet.ts"
+      },
+      {
+        "name": "update_row",
+        "displayName": "Update Row",
+        "file": "update-row.ts"
+      },
+      {
+        "name": "create-column",
+        "displayName": "Create Spreadsheet Column",
+        "file": "create-column.ts"
+      },
+      {
+        "name": "copy-worksheet",
+        "displayName": "Copy Worksheet",
+        "file": "copy-worksheet.ts"
+      }
+    ],
+    "props": [
+      "values"
+    ]
+  },
+  "@activepieces/piece-text-ai": {
+    "name": "@activepieces/piece-text-ai",
+    "version": "0.4.8",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "summarizeText",
+        "displayName": "Summarize Text",
+        "file": "summarize-text.ts"
+      },
+      {
+        "name": "askAi",
+        "displayName": "Ask AI",
+        "file": "ask-ai.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-gmail": {
+    "name": "@activepieces/piece-gmail",
+    "version": "0.9.6",
+    "triggers": [
+      {
+        "name": "gmail_new_email_received",
+        "displayName": "New Email",
+        "file": "new-email.ts"
+      },
+      {
+        "name": "new_labeled_email",
+        "displayName": "New Labeled Email",
+        "file": "new-labeled-email.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "gmail_get_thread",
+        "displayName": "Get Thread",
+        "file": "get-thread-action.ts"
+      },
+      {
+        "name": "gmail_search_mail",
+        "displayName": "Find Email",
+        "file": "search-email-action.ts"
+      },
+      {
+        "name": "send_email",
+        "displayName": "Send Email",
+        "file": "send-email-action.ts"
+      },
+      {
+        "name": "gmail_get_mail",
+        "displayName": "Get Email",
+        "file": "get-mail-action.ts"
+      }
+    ],
+    "props": [
+      "label",
+      "to",
+      "from",
+      "subject",
+      "category"
+    ]
+  },
+  "@activepieces/piece-slack": {
+    "name": "@activepieces/piece-slack",
+    "version": "0.10.16",
+    "triggers": [
+      {
+        "name": "new_command",
+        "displayName": "New Command in Channel",
+        "file": "new-command.ts"
+      },
+      {
+        "name": "new-message-in-channel",
+        "displayName": "New Message Posted to Channel",
+        "file": "new-message-in-channel.ts"
+      },
+      {
+        "name": "new_mention",
+        "displayName": "New Mention in Channel",
+        "file": "new-mention.ts"
+      },
+      {
+        "name": "new-command-in-direct-message",
+        "displayName": "New Command in Direct Message",
+        "file": "new-command-in-direct-message.ts"
+      },
+      {
+        "name": "new-mention-in-direct-message",
+        "displayName": "New Mention in Direct Message",
+        "file": "new-mention-in-direct-message.ts"
+      },
+      {
+        "name": "new-saved-message",
+        "displayName": "New Saved Message",
+        "file": "new-saved-message.ts"
+      },
+      {
+        "name": "new-direct-message",
+        "displayName": "New Direct Message",
+        "file": "new-direct-message.ts"
+      },
+      {
+        "name": "new-message",
+        "displayName": "New Public Message Posted Anywhere",
+        "file": "new-message.ts"
+      },
+      {
+        "name": "fun",
+        "displayName": "Channel created",
+        "file": "new-channel.ts"
+      },
+      {
+        "name": "channel_created",
+        "displayName": "channel_created",
+        "file": "new-channel.ts"
+      },
+      {
+        "name": "new-team-custom-emoji",
+        "displayName": "New Team Custom Emoji",
+        "file": "new-team-custom-emoji.ts"
+      },
+      {
+        "name": "slackbot",
+        "displayName": "New User",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "Slackbot",
+        "displayName": "Slackbot",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "Slackbot",
+        "displayName": "Slackbot",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "Slackbot",
+        "displayName": "Slackbot",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "slackbot",
+        "displayName": "slackbot",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "new-user",
+        "displayName": "new-user",
+        "file": "new-user.ts"
+      },
+      {
+        "name": "new_reaction_added",
+        "displayName": "New Reaction",
+        "file": "new-reaction-added.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "retrieveThreadMessages",
+        "displayName": "Retrieve Thread Messages",
+        "file": "retrieve-thread-messages.ts"
+      },
+      {
+        "name": "uploadFile",
+        "displayName": "Upload file",
+        "file": "upload-file.ts"
+      },
+      {
+        "name": "set-channel-topic",
+        "displayName": "Set Channel Topic",
+        "file": "set-channel-topic.ts"
+      },
+      {
+        "name": "request_approval_message",
+        "displayName": "Request Approval in a Channel",
+        "file": "request-approval-message.ts"
+      },
+      {
+        "name": "get-message",
+        "displayName": "Get Message by Timestamp",
+        "file": "get-message.ts"
+      },
+      {
+        "name": "getChannelHistory",
+        "displayName": "Get channel history",
+        "file": "get-channel-history.ts"
+      },
+      {
+        "name": "markdownToSlackFormat",
+        "displayName": "Markdown to Slack format",
+        "file": "markdown-to-slack-format.ts"
+      },
+      {
+        "name": "send_channel_message",
+        "displayName": "Send Message To A Channel",
+        "file": "send-message-action.ts"
+      },
+      {
+        "name": "slack-add-reaction-to-message",
+        "displayName": "Add Reaction to Message",
+        "file": "add-reaction-to-message.ts"
+      },
+      {
+        "name": "request_action_message",
+        "displayName": "Request Action in A Channel",
+        "file": "request-action-message.ts"
+      },
+      {
+        "name": "request_approval_direct_message",
+        "displayName": "Request Approval from A User",
+        "file": "request-approval-direct-message.ts"
+      },
+      {
+        "name": "slack-find-user-by-handle",
+        "displayName": "Find User by Handle",
+        "file": "find-user-by-handle.ts"
+      },
+      {
+        "name": "request_action_direct_message",
+        "displayName": "Request Action from A User",
+        "file": "request-action-direct-message.ts"
+      },
+      {
+        "name": "slack-find-user-by-email",
+        "displayName": "Find User by Email",
+        "file": "find-user-by-email.ts"
+      },
+      {
+        "name": "searchMessages",
+        "displayName": "Search messages",
+        "file": "search-messages.ts"
+      },
+      {
+        "name": "updateMessage",
+        "displayName": "Update message",
+        "file": "update-message.ts"
+      },
+      {
+        "name": "send_direct_message",
+        "displayName": "Send Message To A User",
+        "file": "send-direct-message-action.ts"
+      },
+      {
+        "name": "slack-create-channel",
+        "displayName": "Create Channel",
+        "file": "create-channel.ts"
+      },
+      {
+        "name": "invite-user-to-channel",
+        "displayName": "Invite User to Channel",
+        "file": "invite-user-to-channel.ts"
+      },
+      {
+        "name": "slack-update-profile",
+        "displayName": "Update Profile",
+        "file": "update-profile.ts"
+      },
+      {
+        "name": "get-file",
+        "displayName": "Get File",
+        "file": "get-file.ts"
+      },
+      {
+        "name": "find-user-by-id",
+        "displayName": "Find User by ID",
+        "file": "find-user-by-id.ts"
+      },
+      {
+        "name": "listUsers",
+        "displayName": "List users",
+        "file": "list-users.ts"
+      },
+      {
+        "name": "slack-set-user-status",
+        "displayName": "Set User Status",
+        "file": "set-user-status.ts"
+      }
+    ],
+    "props": [
+      "label",
+      "useUserToken",
+      "style"
+    ]
+  },
+  "@activepieces/piece-schedule": {
+    "name": "@activepieces/piece-schedule",
+    "version": "0.1.13",
+    "triggers": [
+      {
+        "name": "every_hour",
+        "displayName": "Every Hour",
+        "file": "every-hour.trigger.ts"
+      },
+      {
+        "name": "every_month",
+        "displayName": "Every Month",
+        "file": "every-month.trigger.ts"
+      },
+      {
+        "name": "every_day",
+        "displayName": "Every Day",
+        "file": "every-day.trigger.ts"
+      },
+      {
+        "name": "every_week",
+        "displayName": "Every Week",
+        "file": "every-week.trigger.ts"
+      },
+      {
+        "name": "cron_expression",
+        "displayName": "Cron Expression",
+        "file": "cron-expression.trigger.ts"
+      },
+      {
+        "name": "every_x_minutes",
+        "displayName": "Every X Minutes",
+        "file": "every-x-minutes.trigger.ts"
+      }
+    ],
+    "actions": [],
+    "props": []
+  },
+  "@activepieces/piece-utility-ai": {
+    "name": "@activepieces/piece-utility-ai",
+    "version": "0.5.9",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "classifyText",
+        "displayName": "Classify Text",
+        "file": "classify-text.ts"
+      },
+      {
+        "name": "checkModeration",
+        "displayName": "Check Moderation",
+        "file": "check-moderation.ts"
+      },
+      {
+        "name": "extractStructuredData",
+        "displayName": "Extract Structured Data",
+        "file": "extract-structured-data.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-google-drive": {
+    "name": "@activepieces/piece-google-drive",
+    "version": "0.5.52",
+    "triggers": [
+      {
+        "name": "new_file",
+        "displayName": "New File",
+        "file": "new-file.ts"
+      },
+      {
+        "name": "google-drive.png",
+        "displayName": "Include File Content",
+        "file": "new-file.ts"
+      },
+      {
+        "name": "new_folder",
+        "displayName": "New Folder",
+        "file": "new-folder.ts"
+      },
+      {
+        "name": "New Folder WOOOO",
+        "displayName": "New Folder WOOOO",
+        "file": "new-folder.ts"
+      }
+    ],
+    "actions": [],
+    "props": [
+      "include_team_drives",
+      "parentFolder"
+    ]
+  },
+  "@activepieces/piece-hubspot": {
+    "name": "@activepieces/piece-hubspot",
+    "version": "0.7.19",
+    "triggers": [
+      {
+        "name": "new-blog-article",
+        "displayName": "New COS Blog Article",
+        "file": "new-blog-article.ts"
+      },
+      {
+        "name": "new-company",
+        "displayName": "New Company",
+        "file": "new-company.ts"
+      },
+      {
+        "name": "Company Name",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-company.ts"
+      },
+      {
+        "name": "new-or-updated-contact",
+        "displayName": "Contact Recently Created or Updated",
+        "file": "new-or-updated-contact.ts"
+      },
+      {
+        "name": "Maria",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-or-updated-contact.ts"
+      },
+      {
+        "name": "Johnson (Sample Contact)",
+        "displayName": "Johnson (Sample Contact)",
+        "file": "new-or-updated-contact.ts"
+      },
+      {
+        "name": "deal-stage-updated",
+        "displayName": "Updated Deal Stage",
+        "file": "deal-stage-updated.ts"
+      },
+      {
+        "name": "Second Deal",
+        "displayName": "Deal Pipeline",
+        "file": "deal-stage-updated.ts"
+      },
+      {
+        "name": "new-line-item",
+        "displayName": "New Line Item",
+        "file": "new-line-item.ts"
+      },
+      {
+        "name": "Chair",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-line-item.ts"
+      },
+      {
+        "name": "new-ticket-property-change",
+        "displayName": "New Ticket Property Change",
+        "file": "new-ticket-property-change.ts"
+      },
+      {
+        "name": "new-contact-in-list",
+        "displayName": "New Contact in List",
+        "file": "new-contact-in-list.ts"
+      },
+      {
+        "name": "Last",
+        "displayName": "Contact List",
+        "file": "new-contact-in-list.ts"
+      },
+      {
+        "name": "First",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-contact-in-list.ts"
+      },
+      {
+        "name": "new-custom-object-property-change",
+        "displayName": "New Custom Object Property Change",
+        "file": "new-custom-object-property-change.ts"
+      },
+      {
+        "name": "Oreo",
+        "displayName": "Oreo",
+        "file": "new-custom-object-property-change.ts"
+      },
+      {
+        "name": "new-task",
+        "displayName": "New Task",
+        "file": "new-task.ts"
+      },
+      {
+        "name": "new-custom-object",
+        "displayName": "New Custom Object",
+        "file": "new-custom-object.ts"
+      },
+      {
+        "name": "Oreo",
+        "displayName": "Oreo",
+        "file": "new-custom-object.ts"
+      },
+      {
+        "name": "new-email-subscriptions-timeline",
+        "displayName": "New Email Subscriptions Timeline",
+        "file": "email-subscriptions-timeline.ts"
+      },
+      {
+        "name": "new-company-property-change",
+        "displayName": "New Company Property Change",
+        "file": "new-company-property-change.ts"
+      },
+      {
+        "name": "Activepieces",
+        "displayName": "Property Name",
+        "file": "new-company-property-change.ts"
+      },
+      {
+        "name": "new-or-updated-product",
+        "displayName": "Product Recently Created or Updated",
+        "file": "new-or-updated-product.ts"
+      },
+      {
+        "name": "Chair",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-or-updated-product.ts"
+      },
+      {
+        "name": "new-ticket",
+        "displayName": "New Ticket",
+        "file": "new-ticket.ts"
+      },
+      {
+        "name": "new-or-updated-line-item",
+        "displayName": "Line Item Recently Created or Updated",
+        "file": "new-or-updated-line-item.ts"
+      },
+      {
+        "name": "Chair",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-or-updated-line-item.ts"
+      },
+      {
+        "name": "new-contact",
+        "displayName": "New Contact",
+        "file": "new-contact.ts"
+      },
+      {
+        "name": "Maria",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-contact.ts"
+      },
+      {
+        "name": "Johnson (Sample Contact)",
+        "displayName": "Johnson (Sample Contact)",
+        "file": "new-contact.ts"
+      },
+      {
+        "name": "new-or-updated-company",
+        "displayName": "Company Recently Created or Updated",
+        "file": "new-or-updated-company.ts"
+      },
+      {
+        "name": "Activepieces",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-or-updated-company.ts"
+      },
+      {
+        "name": "new-form-submission",
+        "displayName": "New Form Submission",
+        "file": "new-form-submission.ts"
+      },
+      {
+        "name": "new-email-event",
+        "displayName": "New Email Event",
+        "file": "new-email-event.ts"
+      },
+      {
+        "name": "new-deal-property-change",
+        "displayName": "New Deal Property Change",
+        "file": "new-deal-property-change.ts"
+      },
+      {
+        "name": "new-product",
+        "displayName": "New Product",
+        "file": "new-product.ts"
+      },
+      {
+        "name": "TEST",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-product.ts"
+      },
+      {
+        "name": "new-engagement",
+        "displayName": "New Engagement",
+        "file": "new-engagement.ts"
+      },
+      {
+        "name": "new-deal",
+        "displayName": "New Deal",
+        "file": "new-deal.ts"
+      },
+      {
+        "name": "test deal",
+        "displayName": "Additional properties to retrieve",
+        "file": "new-deal.ts"
+      },
+      {
+        "name": "new-contact-property-change",
+        "displayName": "New Contact Property Change",
+        "file": "new-contact-property-change.ts"
+      },
+      {
+        "name": "Maria",
+        "displayName": "Property Name",
+        "file": "new-contact-property-change.ts"
+      },
+      {
+        "name": "Johnson (Sample Contact)",
+        "displayName": "Johnson (Sample Contact)",
+        "file": "new-contact-property-change.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "create-contact",
+        "displayName": "Create Contact",
+        "file": "create-contact.ts"
+      },
+      {
+        "name": "get-owner-by-id",
+        "displayName": "Get Owner by ID",
+        "file": "get-owner-by-id.ts"
+      },
+      {
+        "name": "update-company",
+        "displayName": "Update Company",
+        "file": "update-company.ts"
+      },
+      {
+        "name": "update-product",
+        "displayName": "Update Product",
+        "file": "update-product.ts"
+      },
+      {
+        "name": "upload-file",
+        "displayName": "Upload File",
+        "file": "upload-file.ts"
+      },
+      {
+        "name": "get-pipeline-stage-details",
+        "displayName": "Get Pipeline Stage Details",
+        "file": "get-pipeline-stage-details.ts"
+      },
+      {
+        "name": "find-line-item",
+        "displayName": "Find Line Item",
+        "file": "find-line-item.ts"
+      },
+      {
+        "name": "update-line-item",
+        "displayName": "Update Line Item",
+        "file": "update-line-item.ts"
+      },
+      {
+        "name": "update-custome-object",
+        "displayName": "Update Custom Object",
+        "file": "update-custom-object.ts"
+      },
+      {
+        "name": "find-product",
+        "displayName": "Find Product",
+        "file": "find-product.ts"
+      },
+      {
+        "name": "create-company",
+        "displayName": "Create Company",
+        "file": "create-company.ts"
+      },
+      {
+        "name": "find-associations",
+        "displayName": "Find Associations",
+        "file": "find-associations.ts"
+      },
+      {
+        "name": "get-company",
+        "displayName": "Get Company",
+        "file": "get-company.ts"
+      },
+      {
+        "name": "create-blog-post",
+        "displayName": "Create COS Blog Post",
+        "file": "create-blog-post.ts"
+      },
+      {
+        "name": "get-page",
+        "displayName": "Get Page",
+        "file": "get-page.ts"
+      },
+      {
+        "name": "get-owner-by-email",
+        "displayName": "Get Owner by Email",
+        "file": "get-owner-by-email.ts"
+      },
+      {
+        "name": "update-contact",
+        "displayName": "Update Contact",
+        "file": "update-contact.ts"
+      },
+      {
+        "name": "create-line-item",
+        "displayName": "Create Line Item",
+        "file": "create-line-item.ts"
+      },
+      {
+        "name": "create-ticket",
+        "displayName": "Create Ticket",
+        "file": "create-ticket.ts"
+      },
+      {
+        "name": "get-contact",
+        "displayName": "Get Contact",
+        "file": "get-contact.ts"
+      },
+      {
+        "name": "create-or-update-contact",
+        "displayName": "Create or Update Contact",
+        "file": "create-or-update-contact.ts"
+      },
+      {
+        "name": "get-ticket",
+        "displayName": "Get Ticket",
+        "file": "get-ticket.ts"
+      },
+      {
+        "name": "get-line-item",
+        "displayName": "Get Line Item",
+        "file": "get-line-item.ts"
+      },
+      {
+        "name": "create-page",
+        "displayName": "Create Page",
+        "file": "create-page.ts"
+      },
+      {
+        "name": "remove-associations",
+        "displayName": "Remove Associations",
+        "file": "remove-associations.ts"
+      },
+      {
+        "name": "delete-page",
+        "displayName": "Delete Page",
+        "file": "delete-page.ts"
+      },
+      {
+        "name": "create-deal",
+        "displayName": "Create Deal",
+        "file": "create-deal.ts"
+      },
+      {
+        "name": "find-contact",
+        "displayName": "Find Contact",
+        "file": "find-contact.ts"
+      },
+      {
+        "name": "get-custom-object",
+        "displayName": "Get Custom Object",
+        "file": "get-custom-object.ts"
+      },
+      {
+        "name": "get-product",
+        "displayName": "Get Product",
+        "file": "get-product.ts"
+      },
+      {
+        "name": "get-deal",
+        "displayName": "Get Deal",
+        "file": "get-deal.ts"
+      },
+      {
+        "name": "update-ticket",
+        "displayName": "Update Ticket",
+        "file": "update-ticket.ts"
+      },
+      {
+        "name": "create-product",
+        "displayName": "Create Product",
+        "file": "create-product.ts"
+      },
+      {
+        "name": "find-ticket",
+        "displayName": "Find Ticket",
+        "file": "find-ticket.ts"
+      },
+      {
+        "name": "find-company",
+        "displayName": "Find Company",
+        "file": "find-company.ts"
+      },
+      {
+        "name": "create-custome-object",
+        "displayName": "Create Custom Object",
+        "file": "create-custom-object.ts"
+      },
+      {
+        "name": "add-contact-to-workflow",
+        "displayName": "Add Contact to Workflow",
+        "file": "add-contact-to-workflow.ts"
+      },
+      {
+        "name": "remove-email-subscription",
+        "displayName": "Remove Email Subscription",
+        "file": "remove-email-subscription.ts"
+      },
+      {
+        "name": "update-deal",
+        "displayName": "Update Deal",
+        "file": "update-deal.ts"
+      },
+      {
+        "name": "find-custom-object",
+        "displayName": "Find Custom Object",
+        "file": "find-custom-object.ts"
+      },
+      {
+        "name": "add_contact_to_list",
+        "displayName": "Add contact To List",
+        "file": "add-contact-to-list-action.ts"
+      },
+      {
+        "name": "remove-contact-from-list",
+        "displayName": "Remove Contact from List",
+        "file": "remove-contact-from-list.ts"
+      },
+      {
+        "name": "create-associations",
+        "displayName": "Create Associations",
+        "file": "create-associations.ts"
+      },
+      {
+        "name": "find-deal",
+        "displayName": "Find Deal",
+        "file": "find-deal.ts"
+      }
+    ],
+    "props": [
+      "StaticDropdown",
+      "Dropdown"
+    ]
+  },
+  "@activepieces/piece-date-helper": {
+    "name": "@activepieces/piece-date-helper",
+    "version": "0.1.19",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "extract_date_parts",
+        "displayName": "Extract Date Units",
+        "file": "extract-date-parts.ts"
+      },
+      {
+        "name": "add_subtract_date",
+        "displayName": "Add/Subtract Time",
+        "file": "add-subtract-date.ts"
+      },
+      {
+        "name": "get_current_date",
+        "displayName": "Get Current Date",
+        "file": "get-current-date.ts"
+      },
+      {
+        "name": "next_day_of_week",
+        "displayName": "Next Day of Week",
+        "file": "next-day-of-week.ts"
+      },
+      {
+        "name": "next_day_of_year",
+        "displayName": "Next Day of Year",
+        "file": "next-day-of-year.ts"
+      },
+      {
+        "name": "format_date",
+        "displayName": "Format Date",
+        "file": "format-date.ts"
+      },
+      {
+        "name": "date_difference",
+        "displayName": "Date Difference",
+        "file": "date-difference.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-forms": {
+    "name": "@activepieces/piece-forms",
+    "version": "0.4.10",
+    "triggers": [
+      {
+        "name": "form_submission",
+        "displayName": "Web Form",
+        "file": "form-trigger.ts"
+      },
+      {
+        "name": "chat_submission",
+        "displayName": "Chat UI",
+        "file": "chat-trigger.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "return_response",
+        "displayName": "Respond on UI",
+        "file": "return-response.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-webhook": {
+    "name": "@activepieces/piece-webhook",
+    "version": "0.1.25",
+    "triggers": [
+      {
+        "name": "catch_webhook",
+        "displayName": "Catch Webhook",
+        "file": "catch-hook.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "return_response",
+        "displayName": "Return Response",
+        "file": "return-response.ts"
+      },
+      {
+        "name": "return_response_and_wait_for_next_webhook",
+        "displayName": "Respond and Wait for Next Webhook",
+        "file": "return-response-and-wait-for-next-webhook.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-telegram-bot": {
+    "name": "@activepieces/piece-telegram-bot",
+    "version": "0.3.21",
+    "triggers": [],
+    "actions": [],
+    "props": []
+  },
+  "@activepieces/piece-store": {
+    "name": "@activepieces/piece-store",
+    "version": "0.6.10",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "get",
+        "displayName": "Get",
+        "file": "store-get-action.ts"
+      },
+      {
+        "name": "append",
+        "displayName": "Append",
+        "file": "store-append-action.ts"
+      },
+      {
+        "name": "remove_from_list",
+        "displayName": "Remove from List",
+        "file": "store-remove-from-list.ts"
+      },
+      {
+        "name": "remove_value",
+        "displayName": "Remove",
+        "file": "store-remove-value.ts"
+      },
+      {
+        "name": "add_to_list",
+        "displayName": "Add To List",
+        "file": "store-add-to-list.ts"
+      },
+      {
+        "name": "put",
+        "displayName": "Put",
+        "file": "store-put-action.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-http": {
+    "name": "@activepieces/piece-http",
+    "version": "0.9.5",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "send_request",
+        "displayName": "Send HTTP request",
+        "file": "send-http-request-action.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-notion": {
+    "name": "@activepieces/piece-notion",
+    "version": "0.4.13",
+    "triggers": [
+      {
+        "name": "new_comment",
+        "displayName": "New Comment",
+        "file": "new-comment.ts"
+      },
+      {
+        "name": "Activepieces",
+        "displayName": "Activepieces",
+        "file": "new-comment.ts"
+      },
+      {
+        "name": "new_database_item",
+        "displayName": "New Database Item",
+        "file": "new-database-item.ts"
+      },
+      {
+        "name": "Doing",
+        "displayName": "Doing",
+        "file": "new-database-item.ts"
+      },
+      {
+        "name": "updated_database_item",
+        "displayName": "Updated Database Item",
+        "file": "updated-database-item.ts"
+      },
+      {
+        "name": "Doing",
+        "displayName": "Doing",
+        "file": "updated-database-item.ts"
+      },
+      {
+        "name": "updated_page",
+        "displayName": "Updated Page",
+        "file": "updated-page.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "archive_database_item",
+        "displayName": "Archive Database Item",
+        "file": "archive-database-item.ts"
+      },
+      {
+        "name": "add_comment",
+        "displayName": "Add Comment",
+        "file": "add-comment.ts"
+      },
+      {
+        "name": "update_database_item",
+        "displayName": "Update Database Item",
+        "file": "update-database-item.ts"
+      },
+      {
+        "name": "get_page_comments",
+        "displayName": "Get Page Comments",
+        "file": "get-page-comments.ts"
+      },
+      {
+        "name": "getPageOrBlockChildren",
+        "displayName": "Get block content",
+        "file": "get-page-or-block-children.ts"
+      },
+      {
+        "name": "createPage",
+        "displayName": "Create Page",
+        "file": "create-page.ts"
+      },
+      {
+        "name": "restore_database_item",
+        "displayName": "Restore Database Item",
+        "file": "restore-database-item.ts"
+      },
+      {
+        "name": "create_database_item",
+        "displayName": "Create Database Item",
+        "file": "create-database-item.ts"
+      },
+      {
+        "name": "append_to_page",
+        "displayName": "Append to Page",
+        "file": "append-to-page.ts"
+      },
+      {
+        "name": "find_page",
+        "displayName": "Find Page",
+        "file": "find-page.ts"
+      },
+      {
+        "name": "notion-find-database-item",
+        "displayName": "Find Database Item",
+        "file": "find-item.ts"
+      },
+      {
+        "name": "retrieve_database",
+        "displayName": "Retrieve Database Structure",
+        "file": "retrieve-database.ts"
+      }
+    ],
+    "props": [
+      "databaseFields",
+      "database_id",
+      "page",
+      "filterDatabaseFields",
+      "database_item_id",
+      "formula",
+      "archived_database_item_id"
+    ]
+  },
+  "@activepieces/piece-tables": {
+    "name": "@activepieces/piece-tables",
+    "version": "0.2.8",
+    "triggers": [
+      {
+        "name": "deletedRecord",
+        "displayName": "Record Deleted",
+        "file": "deleted-record.ts"
+      },
+      {
+        "name": "newRecord",
+        "displayName": "New Record Created",
+        "file": "new-record.ts"
+      },
+      {
+        "name": "updatedRecord",
+        "displayName": "Record Updated",
+        "file": "updated-record.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "tables-delete-record",
+        "displayName": "Delete Record(s)",
+        "file": "delete-record.ts"
+      },
+      {
+        "name": "tables-find-records",
+        "displayName": "Find Records",
+        "file": "find-records.ts"
+      },
+      {
+        "name": "tables-get-record",
+        "displayName": "Get Record",
+        "file": "get-record.ts"
+      },
+      {
+        "name": "tables-create-records",
+        "displayName": "Create Record(s)",
+        "file": "create-records.ts"
+      },
+      {
+        "name": "tables-update-record",
+        "displayName": "Update Record",
+        "file": "update-record.ts"
+      }
+    ],
+    "props": [
+      "record_id",
+      "table_id"
+    ]
+  },
+  "@activepieces/piece-openai": {
+    "name": "@activepieces/piece-openai",
+    "version": "0.6.7",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "text_to_speech",
+        "displayName": "Text-to-Speech",
+        "file": "text-to-speech.ts"
+      },
+      {
+        "name": "vision_prompt",
+        "displayName": "Vision Prompt",
+        "file": "vision-prompt.ts"
+      },
+      {
+        "name": "ask_assistant",
+        "displayName": "Ask Assistant",
+        "file": "ask-assistant.ts"
+      },
+      {
+        "name": "ask_chatgpt",
+        "displayName": "Ask ChatGPT",
+        "file": "send-prompt.ts"
+      },
+      {
+        "name": "translate",
+        "displayName": "Translate Audio",
+        "file": "translation.ts"
+      },
+      {
+        "name": "transcribe",
+        "displayName": "Transcribe Audio",
+        "file": "transcriptions.ts"
+      },
+      {
+        "name": "generate_image",
+        "displayName": "Generate Image",
+        "file": "generate-image.ts"
+      },
+      {
+        "name": "extract-structured-data",
+        "displayName": "Extract Structured Data from Text",
+        "file": "extract-structure-data.action.ts"
+      },
+      {
+        "name": "extract_structured_data",
+        "displayName": "Model",
+        "file": "extract-structure-data.action.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-salesforce": {
+    "name": "@activepieces/piece-salesforce",
+    "version": "0.2.1",
+    "triggers": [],
+    "actions": [],
+    "props": [
+      "leadSource",
+      "childRelationship",
+      "object",
+      "opportunity",
+      "environment",
+      "owner",
+      "status",
+      "lead",
+      "contact",
+      "recipient",
+      "optionalContact",
+      "report",
+      "record",
+      "field",
+      "account",
+      "parentRecord",
+      "campaign"
+    ]
+  },
+  "@activepieces/piece-pipedrive": {
+    "name": "@activepieces/piece-pipedrive",
+    "version": "0.7.7",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "create-lead",
+        "displayName": "Create Lead",
+        "file": "create-lead.ts"
+      },
+      {
+        "name": "find-deals-associated-with-person",
+        "displayName": "Find Deals Associated With Person",
+        "file": "find-deals-associated-with-person.ts"
+      },
+      {
+        "name": "get-note",
+        "displayName": "Retrieve a Note",
+        "file": "get-note.ts"
+      },
+      {
+        "name": "find-organization",
+        "displayName": "Find Organization",
+        "file": "find-organization.ts"
+      },
+      {
+        "name": "Activepieces Find Organization Filter",
+        "displayName": "Activepieces Find Organization Filter",
+        "file": "find-organization.ts"
+      },
+      {
+        "name": "create-organization",
+        "displayName": "Create Organization",
+        "file": "create-organization.ts"
+      },
+      {
+        "name": "create-person",
+        "displayName": "Create Person",
+        "file": "create-person.ts"
+      },
+      {
+        "name": "find-notes",
+        "displayName": "Find Notes",
+        "file": "find-notes.ts"
+      },
+      {
+        "name": "find-product",
+        "displayName": "Find Product",
+        "file": "find-product.ts"
+      },
+      {
+        "name": "find-products",
+        "displayName": "Find Products",
+        "file": "find-products.ts"
+      },
+      {
+        "name": "update-person",
+        "displayName": "Update Person",
+        "file": "update-person.ts"
+      },
+      {
+        "name": "update-organization",
+        "displayName": "Update Organization",
+        "file": "update-organization.ts"
+      },
+      {
+        "name": "add-labels-to-person",
+        "displayName": "Add Labels to Person",
+        "file": "add-label-to-person.ts"
+      },
+      {
+        "name": "create-note",
+        "displayName": "Create Note",
+        "file": "create-note.ts"
+      },
+      {
+        "name": "create-deal",
+        "displayName": "Create Deal",
+        "file": "create-deal.ts"
+      },
+      {
+        "name": "update-lead",
+        "displayName": "Update Lead",
+        "file": "update-lead.ts"
+      },
+      {
+        "name": "find-user",
+        "displayName": "Find User",
+        "file": "find-user.ts"
+      },
+      {
+        "name": "create-activity",
+        "displayName": "Create Activity",
+        "file": "create-activity.ts"
+      },
+      {
+        "name": "get-product",
+        "displayName": "Retrieve a Product",
+        "file": "get-product.ts"
+      },
+      {
+        "name": "add-product-to-deal",
+        "displayName": "Add Product to Deal",
+        "file": "add-product-to-deal.ts"
+      },
+      {
+        "name": "create-product",
+        "displayName": "Create Product",
+        "file": "create-product.ts"
+      },
+      {
+        "name": "update-deal",
+        "displayName": "Update Deal",
+        "file": "update-deal.ts"
+      },
+      {
+        "name": "attach-file",
+        "displayName": "Attach File",
+        "file": "attach-file.ts"
+      },
+      {
+        "name": "find-person",
+        "displayName": "Find Person",
+        "file": "find-person.ts"
+      },
+      {
+        "name": "Activepieces Find Person Filter",
+        "displayName": "Activepieces Find Person Filter",
+        "file": "find-person.ts"
+      },
+      {
+        "name": "update-activity",
+        "displayName": "Update Activity",
+        "file": "update-activity.ts"
+      },
+      {
+        "name": "find-activity",
+        "displayName": "Find Activity",
+        "file": "find-activity.ts"
+      },
+      {
+        "name": "find-deal",
+        "displayName": "Find Deal",
+        "file": "find-deal.ts"
+      },
+      {
+        "name": "add-follower",
+        "displayName": "Add Follower",
+        "file": "add-follower.ts"
+      }
+    ],
+    "props": [
+      "dealValueCurrency",
+      "dueDate",
+      "dealValue",
+      "isDone",
+      "probability",
+      "address",
+      "busy",
+      "channel",
+      "dueTime",
+      "firstName",
+      "expectedCloseDate",
+      "note",
+      "publicDescription",
+      "leadValue",
+      "lastName",
+      "phone",
+      "creationTime",
+      "marketing_status",
+      "leadValueCurrency",
+      "status",
+      "duration",
+      "email"
+    ]
+  },
+  "@activepieces/piece-data-mapper": {
+    "name": "@activepieces/piece-data-mapper",
+    "version": "0.3.11",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "advanced_mapping",
+        "displayName": "Advanced Mapping",
+        "file": "advanced-mapping.ts"
+      }
+    ],
+    "props": []
+  }
+}
