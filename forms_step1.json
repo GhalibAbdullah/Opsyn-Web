@@ -1,0 +1,134 @@
+{
+  "displayName": "New Response",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "New Response",
+    "settings": {
+      "pieceName": "@activepieces/piece-google-forms",
+      "pieceVersion": "~0.3.13",
+      "triggerName": "new_response",
+      "input": {},
+      "propertySettings": {}
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "PIECE",
+      "valid": true,
+      "displayName": "Business Email Filter",
+      "settings": {
+        "pieceName": "@activepieces/piece-codemash",
+        "pieceVersion": "~0.0.1",
+        "actionName": "run_codemash",
+        "input": {
+          "code": "function isBusinessEmail(email) {\n  const allowedDomains = ['yahoo.com', 'gmail.com', 'outlook.com', 'hotmail.com'];\n  const domain = email.split('@')[1];\n  return !allowedDomains.includes(domain);\n}\n\nmodule.exports = isBusinessEmail;\n",
+          "inputUiInfo": {
+            "customizedInputs": {}
+          }
+        },
+        "propertySettings": {
+          "code": {
+            "type": "MANUAL"
+          },
+          "inputUiInfo": {
+            "type": "MANUAL"
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_2",
+        "type": "ROUTER",
+        "valid": true,
+        "displayName": "Router",
+        "settings": {
+          "executionType": "EXECUTE_FIRST_MATCH",
+          "branches": [
+            {
+              "branchType": "CONDITION",
+              "branchName": "condition_true",
+              "conditions": [
+                [
+                  {
+                    "firstValue": "{{trigger.values.email}}",
+                    "operator": "TEXT_DOES_NOT_CONTAIN",
+                    "secondValue": "yahoo.com"
+                  },
+                  {
+                    "firstValue": "{{trigger.values.email}}",
+                    "operator": "TEXT_DOES_NOT_CONTAIN",
+                    "secondValue": "gmail.com"
+                  },
+                  {
+                    "firstValue": "{{trigger.values.email}}",
+                    "operator": "TEXT_DOES_NOT_CONTAIN",
+                    "secondValue": "outlook.com"
+                  },
+                  {
+                    "firstValue": "{{trigger.values.email}}",
+                    "operator": "TEXT_DOES_NOT_CONTAIN",
+                    "secondValue": "hotmail.com"
+                  }
+                ]
+              ]
+            },
+            {
+              "branchType": "FALLBACK",
+              "branchName": "condition_false"
+            }
+          ],
+          "propertySettings": {}
+        },
+        "children": [
+          {
+            "name": "step_3",
+            "type": "PIECE",
+            "valid": true,
+            "displayName": "send_channel_message",
+            "settings": {
+              "pieceName": "@activepieces/piece-slack",
+              "pieceVersion": "~0.10.16",
+              "actionName": "send_channel_message",
+              "input": {
+                "channel": "#sales",
+                "text": "Notification from send_channel_message"
+              },
+              "propertySettings": {
+                "channel": {
+                  "type": "MANUAL"
+                },
+                "text": {
+                  "type": "MANUAL"
+                }
+              }
+            }
+          },
+          {
+            "name": "step_4",
+            "type": "PIECE",
+            "valid": true,
+            "displayName": "send_channel_message",
+            "settings": {
+              "pieceName": "@activepieces/piece-slack",
+              "pieceVersion": "~0.10.16",
+              "actionName": "send_channel_message",
+              "input": {
+                "channel": "#sales",
+                "text": "Notification from send_channel_message"
+              },
+              "propertySettings": {
+                "channel": {
+                  "type": "MANUAL"
+                },
+                "text": {
+                  "type": "MANUAL"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "schemaVersion": "10"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "New Row Added Trigger Slack Message",
+  "description": "",
+  "tags": [],
+  "pieces": [],
+  "template": {
+    "displayName": "New Row Added Trigger Slack Message",
+    "trigger": {},
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

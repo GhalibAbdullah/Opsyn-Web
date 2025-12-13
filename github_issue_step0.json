@@ -1,0 +1,161 @@
+{
+  "displayName": "New Issue Trigger",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "settings": {
+      "input": {
+        "auth": "{{connections['YtT8zq6Qj7q5d2YtVWx1o']}}",
+        "repository": "org/project",
+        "events": [
+          "issues"
+        ],
+        "owner": "org"
+      },
+      "pieceName": "@activepieces/piece-github",
+      "triggerName": "github_new_issue",
+      "sampleData": {},
+      "pieceVersion": "~0.5.11",
+      "propertySettings": {
+        "auth": {
+          "type": "MANUAL"
+        },
+        "repository": {
+          "type": "MANUAL"
+        },
+        "events": {
+          "type": "MANUAL"
+        },
+        "owner": {
+          "type": "MANUAL"
+        }
+      },
+      "sampleDataSettings": {}
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "ROUTER",
+      "valid": true,
+      "children": [
+        {
+          "name": "step_2",
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+              "message": "{{trigger['issue']['title']}}\n{{trigger['issue']['user']['login']}}\n{{trigger['issue']['html_url']}}",
+              "channel": "C095S3J3U1A",
+              "replyBroadcast": false
+            },
+            "pieceName": "@activepieces/piece-slack",
+            "actionName": "send_channel_message",
+            "sampleData": {},
+            "pieceVersion": "~0.9.4",
+            "propertySettings": {
+              "auth": {
+                "type": "MANUAL"
+              },
+              "message": {
+                "type": "MANUAL"
+              },
+              "channel": {
+                "type": "MANUAL"
+              },
+              "profile": {
+                "type": "MANUAL"
+              },
+              "replyBroadcast": {
+                "type": "MANUAL"
+              }
+            },
+            "sampleDataSettings": {},
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Send Message To A Channel"
+        },
+        null
+      ],
+      "settings": {
+        "branches": [
+          {
+            "branchName": "Bug",
+            "branchType": "CONDITION",
+            "conditions": [
+              [
+                {
+                  "operator": "LIST_CONTAINS",
+                  "firstValue": "{{trigger['issue']['labels']}}",
+                  "secondValue": "bug",
+                  "caseSensitive": false
+                }
+              ]
+            ]
+          },
+          {
+            "branchName": "Otherwise",
+            "branchType": "FALLBACK"
+          }
+        ],
+        "sampleData": {},
+        "executionType": "EXECUTE_FIRST_MATCH"
+      },
+      "nextAction": {
+        "name": "step_3",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+            "message": "{{trigger['issue']['title']}}\n{{trigger['issue']['user']['login']}}\n{{trigger['issue']['html_url']}}",
+            "channel": "C095S3J3U1A",
+            "replyBroadcast": false
+          },
+          "pieceName": "@activepieces/piece-slack",
+          "actionName": "send_channel_message",
+          "sampleData": {},
+          "pieceVersion": "~0.9.4",
+          "propertySettings": {
+            "auth": {
+              "type": "MANUAL"
+            },
+            "message": {
+              "type": "MANUAL"
+            },
+            "channel": {
+              "type": "MANUAL"
+            },
+            "profile": {
+              "type": "MANUAL"
+            },
+            "replyBroadcast": {
+              "type": "MANUAL"
+            }
+          },
+          "sampleDataSettings": {},
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "displayName": "Send Message To A Channel"
+      },
+      "displayName": "Router"
+    },
+    "displayName": "New Issue Trigger"
+  },
+  "schemaVersion": "9"
+}

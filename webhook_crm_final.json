@@ -1,0 +1,263 @@
+{
+  "name": "Webhook Trigger",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-slack",
+    "@activepieces/piece-webhook"
+  ],
+  "template": {
+    "displayName": "Webhook Trigger",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "valid": true,
+      "settings": {
+        "input": {
+          "auth": "{{connections['ZJ68bS5J8oJt6ZtBfWf3l']}}",
+          "endpoint": "/lead"
+        },
+        "pieceName": "@activepieces/piece-webhook",
+        "triggerName": "catch_webhook",
+        "pieceVersion": "~0.1.25",
+        "propertySettings": {
+          "auth": {
+            "type": "MANUAL"
+          },
+          "endpoint": {
+            "type": "MANUAL"
+          }
+        },
+        "sampleDataSettings": {},
+        "errorHandlingOptions": {
+          "retryOnFailure": {
+            "value": false
+          },
+          "continueOnFailure": {
+            "value": false
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "ROUTER",
+        "valid": true,
+        "children": [
+          {
+            "name": "step_2",
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "auth": "{{connections['Yi174h1Yw5v2o7F12Zk9O']}}",
+                "sheetId": 0,
+                "matchCase": false,
+                "columnName": "B",
+                "searchValue": "{{trigger['body']['email']}}",
+                "spreadsheetId": "17f6bR8Rf5qf7KlL7Kx4JiM175X0Z7wX17670f9Yl32Jv66b6",
+                "includeTeamDrives": false
+              },
+              "pieceName": "@activepieces/piece-google-sheets",
+              "actionName": "find_rows",
+              "pieceVersion": "~0.12.20",
+              "propertySettings": {
+                "auth": {
+                  "type": "MANUAL"
+                },
+                "sheetId": {
+                  "type": "MANUAL"
+                },
+                "matchCase": {
+                  "type": "MANUAL"
+                },
+                "columnName": {
+                  "type": "MANUAL"
+                },
+                "searchValue": {
+                  "type": "MANUAL"
+                },
+                "spreadsheetId": {
+                  "type": "MANUAL"
+                },
+                "includeTeamDrives": {
+                  "type": "MANUAL"
+                }
+              },
+              "sampleDataSettings": {},
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_3",
+              "skip": false,
+              "type": "ROUTER",
+              "valid": true,
+              "children": [
+                {
+                  "name": "step_4",
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "auth": "{{connections['Yi174h1Yw5v2o7F12Zk9O']}}",
+                      "rowId": "{{step_2['rows'][0]['row']}}",
+                      "values": {
+                        "A": "{{trigger['body']['name']}}",
+                        "B": "{{trigger['body']['email']}}",
+                        "C": "{{trigger['body']['company']}}",
+                        "D": "{{trigger['body']['source']}}"
+                      }
+                    },
+                    "pieceName": "@activepieces/piece-google-sheets",
+                    "actionName": "update_row",
+                    "pieceVersion": "~0.12.20",
+                    "propertySettings": {
+                      "auth": {
+                        "type": "MANUAL"
+                      },
+                      "rowId": {
+                        "type": "MANUAL"
+                      },
+                      "values": {
+                        "type": "MANUAL"
+                      }
+                    }
+                  },
+                  "displayName": "Update Row"
+                },
+                {
+                  "name": "step_5",
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "auth": "{{connections['Yi174h1Yw5v2o7F12Zk9O']}}",
+                      "row": {
+                        "A": "{{trigger['body']['name']}}",
+                        "B": "{{trigger['body']['email']}}",
+                        "C": "{{trigger['body']['company']}}",
+                        "D": "{{trigger['body']['source']}}"
+                      },
+                      "sheetId": 0,
+                      "spreadsheetId": "17f6bR8Rf5qf7KlL7Kx4JiM175X0Z7wX17670f9Yl32Jv66b6",
+                      "includeTeamDrives": false
+                    },
+                    "pieceName": "@activepieces/piece-google-sheets",
+                    "actionName": "insert_row",
+                    "pieceVersion": "~0.12.20",
+                    "propertySettings": {
+                      "auth": {
+                        "type": "MANUAL"
+                      },
+                      "row": {
+                        "type": "MANUAL"
+                      },
+                      "sheetId": {
+                        "type": "MANUAL"
+                      },
+                      "spreadsheetId": {
+                        "type": "MANUAL"
+                      },
+                      "includeTeamDrives": {
+                        "type": "MANUAL"
+                      }
+                    }
+                  },
+                  "displayName": "Insert Row"
+                }
+              ],
+              "settings": {
+                "branches": [
+                  {
+                    "branchName": "Email Exists",
+                    "branchType": "CONDITION",
+                    "conditions": [
+                      [
+                        {
+                          "operator": "ARRAY_LENGTH_GREATER_THAN",
+                          "firstValue": "{{step_2['rows']}}",
+                          "secondValue": "0"
+                        }
+                      ]
+                    ]
+                  },
+                  {
+                    "branchName": "Otherwise",
+                    "branchType": "FALLBACK"
+                  }
+                ]
+              },
+              "displayName": "step_3"
+            },
+            "displayName": "step_2"
+          }
+        ],
+        "settings": {
+          "branches": [
+            {
+              "branchName": "Email Missing",
+              "branchType": "CONDITION",
+              "conditions": [
+                [
+                  {
+                    "operator": "TEXT_IS_EMPTY",
+                    "firstValue": "{{trigger['body']['email']}}"
+                  }
+                ]
+              ]
+            },
+            {
+              "branchName": "Otherwise",
+              "branchType": "FALLBACK"
+            }
+          ]
+        },
+        "nextAction": {
+          "name": "step_6",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+              "message": "{{#if step_4}}updated existing lead{{else}}created new lead{{/if}}",
+              "channel": "C095S3J3U1A",
+              "replyBroadcast": false
+            },
+            "pieceName": "@activepieces/piece-slack",
+            "actionName": "send_channel_message",
+            "pieceVersion": "~0.10.16",
+            "propertySettings": {
+              "auth": {
+                "type": "MANUAL"
+              },
+              "message": {
+                "type": "MANUAL"
+              },
+              "channel": {
+                "type": "MANUAL"
+              },
+              "replyBroadcast": {
+                "type": "MANUAL"
+              }
+            }
+          },
+          "displayName": "Send Message To A Channel"
+        },
+        "displayName": "Router"
+      },
+      "displayName": "Trigger"
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

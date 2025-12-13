@@ -1,0 +1,75 @@
+{
+  "created": "1766070000000",
+  "updated": "1766070000000",
+  "name": "AI Social Post Generator",
+  "description": "Generates a LinkedIn post draft from a Google Sheet row and saves it back.",
+  "tags": [
+    "ai",
+    "social",
+    "google-sheets"
+  ],
+  "pieces": [
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-openai"
+  ],
+  "template": {
+    "displayName": "AI Social Post Generator",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "New Row in Google Sheets",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "pieceName": "@activepieces/piece-google-sheets",
+        "pieceVersion": "~0.2.1",
+        "input": {
+          "spreadsheet_id": "YOUR_SPREADSHEET_ID",
+          "sheet_id": 0,
+          "connection": "google_sheets_connection"
+        },
+        "triggerName": "new_row"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "pieceName": "@activepieces/piece-openai",
+          "pieceVersion": "~0.6.0",
+          "actionName": "ask_ai",
+          "input": {
+            "model": "gpt-3.5-turbo",
+            "prompt": "You are a professional social media manager. Write a concise, engaging LinkedIn post (max 5 sentences) based on this topic: {{trigger.column_A}}. Start with a relevant emoji.",
+            "connection": "openai_connection"
+          }
+        },
+        "displayName": "Generate LinkedIn Draft (AI)",
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "pieceName": "@activepieces/piece-google-sheets",
+            "pieceVersion": "~0.2.1",
+            "actionName": "update_row",
+            "input": {
+              "spreadsheet_id": "YOUR_SPREADSHEET_ID",
+              "sheet_id": 0,
+              "row_id": "{{trigger.row_id}}",
+              "connection": "google_sheets_connection",
+              "value_column_A": "{{trigger.column_A}}",
+              "value_column_B": "{{steps.step_1.output}}"
+            }
+          },
+          "displayName": "Update Sheet with Draft",
+          "nextAction": null
+        }
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

@@ -1,0 +1,52 @@
+{
+  "name": "New Row Triggered",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-http"
+  ],
+  "template": {
+    "displayName": "New Row Triggered",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "valid": false,
+      "displayName": "New Row Triggered",
+      "settings": {
+        "pieceName": "@activepieces/piece-google-sheets",
+        "pieceVersion": "~1.0.0",
+        "triggerName": "new_row",
+        "input": {
+          "auth": "__TODO_CONNECTION__",
+          "sheetId": 0,
+          "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+          "includeTeamDrives": false,
+          "firstRowHeaders": true,
+          "sheetName": "Leads",
+          "throwErrorOnInvalidId": false,
+          "useHeaderRow": true
+        },
+        "propertySettings": {}
+      },
+      "nextAction": {
+        "name": "step_1",
+        "type": "PIECE",
+        "valid": false,
+        "displayName": "Generated Flow",
+        "settings": {
+          "pieceName": "@activepieces/piece-http",
+          "pieceVersion": "~1.0.0",
+          "actionName": "action",
+          "input": {},
+          "propertySettings": {}
+        }
+      }
+    },
+    "valid": false,
+    "schemaVersion": null,
+    "connectionIds": [],
+    "agentIds": []
+  },
+  "schemaVersion": null
+}

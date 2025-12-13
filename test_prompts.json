@@ -1,0 +1,80 @@
+{
+  "test_prompts": [
+    {
+      "id": 1,
+      "name": "Simple Trigger-Action",
+      "prompt": "When a new row is added to Google Sheets 'Customer Orders', send a Slack message to #orders channel with the customer name and order total.",
+      "expected_features": [
+        "Google Sheets trigger (new_row)",
+        "Slack action (send_channel_message)",
+        "Data access (trigger.values)",
+        "Channel specification"
+      ],
+      "difficulty": "Easy"
+    },
+    {
+      "id": 2,
+      "name": "Conditional Logic (ROUTER)",
+      "prompt": "When a webhook is received, if the 'status' field equals 'urgent', send an email alert to support@company.com, otherwise add the payload to Google Sheets 'Webhook Logs'.",
+      "expected_features": [
+        "Webhook trigger",
+        "ROUTER with conditional logic",
+        "Email action",
+        "Google Sheets action",
+        "Condition checking (status == urgent)"
+      ],
+      "difficulty": "Medium"
+    },
+    {
+      "id": 3,
+      "name": "Schedule Multi-step",
+      "prompt": "Every Monday at 9 AM, get all rows from Google Sheets 'Weekly Tasks', use AI to generate a summary, and post it to Slack #weekly-updates channel.",
+      "expected_features": [
+        "Schedule trigger (every_week)",
+        "Google Sheets action (get rows)",
+        "AI/Code action for summarization",
+        "Slack action",
+        "Multi-step chain"
+      ],
+      "difficulty": "Medium"
+    },
+    {
+      "id": 4,
+      "name": "Form Submission with Enrichment",
+      "prompt": "When a new Google Form response is submitted, check if the email domain is a business email (not gmail.com or yahoo.com), and if it is, send a Slack message to #sales with the form data.",
+      "expected_features": [
+        "Google Forms trigger (new_response)",
+        "CODE action for email validation",
+        "ROUTER with conditional logic",
+        "Slack action",
+        "Data access from form response"
+      ],
+      "difficulty": "Hard"
+    },
+    {
+      "id": 5,
+      "name": "Email Processing",
+      "prompt": "When a new email arrives in Gmail with subject containing 'Invoice', extract the sender email and invoice amount, then create a row in Google Sheets 'Invoices' with the sender email, amount, and current date.",
+      "expected_features": [
+        "Gmail trigger (new_email)",
+        "CODE action for data extraction",
+        "Google Sheets action (insert_row)",
+        "Date handling",
+        "Subject filtering"
+      ],
+      "difficulty": "Hard"
+    }
+  ],
+  "usage_instructions": {
+    "system_prompt": "You are an AI Workflow Builder for OPSYN (Activepieces-based). Return ONLY valid Activepieces flow JSON.",
+    "format": "User request: {prompt}\n\nAssistant: {model_output}",
+    "evaluation_criteria": [
+      "Schema compatibility (has displayName, trigger, schemaVersion)",
+      "Correct action/trigger names",
+      "Proper data access patterns",
+      "Complete structure (all required fields)",
+      "Logic correctness (optional - users can modify)"
+    ]
+  }
+}
+

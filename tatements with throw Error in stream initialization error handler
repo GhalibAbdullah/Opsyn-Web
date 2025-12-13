@@ -1,0 +1,52 @@
+warning: in the working copy of 'packages/pieces/community/agent/src/lib/actions/run-agent.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/packages/pieces/community/agent/src/lib/actions/run-agent.ts b/packages/pieces/community/agent/src/lib/actions/run-agent.ts[m
+[1mindex 54ef78eb73..e415674201 100644[m
+[1m--- a/packages/pieces/community/agent/src/lib/actions/run-agent.ts[m
+[1m+++ b/packages/pieces/community/agent/src/lib/actions/run-agent.ts[m
+[36m@@ -133,7 +133,7 @@[m [mexport const runAgent = createAction({[m
+       result.status = AgentTaskStatus.FAILED[m
+       result.message = `Failed to initialize stream: ${error instanceof Error ? error.message : JSON.stringify(error)}`[m
+       context.output.update({ data: { ...result } })[m
+[31m-      return result[m
+[32m+[m[32m      throw new Error(result.message ?? 'Agent stream initialization failed')[m
+     }[m
+ [m
+     let currentText = ''[m
+[36m@@ -272,7 +272,7 @@[m [mexport const runAgent = createAction({[m
+                 ...result[m
+             }[m
+         })[m
+[31m-        return result[m
+[32m+[m[32m        throw new Error(result.message ?? 'Agent execution failed')[m
+     }[m
+ [m
+     if (currentText.length > 0) {[m
+[36m@@ -290,20 +290,25 @@[m [mexport const runAgent = createAction({[m
+       ...result[m
+     }})[m
+ [m
+[32m+[m[32m    // Note: We don't throw here even if status is FAILED because this represents[m
+[32m+[m[32m    // a "logical" failure (agent didn't complete its task), not an execution error.[m
+[32m+[m[32m    // The agent still ran successfully - it just didn't use mark_as_complete tool.[m
+     return result[m
+     }[m
+     catch (outerError) {[m
+       // Catch any errors that happen outside the inner try-catch[m
+[32m+[m[32m      // These are actual execution errors (API errors, exceptions) that should fail the flow[m
+       const errorResult: AgentResult = {[m
+         prompt: context.propsValue?.prompt || '',[m
+         steps: [],[m
+         status: AgentTaskStatus.FAILED,[m
+         message: outerError instanceof Error [m
+[31m-          ? `Unexpected error: ${outerError.message}${outerError.stack ? '\n' + outerError.stack : ''}`[m
+[32m+[m[32m          ? outerError.message[m
+           : JSON.stringify(outerError, null, 2),[m
+       }[m
+       context.output.update({ data: errorResult })[m
+[31m-      return errorResult[m
+[32m+[m[32m      // Re-throw to mark the flow run as failed[m
+[32m+[m[32m      throw outerError[m
+     }[m
+   }[m
+ });[m
+\ No newline at end of file[m

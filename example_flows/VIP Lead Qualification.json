@@ -1,0 +1,181 @@
+﻿{
+  "created": "1765543969596",
+  "updated": "1765543969596",
+  "name": "VIP Lead Qualification",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-forms",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "VIP Lead Qualification",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "New Response",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "propertySettings": {
+          "form_id": {
+            "type": "MANUAL"
+          },
+          "include_team_drives": {
+            "type": "MANUAL"
+          }
+        },
+        "pieceName": "@activepieces/piece-google-forms",
+        "pieceVersion": "~0.3.13",
+        "input": {
+          "auth": "{{connections['dWhpwBlcpnoCMhhY556Dp']}}",
+          "form_id": "1YbyE0iLMrhP28_pz8-2BIOYXZ10k8fmO_AiaXB2UFPs",
+          "include_team_drives": false
+        },
+        "sampleData": {},
+        "triggerName": "new_response"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "CODE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "form_email": "{{steps.trigger.email}}"
+          },
+          "sampleData": {},
+          "sourceCode": {
+            "code": "export const code = async (inputs) => {\n    // 1. Get the email from the inputs object\n    const email = inputs.form_email; \n\n    // 2. Perform the logic (Lead Qualification)\n    const isBusiness = \n        !email.endsWith(\"@gmail.com\") && \n        !email.endsWith(\"@yahoo.com\");\n        \n    // 3. The return object\n    return { \n        isBusiness: isBusiness \n    };\n};",
+            "packageJson": "{}"
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "ROUTER",
+          "valid": true,
+          "children": [
+            {
+              "name": "step_3",
+              "skip": false,
+              "type": "PIECE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "auth": "{{connections['gIpHPkVZOajol3FdPexdR']}}",
+                  "text": "🚨 VIP Lead Detected!\nName: {{steps.trigger.name}}\nEmail: {{steps.trigger.email}}\nThis lead is a business domain — follow up ASAP!\n",
+                  "blocks": [],
+                  "channel": "C0A2QNA6CVC",
+                  "unfurlLinks": true,
+                  "replyBroadcast": false,
+                  "mentionOriginFlow": false
+                },
+                "pieceName": "@activepieces/piece-slack",
+                "actionName": "send_channel_message",
+                "sampleData": {},
+                "pieceVersion": "~0.10.18",
+                "propertySettings": {
+                  "file": {
+                    "type": "MANUAL"
+                  },
+                  "info": {
+                    "type": "MANUAL"
+                  },
+                  "text": {
+                    "type": "MANUAL"
+                  },
+                  "blocks": {
+                    "type": "MANUAL"
+                  },
+                  "channel": {
+                    "type": "MANUAL"
+                  },
+                  "threadTs": {
+                    "type": "MANUAL"
+                  },
+                  "username": {
+                    "type": "MANUAL"
+                  },
+                  "unfurlLinks": {
+                    "type": "MANUAL"
+                  },
+                  "profilePicture": {
+                    "type": "MANUAL"
+                  },
+                  "replyBroadcast": {
+                    "type": "MANUAL"
+                  },
+                  "mentionOriginFlow": {
+                    "type": "MANUAL"
+                  }
+                },
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": false
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              },
+              "displayName": "Send Message To A Channel"
+            },
+            null,
+            null
+          ],
+          "settings": {
+            "branches": [
+              {
+                "branchName": "Branch 1",
+                "branchType": "CONDITION",
+                "conditions": [
+                  [
+                    {
+                      "operator": "TEXT_EXACTLY_MATCHES",
+                      "firstValue": "{{steps.code.isBusiness}}",
+                      "secondValue": "true",
+                      "caseSensitive": false
+                    }
+                  ]
+                ]
+              },
+              {
+                "branchName": "Branch 2",
+                "branchType": "CONDITION",
+                "conditions": [
+                  [
+                    {
+                      "operator": "TEXT_CONTAINS",
+                      "firstValue": "{{steps.code.isBusiness}}",
+                      "secondValue": "false",
+                      "caseSensitive": false
+                    }
+                  ]
+                ]
+              },
+              {
+                "branchName": "Otherwise",
+                "branchType": "FALLBACK"
+              }
+            ],
+            "sampleData": {},
+            "executionType": "EXECUTE_FIRST_MATCH"
+          },
+          "displayName": "Router"
+        },
+        "displayName": "Code"
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

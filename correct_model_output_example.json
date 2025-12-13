@@ -1,0 +1,41 @@
+{
+  "displayName": "New Google Sheets Row to Slack",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "New Row Added",
+    "settings": {
+      "pieceName": "@activepieces/piece-google-sheets",
+      "pieceVersion": "~0.11.0",
+      "triggerName": "new_row",
+      "input": {
+        "auth": "__TODO_CONNECTION__",
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+        "sheetId": "__TODO_SHEET_ID__",
+        "includeTeamDrives": false,
+        "firstRowHeaders": true
+      },
+      "propertySettings": {}
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "PIECE",
+      "valid": true,
+      "displayName": "Send Slack Message",
+      "settings": {
+        "pieceName": "@activepieces/piece-slack",
+        "pieceVersion": "~0.9.0",
+        "actionName": "send_channel_message",
+        "input": {
+          "auth": "__TODO_CONNECTION__",
+          "channel": "#sales",
+          "text": "🆕 New lead added!\n\nName: {{trigger.values.A}}\nEmail: {{trigger.values.B}}\nCompany: {{trigger.values.C}}"
+        },
+        "propertySettings": {}
+      }
+    }
+  },
+  "schemaVersion": null
+}
+

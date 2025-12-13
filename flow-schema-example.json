@@ -1,0 +1,355 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Activepieces Flow Import Schema",
+  "description": "Schema for IMPORT_FLOW operation request",
+  "type": "object",
+  "required": ["type", "request"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "IMPORT_FLOW"
+    },
+    "request": {
+      "type": "object",
+      "required": ["displayName", "trigger"],
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Flow display name"
+        },
+        "schemaVersion": {
+          "type": ["string", "null"],
+          "description": "Schema version (use null for latest, currently '8')"
+        },
+        "trigger": {
+          "oneOf": [
+            {
+              "type": "object",
+              "title": "EmptyTrigger",
+              "required": ["type", "name", "valid", "displayName", "settings"],
+              "properties": {
+                "type": { "const": "EMPTY" },
+                "name": { "type": "string" },
+                "valid": { "type": "boolean" },
+                "displayName": { "type": "string" },
+                "settings": {},
+                "nextAction": { "$ref": "#/definitions/flowAction" }
+              }
+            },
+            {
+              "type": "object",
+              "title": "PieceTrigger",
+              "required": ["type", "name", "valid", "displayName", "settings"],
+              "properties": {
+                "type": { "const": "PIECE_TRIGGER" },
+                "name": { "type": "string" },
+                "valid": { "type": "boolean" },
+                "displayName": { "type": "string" },
+                "settings": {
+                  "type": "object",
+                  "required": ["pieceName", "pieceVersion", "input", "propertySettings"],
+                  "properties": {
+                    "pieceName": {
+                      "type": "string",
+                      "pattern": "^@activepieces/piece-",
+                      "description": "Piece name, e.g., '@activepieces/piece-webhook'"
+                    },
+                    "pieceVersion": {
+                      "type": "string",
+                      "pattern": "^\\d+\\.\\d+\\.\\d+",
+                      "description": "Semantic version, e.g., '1.0.0'"
+                    },
+                    "triggerName": { "type": "string" },
+                    "input": {
+                      "type": "object",
+                      "description": "Trigger input parameters"
+                    },
+                    "propertySettings": {
+                      "type": "object",
+                      "description": "Property settings"
+                    },
+                    "sampleData": { "type": "object" },
+                    "customLogoUrl": { "type": "string" }
+                  }
+                },
+                "nextAction": { "$ref": "#/definitions/flowAction" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "definitions": {
+    "flowAction": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/codeAction"
+        },
+        {
+          "$ref": "#/definitions/pieceAction"
+        },
+        {
+          "$ref": "#/definitions/loopAction"
+        },
+        {
+          "$ref": "#/definitions/routerAction"
+        }
+      ]
+    },
+    "commonActionProps": {
+      "type": "object",
+      "required": ["name", "valid", "displayName", "type"],
+      "properties": {
+        "name": { "type": "string" },
+        "valid": { "type": "boolean" },
+        "displayName": { "type": "string" },
+        "skip": { "type": "boolean" }
+      }
+    },
+    "codeAction": {
+      "allOf": [
+        { "$ref": "#/definitions/commonActionProps" },
+        {
+          "type": "object",
+          "required": ["type", "settings"],
+          "properties": {
+            "type": { "const": "CODE" },
+            "settings": {
+              "type": "object",
+              "required": ["sourceCode", "input"],
+              "properties": {
+                "sourceCode": {
+                  "type": "object",
+                  "required": ["packageJson", "code"],
+                  "properties": {
+                    "packageJson": { "type": "string" },
+                    "code": { "type": "string" }
+                  }
+                },
+                "input": { "type": "object" },
+                "errorHandlingOptions": {
+                  "type": "object",
+                  "properties": {
+                    "continueOnFailure": {
+                      "type": "object",
+                      "properties": {
+                        "value": { "type": "boolean" }
+                      }
+                    },
+                    "retryOnFailure": {
+                      "type": "object",
+                      "properties": {
+                        "value": { "type": "boolean" }
+                      }
+                    }
+                  }
+                },
+                "sampleData": { "type": "object" },
+                "customLogoUrl": { "type": "string" }
+              }
+            },
+            "nextAction": { "$ref": "#/definitions/flowAction" }
+          }
+        }
+      ]
+    },
+    "pieceAction": {
+      "allOf": [
+        { "$ref": "#/definitions/commonActionProps" },
+        {
+          "type": "object",
+          "required": ["type", "settings"],
+          "properties": {
+            "type": { "const": "PIECE" },
+            "settings": {
+              "type": "object",
+              "required": ["pieceName", "pieceVersion", "input", "propertySettings"],
+              "properties": {
+                "pieceName": {
+                  "type": "string",
+                  "pattern": "^@activepieces/piece-"
+                },
+                "pieceVersion": {
+                  "type": "string",
+                  "pattern": "^\\d+\\.\\d+\\.\\d+"
+                },
+                "actionName": { "type": "string" },
+                "input": { "type": "object" },
+                "propertySettings": { "type": "object" },
+                "errorHandlingOptions": {
+                  "type": "object",
+                  "properties": {
+                    "continueOnFailure": {
+                      "type": "object",
+                      "properties": {
+                        "value": { "type": "boolean" }
+                      }
+                    },
+                    "retryOnFailure": {
+                      "type": "object",
+                      "properties": {
+                        "value": { "type": "boolean" }
+                      }
+                    }
+                  }
+                },
+                "sampleData": { "type": "object" },
+                "customLogoUrl": { "type": "string" }
+              }
+            },
+            "nextAction": { "$ref": "#/definitions/flowAction" }
+          }
+        }
+      ]
+    },
+    "loopAction": {
+      "allOf": [
+        { "$ref": "#/definitions/commonActionProps" },
+        {
+          "type": "object",
+          "required": ["type", "settings"],
+          "properties": {
+            "type": { "const": "LOOP_ON_ITEMS" },
+            "settings": {
+              "type": "object",
+              "required": ["items"],
+              "properties": {
+                "items": { "type": "string" },
+                "sampleData": { "type": "object" },
+                "customLogoUrl": { "type": "string" }
+              }
+            },
+            "firstLoopAction": { "$ref": "#/definitions/flowAction" },
+            "nextAction": { "$ref": "#/definitions/flowAction" }
+          }
+        }
+      ]
+    },
+    "routerAction": {
+      "allOf": [
+        { "$ref": "#/definitions/commonActionProps" },
+        {
+          "type": "object",
+          "required": ["type", "settings", "children"],
+          "properties": {
+            "type": { "const": "ROUTER" },
+            "settings": {
+              "type": "object",
+              "required": ["executionType", "branches"],
+              "properties": {
+                "executionType": {
+                  "type": "string",
+                  "enum": ["EXECUTE_ALL_MATCH", "EXECUTE_FIRST_MATCH"]
+                },
+                "branches": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": ["branchType", "branchName"],
+                        "properties": {
+                          "branchType": { "const": "CONDITION" },
+                          "branchName": { "type": "string" },
+                          "conditions": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": { "$ref": "#/definitions/branchCondition" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": ["branchType", "branchName"],
+                        "properties": {
+                          "branchType": { "const": "FALLBACK" },
+                          "branchName": { "type": "string" }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "sampleData": { "type": "object" },
+                "customLogoUrl": { "type": "string" }
+              }
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "$ref": "#/definitions/flowAction" },
+                  { "type": "null" }
+                ]
+              },
+              "description": "Must have same length as branches array"
+            },
+            "nextAction": { "$ref": "#/definitions/flowAction" }
+          }
+        }
+      ]
+    },
+    "branchCondition": {
+      "type": "object",
+      "required": ["firstValue", "operator"],
+      "properties": {
+        "firstValue": { "type": "string" },
+        "secondValue": { "type": "string" },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "TEXT_CONTAINS",
+            "TEXT_DOES_NOT_CONTAIN",
+            "TEXT_EXACTLY_MATCHES",
+            "TEXT_DOES_NOT_EXACTLY_MATCH",
+            "TEXT_STARTS_WITH",
+            "TEXT_DOES_NOT_START_WITH",
+            "TEXT_ENDS_WITH",
+            "TEXT_DOES_NOT_END_WITH",
+            "NUMBER_IS_GREATER_THAN",
+            "NUMBER_IS_LESS_THAN",
+            "NUMBER_IS_EQUAL_TO",
+            "BOOLEAN_IS_TRUE",
+            "BOOLEAN_IS_FALSE",
+            "DATE_IS_BEFORE",
+            "DATE_IS_EQUAL",
+            "DATE_IS_AFTER",
+            "LIST_CONTAINS",
+            "LIST_DOES_NOT_CONTAIN",
+            "LIST_IS_EMPTY",
+            "LIST_IS_NOT_EMPTY",
+            "EXISTS",
+            "DOES_NOT_EXIST"
+          ]
+        },
+        "caseSensitive": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "enum": [
+                  "EXISTS",
+                  "DOES_NOT_EXIST",
+                  "BOOLEAN_IS_TRUE",
+                  "BOOLEAN_IS_FALSE",
+                  "LIST_IS_EMPTY",
+                  "LIST_IS_NOT_EMPTY"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "secondValue": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+

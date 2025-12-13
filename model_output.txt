@@ -1,0 +1,234 @@
+{
+
+  "flows": [
+
+    {
+
+      "start": "step_1",
+
+      "branches": [
+
+        {
+
+          "continue": "step_2",
+
+          "branch": "step_3"
+
+        },
+
+        {
+
+          "displayName": "Run Google Sheets",
+
+          "type": "google-sheets",
+
+          "firstRowHeaders": true,
+
+          "skipEmptyRows": false,
+
+          "input": {
+
+            "auth": "{{connections['J62V0T6iQ43MxqQ3Za07i']}}",
+
+            "sheetId": 0,
+
+            "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+
+            "includeTeamDrives": false,
+
+            "sheetName": "Leads",
+
+            "throwErrorOnInvalidId": false,
+
+            "useHeaderRow": true
+
+          },
+
+          "nextAction": "step_1",
+
+          "displayName": "Run Google Sheets"
+
+        }
+
+      ],
+
+      "displayName": "New Row Triggered",
+
+      "type": "PIECE_TRIGGER",
+
+      "property": {
+
+        "auth": "{{connections['J62V0T6iQ43MxqQ3Za07i']}}",
+
+        "sheetId": 0,
+
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+
+        "trigger_type": "add",
+
+        "includeTeamDrives": false,
+
+        "firstRowHeaders": true,
+
+        "sheetName": "Leads",
+
+        "throwErrorOnInvalidId": false,
+
+        "useHeaderRow": true
+
+      },
+
+      "firstAction": {
+
+        "continue": "step_3",
+
+        "branch": "step_2"
+
+      },
+
+      "displayName": "New Row Triggered"
+
+    },
+
+    {
+
+      "displayName": "Run Google Sheets",
+
+      "type": "google-sheets",
+
+      "firstRowHeaders": true,
+
+      "skipEmptyRows": false,
+
+      "input": {
+
+        "auth": "{{connections['J62V0T6iQ43MxqQ3Za07i']}}",
+
+        "sheetId": 0,
+
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+
+        "includeTeamDrives": false,
+
+        "sheetName": "Leads",
+
+        "throwErrorOnInvalidId": false,
+
+        "useHeaderRow": true
+
+      },
+
+      "nextAction": "step_3",
+
+      "displayName": "Run Google Sheets"
+
+    },
+
+    {
+
+      "displayName": "Run Google Sheets",
+
+      "type": "google-sheets",
+
+      "firstRowHeaders": true,
+
+      "skipEmptyRows": false,
+
+      "input": {
+
+        "auth": "{{connections['J62V0T6iQ43MxqQ3Za07i']}}",
+
+        "sheetId": 0,
+
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+
+        "includeTeamDrives": false,
+
+        "sheetName": "Leads",
+
+        "throwErrorOnInvalidId": false,
+
+        "useHeaderRow": true
+
+      },
+
+      "nextAction": "step_2",
+
+      "displayName": "Run Google Sheets"
+
+    },
+
+    {
+
+      "displayName": "Run Google Sheets",
+
+      "type": "google-sheets",
+
+      "firstRowHeaders": true,
+
+      "skipEmptyRows": false,
+
+      "input": {
+
+        "auth": "{{connections['J62V0T6iQ43MxqQ3Za07i']}}",
+
+        "sheetId": 0,
+
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+
+        "includeTeamDrives": false,
+
+        "sheetName": "Leads",
+
+        "throwErrorOnInvalidId": false,
+
+        "useHeaderRow": true
+
+      },
+
+      "nextAction": "step_1",
+
+      "displayName": "Run Google Sheets"
+
+    },
+
+    {
+
+      "displayName": "Ask User for Slack Channel ID",
+
+      "type": "PIECE_TRIGGER",
+
+      "firstRowHeaders": false,
+
+      "skipEmptyRows": false,
+
+      "input": {
+
+        "prompt": "Please provide the Slack channel ID where you want to post the lead information. You can find it in the URL of the channel, for example: https://www.slack.com/channels/C045T3B6P9D",
+
+        "maxReruns": 10,
+
+        "failureRetryDelay": "5 second(s)",
+
+        "failureRetryOn": ["invalid-input"],
+
+        "supportedLanguages": ["en"],
+
+        "executionType": "simple",
+
+        "failureMode": "stopFlow",
+
+        "webSearch": false
+
+      },
+
+      "nextAction": "step_4",
+
+      "displayName": "Ask User for Slack Channel ID"
+
+    },
+
+    {
+
+
+

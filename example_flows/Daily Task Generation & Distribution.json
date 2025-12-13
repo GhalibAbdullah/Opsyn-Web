@@ -1,0 +1,168 @@
+﻿{
+  "created": "1765543942419",
+  "updated": "1765543942419",
+  "name": "Daily Task Generation & Distribution",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-schedule",
+    "@activepieces/piece-ai",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "Daily Task Generation & Distribution",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every Day",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "propertySettings": {
+          "timezone": {
+            "type": "MANUAL"
+          },
+          "hour_of_the_day": {
+            "type": "MANUAL"
+          },
+          "run_on_weekends": {
+            "type": "MANUAL"
+          }
+        },
+        "pieceName": "@activepieces/piece-schedule",
+        "pieceVersion": "~0.1.13",
+        "input": {
+          "timezone": "UTC",
+          "hour_of_the_day": 8,
+          "run_on_weekends": false
+        },
+        "sampleData": {},
+        "triggerName": "every_day"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "model": "google/gemini-2.5-flash",
+            "prompt": "Generate a numbered list of 5 routine project management tasks for a CS FYP team today.\nExample:\n1. Review commit logs.",
+            "provider": "activepieces",
+            "webSearch": false,
+            "creativity": 100,
+            "maxOutputTokens": 2000,
+            "webSearchOptions": {}
+          },
+          "pieceName": "@activepieces/piece-ai",
+          "actionName": "askAi",
+          "sampleData": {},
+          "pieceVersion": "~0.0.2",
+          "propertySettings": {
+            "model": {
+              "type": "MANUAL"
+            },
+            "prompt": {
+              "type": "MANUAL"
+            },
+            "provider": {
+              "type": "MANUAL"
+            },
+            "webSearch": {
+              "type": "MANUAL"
+            },
+            "creativity": {
+              "type": "MANUAL"
+            },
+            "conversationKey": {
+              "type": "MANUAL"
+            },
+            "maxOutputTokens": {
+              "type": "MANUAL"
+            },
+            "webSearchOptions": {
+              "type": "MANUAL",
+              "schema": {}
+            }
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['gIpHPkVZOajol3FdPexdR']}}",
+              "text": "Daily Task List:\n{{steps.ask_ai.result}}",
+              "blocks": [],
+              "channel": "C0A2LC1SG2F",
+              "unfurlLinks": true,
+              "replyBroadcast": false,
+              "mentionOriginFlow": false
+            },
+            "pieceName": "@activepieces/piece-slack",
+            "actionName": "send_channel_message",
+            "sampleData": {},
+            "pieceVersion": "~0.10.18",
+            "propertySettings": {
+              "file": {
+                "type": "MANUAL"
+              },
+              "info": {
+                "type": "MANUAL"
+              },
+              "text": {
+                "type": "MANUAL"
+              },
+              "blocks": {
+                "type": "MANUAL"
+              },
+              "channel": {
+                "type": "MANUAL"
+              },
+              "threadTs": {
+                "type": "MANUAL"
+              },
+              "username": {
+                "type": "MANUAL"
+              },
+              "unfurlLinks": {
+                "type": "MANUAL"
+              },
+              "profilePicture": {
+                "type": "MANUAL"
+              },
+              "replyBroadcast": {
+                "type": "MANUAL"
+              },
+              "mentionOriginFlow": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Send Message To A Channel"
+        },
+        "displayName": "Ask AI"
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

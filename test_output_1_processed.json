@@ -1,0 +1,36 @@
+{
+  "displayName": "New Row Added Trigger Slack Message",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "New Row Added Trigger",
+    "settings": {
+      "pieceName": "@activepieces/piece-google-sheets",
+      "pieceVersion": "~0.1.1",
+      "triggerName": "new_row",
+      "input": {
+        "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+        "sheetId": "__TODO_SHEET_ID__"
+      },
+      "propertySettings": {}
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "PIECE",
+      "valid": true,
+      "displayName": "Slack Message",
+      "settings": {
+        "pieceName": "@activepieces/piece-slack",
+        "pieceVersion": "~0.4.0",
+        "actionName": "send_channel_message",
+        "input": {
+          "channel": "#orders",
+          "text": "Notification from send_channel_message"
+        },
+        "propertySettings": {}
+      }
+    }
+  },
+  "schemaVersion": "10"
+}

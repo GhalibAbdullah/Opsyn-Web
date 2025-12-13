@@ -1,0 +1,124 @@
+{
+  "name": "Interview Reminder",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-calendar",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "Interview Reminder",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "valid": true,
+      "settings": {
+        "input": {
+          "auth": "{{connections['oq28sT9YsJg86ZQxM6a4A']}}",
+          "calendar_id": "activepieces.com",
+          "event_to_check": "all_events",
+          "timeZone": "UTC",
+          "search_query": "after:today",
+          "include_team_drives": false
+        },
+        "pieceName": "@activepieces/piece-google-calendar",
+        "triggerName": "new_event",
+        "pieceVersion": "~0.5.12",
+        "propertySettings": {
+          "auth": {
+            "type": "MANUAL"
+          },
+          "calendar_id": {
+            "type": "MANUAL"
+          },
+          "event_to_check": {
+            "type": "MANUAL"
+          },
+          "timeZone": {
+            "type": "MANUAL"
+          },
+          "search_query": {
+            "type": "MANUAL"
+          },
+          "include_team_drives": {
+            "type": "MANUAL"
+          }
+        },
+        "sampleDataSettings": {},
+        "errorHandlingOptions": {
+          "retryOnFailure": {
+            "value": true
+          },
+          "continueOnFailure": {
+            "value": false
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_2",
+        "skip": false,
+        "type": "LOOP_ON_ITEMS",
+        "valid": true,
+        "settings": {
+          "items": "{{trigger['events']}}",
+          "sampleData": {},
+          "propertySettings": {},
+          "sampleDataSettings": {}
+        },
+        "displayName": "Loop on Items",
+        "firstLoopAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+              "text": "🔔 New Interview Reminder!\n\nTitle: {{step_2['item']['summary']}}\nMeeting Link: {{step_2['item']['conferenceData']['entryPoints'][0]['uri']}}",
+              "blocks": [],
+              "channel": "C095S3J3U1A",
+              "replyBroadcast": false
+            },
+            "pieceName": "@activepieces/piece-slack",
+            "actionName": "send_channel_message",
+            "pieceVersion": "~0.10.16",
+            "propertySettings": {
+              "auth": {
+                "type": "MANUAL"
+              },
+              "text": {
+                "type": "MANUAL"
+              },
+              "blocks": {
+                "type": "MANUAL"
+              },
+              "channel": {
+                "type": "MANUAL"
+              },
+              "profile": {
+                "type": "MANUAL"
+              },
+              "replyBroadcast": {
+                "type": "MANUAL"
+              }
+            },
+            "sampleDataSettings": {},
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Send Message To A Channel"
+        }
+      },
+      "displayName": "New Interview Reminder"
+    },
+    "valid": true,
+    "schemaVersion": "9"
+  },
+  "blogUrl": ""
+}

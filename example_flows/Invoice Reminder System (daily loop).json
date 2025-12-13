@@ -1,0 +1,231 @@
+﻿{
+  "created": "1765547239795",
+  "updated": "1765547239795",
+  "name": "Invoice Reminder System (daily loop)",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-schedule",
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-gmail"
+  ],
+  "template": {
+    "displayName": "Invoice Reminder System (daily loop)",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every Day",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "propertySettings": {
+          "timezone": {
+            "type": "MANUAL"
+          },
+          "hour_of_the_day": {
+            "type": "MANUAL"
+          },
+          "run_on_weekends": {
+            "type": "MANUAL"
+          }
+        },
+        "pieceName": "@activepieces/piece-schedule",
+        "pieceVersion": "~0.1.13",
+        "input": {
+          "timezone": "Asia/Karachi",
+          "hour_of_the_day": 9,
+          "run_on_weekends": false
+        },
+        "sampleData": {},
+        "triggerName": "every_day"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "auth": "{{connections['xQVyR5SFP5CdknAW59wZT']}}",
+            "sheetId": 1737238213,
+            "spreadsheetId": "1LY--D0X_T0Or0xUuW2KHLsqi90lhSIePjD3-yddGT0I",
+            "first_row_headers": false,
+            "includeTeamDrives": false
+          },
+          "pieceName": "@activepieces/piece-google-sheets",
+          "actionName": "get-many-rows",
+          "sampleData": {},
+          "pieceVersion": "~0.13.1",
+          "propertySettings": {
+            "sheetId": {
+              "type": "MANUAL"
+            },
+            "spreadsheetId": {
+              "type": "MANUAL"
+            },
+            "first_row_headers": {
+              "type": "MANUAL"
+            },
+            "includeTeamDrives": {
+              "type": "MANUAL"
+            }
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "LOOP_ON_ITEMS",
+          "valid": true,
+          "settings": {
+            "items": "{{steps.get_many_rows.rows}}",
+            "sampleData": {}
+          },
+          "displayName": "Loop on Items",
+          "firstLoopAction": {
+            "name": "step_3",
+            "skip": false,
+            "type": "CODE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "current_row": "{{steps.loop.current_item}}"
+              },
+              "sampleData": {},
+              "sourceCode": {
+                "code": "// input: current_row (object)\nconst row = input.current_row || {};\nconst dueRaw = row.DueDate || row.dueDate || \"\";\nconst status = (row.Status || row.status || \"\").toString().trim().toLowerCase();\nconst lastReminder = row.LastReminderDate || row.lastReminderDate || \"\";\n\nfunction parseDate(s) {\n  if (!s) return null;\n  const d = new Date(s);\n  if (!isNaN(d)) return d;\n  const parts = s.split(/[\\/\\-\\.]/).map(p=>p.trim());\n  if (parts.length===3) {\n    if (parts[0].length===4) return new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);\n    return new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);\n  }\n  return null;\n}\n\nconst dueDate = parseDate(dueRaw);\nconst now = new Date();\nconst today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));\n\nlet needs_remind = false;\nlet reason = \"\";\n\nif (!dueDate) {\n  reason = \"no_due_date\";\n} else if (status === \"paid\") {\n  reason = \"already_paid\";\n} else {\n  const dueOnly = new Date(Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate()));\n  if (dueOnly < today) {\n    if (lastReminder) {\n      const lr = parseDate(lastReminder);\n      if (lr) {\n        const lrOnly = new Date(Date.UTC(lr.getUTCFullYear(), lr.getUTCMonth(), lr.getUTCDate()));\n        if (lrOnly.getTime() === today.getTime()) {\n          needs_remind = false; reason = \"already_reminded_today\";\n        } else { needs_remind = true; reason = \"overdue_not_reminded_today\"; }\n      } else { needs_remind = true; reason = \"overdue_lastReminder_bad_format\"; }\n    } else { needs_remind = true; reason = \"overdue_never_reminded\"; }\n  } else reason = \"not_overdue\";\n}\n\nif (status !== \"unpaid\" && needs_remind) { needs_remind = false; reason = \"status_not_unpaid\"; }\n\nreturn { needs_remind, reason, dueDateParsed: dueDate ? dueDate.toISOString().slice(0,10) : null };",
+                "packageJson": "{}"
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_4",
+              "skip": false,
+              "type": "ROUTER",
+              "valid": true,
+              "children": [
+                {
+                  "name": "step_5",
+                  "skip": false,
+                  "type": "PIECE",
+                  "valid": true,
+                  "settings": {
+                    "input": {
+                      "cc": [],
+                      "bcc": [],
+                      "auth": "{{connections['MmuQWFPUwSTjYyDTgQa8X']}}",
+                      "body": "Hi {{steps.loop.current_item.ClientName}},\nThis is a friendly reminder that your invoice {{steps.loop.current_item.InvoiceID}} \nfor {{steps.loop.current_item.Amount}} was due on {{steps.loop.current_item.DueDate}}.\nPlease make the payment at your earliest convenience.\nThank you,\n[Your Company Name]",
+                      "draft": false,
+                      "subject": "Reminder: Invoice {{steps.loop.current_item.InvoiceID}} Due {{steps.loop.current_item.DueDate}}",
+                      "receiver": [
+                        "{{steps.loop.current_item.ClientEmail}}"
+                      ],
+                      "reply_to": [],
+                      "body_type": "plain_text",
+                      "attachments": []
+                    },
+                    "pieceName": "@activepieces/piece-gmail",
+                    "actionName": "send_email",
+                    "sampleData": {},
+                    "pieceVersion": "~0.9.6",
+                    "propertySettings": {
+                      "cc": {
+                        "type": "MANUAL"
+                      },
+                      "bcc": {
+                        "type": "MANUAL"
+                      },
+                      "body": {
+                        "type": "MANUAL"
+                      },
+                      "from": {
+                        "type": "MANUAL"
+                      },
+                      "draft": {
+                        "type": "MANUAL"
+                      },
+                      "subject": {
+                        "type": "MANUAL"
+                      },
+                      "receiver": {
+                        "type": "MANUAL"
+                      },
+                      "reply_to": {
+                        "type": "MANUAL"
+                      },
+                      "body_type": {
+                        "type": "MANUAL"
+                      },
+                      "attachments": {
+                        "type": "MANUAL"
+                      },
+                      "in_reply_to": {
+                        "type": "MANUAL"
+                      },
+                      "sender_name": {
+                        "type": "MANUAL"
+                      }
+                    },
+                    "errorHandlingOptions": {
+                      "retryOnFailure": {
+                        "value": false
+                      },
+                      "continueOnFailure": {
+                        "value": false
+                      }
+                    }
+                  },
+                  "displayName": "Send Email"
+                },
+                null
+              ],
+              "settings": {
+                "branches": [
+                  {
+                    "branchName": "Branch 1",
+                    "branchType": "CONDITION",
+                    "conditions": [
+                      [
+                        {
+                          "operator": "TEXT_EXACTLY_MATCHES",
+                          "firstValue": "{{steps.code.needs_remind}}",
+                          "secondValue": "true",
+                          "caseSensitive": false
+                        }
+                      ]
+                    ]
+                  },
+                  {
+                    "branchName": "Otherwise",
+                    "branchType": "FALLBACK"
+                  }
+                ],
+                "sampleData": {},
+                "executionType": "EXECUTE_FIRST_MATCH"
+              },
+              "displayName": "Router"
+            },
+            "displayName": "Code"
+          }
+        },
+        "displayName": "Get Many Rows"
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

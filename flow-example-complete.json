@@ -1,0 +1,56 @@
+{
+  "type": "IMPORT_FLOW",
+  "request": {
+    "displayName": "Example Flow with Webhook and HTTP Action",
+    "schemaVersion": null,
+    "trigger": {
+      "type": "PIECE_TRIGGER",
+      "name": "trigger_webhook_1",
+      "valid": true,
+      "displayName": "Webhook Trigger",
+      "settings": {
+        "pieceName": "@activepieces/piece-webhook",
+        "pieceVersion": "1.0.0",
+        "triggerName": "webhook",
+        "input": {},
+        "propertySettings": {}
+      },
+      "nextAction": {
+        "type": "PIECE",
+        "name": "action_http_1",
+        "valid": true,
+        "displayName": "Send HTTP Request",
+        "settings": {
+          "pieceName": "@activepieces/piece-http",
+          "pieceVersion": "1.0.0",
+          "actionName": "send_request",
+          "input": {
+            "url": "https://api.example.com/webhook",
+            "method": "POST",
+            "body": {
+              "message": "Hello from Activepieces"
+            }
+          },
+          "propertySettings": {}
+        },
+        "nextAction": {
+          "type": "CODE",
+          "name": "action_code_1",
+          "valid": true,
+          "displayName": "Process Response",
+          "settings": {
+            "sourceCode": {
+              "packageJson": "{\"name\":\"process-response\",\"version\":\"1.0.0\"}",
+              "code": "export const processResponse = async (response) => {\n  return {\n    processed: true,\n    data: response.body\n  }\n}"
+            },
+            "input": {
+              "response": "{{action_http_1.body}}"
+            },
+            "propertySettings": {}
+          }
+        }
+      }
+    }
+  }
+}
+

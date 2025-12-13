@@ -1,0 +1,104 @@
+{
+  "created": "1766070002000",
+  "updated": "1766070002000",
+  "name": "Daily Website Health Check",
+  "description": "Pings a URL daily and alerts Slack if the status is not 200.",
+  "tags": [
+    "schedule",
+    "http",
+    "slack"
+  ],
+  "pieces": [
+    "@activepieces/piece-schedule",
+    "@activepieces/piece-http",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "Daily Website Health Check",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every Day at 8 AM",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "pieceName": "@activepieces/piece-schedule",
+        "pieceVersion": "~0.1.13",
+        "input": {
+          "timezone": "Europe/London",
+          "hour_of_the_day": 8,
+          "run_on_weekends": true
+        },
+        "triggerName": "every_day"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "pieceName": "@activepieces/piece-http",
+          "pieceVersion": "~0.3.0",
+          "actionName": "send_request",
+          "input": {
+            "method": "GET",
+            "url": "https://yourcriticalwebsite.com/health"
+          }
+        },
+        "displayName": "HTTP Health Check",
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "ROUTER",
+          "valid": true,
+          "steps": [
+            {
+              "name": "step_3",
+              "skip": false,
+              "type": "PIECE",
+              "valid": true,
+              "settings": {
+                "pieceName": "@activepieces/piece-slack",
+                "pieceVersion": "~0.1.20",
+                "actionName": "send_message",
+                "input": {
+                  "channel": "#devops-alerts",
+                  "text": "🚨 **CRITICAL ALERT:** Website Health Check Failed!\n\n**URL:** https://yourcriticalwebsite.com/health\n**Status Code:** {{steps.step_1.status}}",
+                  "connection": "slack_connection"
+                }
+              },
+              "displayName": "Send Slack Alert"
+            },
+            null
+          ],
+          "settings": {
+            "branches": [
+              {
+                "branchName": "Failure Alert",
+                "branchType": "CONDITION",
+                "conditions": [
+                  [
+                    {
+                      "operator": "NOT_EXACTLY_MATCHES",
+                      "firstValue": "{{steps.step_1.status}}",
+                      "secondValue": "200",
+                      "caseSensitive": false
+                    }
+                  ]
+                ]
+              },
+              {
+                "branchName": "Otherwise (Success)",
+                "branchType": "FALLBACK"
+              }
+            ],
+            "executionType": "EXECUTE_FIRST_MATCH"
+          },
+          "displayName": "Router"
+        }
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

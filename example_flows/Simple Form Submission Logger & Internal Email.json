@@ -1,0 +1,72 @@
+{
+  "created": "1766070003000",
+  "updated": "1766070003000",
+  "name": "Form Submission Logger and Email",
+  "description": "Logs a webhook submission to Google Sheets and sends an internal email.",
+  "tags": [
+    "webhook",
+    "google-sheets",
+    "gmail"
+  ],
+  "pieces": [
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-gmail"
+  ],
+  "template": {
+    "displayName": "Form Submission Logger and Email",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Webhook",
+      "type": "WEBHOOK",
+      "settings": {
+        "method": "POST",
+        "retryOnFailure": false,
+        "payload": {}
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "pieceName": "@activepieces/piece-google-sheets",
+          "pieceVersion": "~0.2.1",
+          "actionName": "insert_row",
+          "input": {
+            "spreadsheet_id": "YOUR_SPREADSHEET_ID",
+            "sheet_id": 0,
+            "connection": "google_sheets_connection",
+            "value_column_A": "{{trigger.body.name}}",
+            "value_column_B": "{{trigger.body.email}}",
+            "value_column_C": "{{trigger.body.message}}"
+          }
+        },
+        "displayName": "Log to Google Sheets",
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "pieceName": "@activepieces/piece-gmail",
+            "pieceVersion": "~0.3.5",
+            "actionName": "send_email",
+            "input": {
+              "subject": "New Form Submission from {{trigger.body.name}}",
+              "to": "support@yourcompany.com",
+              "body_type": "HTML",
+              "body": "A new form submission has been received:\n\n**Name:** {{trigger.body.name}}\n**Email:** {{trigger.body.email}}\n**Message:** {{trigger.body.message}}\n\n*Logged to Google Sheets.*",
+              "connection": "gmail_connection"
+            }
+          },
+          "displayName": "Send Internal Email",
+          "nextAction": null
+        }
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

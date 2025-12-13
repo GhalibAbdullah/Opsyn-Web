@@ -1,0 +1,110 @@
+﻿{
+  "created": "1765537011660",
+  "updated": "1765537011661",
+  "name": "Daily Slack Reminder",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-schedule",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "Daily Slack Reminder",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every Day",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "propertySettings": {
+          "timezone": {
+            "type": "MANUAL"
+          },
+          "hour_of_the_day": {
+            "type": "MANUAL"
+          },
+          "run_on_weekends": {
+            "type": "MANUAL"
+          }
+        },
+        "pieceName": "@activepieces/piece-schedule",
+        "pieceVersion": "~0.1.13",
+        "input": {
+          "timezone": "UTC",
+          "hour_of_the_day": 9,
+          "run_on_weekends": false
+        },
+        "sampleData": {},
+        "triggerName": "every_day"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "auth": "{{connections['gIpHPkVZOajol3FdPexdR']}}",
+            "text": "Good morning! Time for team check-ins.",
+            "blocks": [],
+            "channel": "C0A2LC1SG2F",
+            "unfurlLinks": true,
+            "replyBroadcast": false,
+            "mentionOriginFlow": false
+          },
+          "pieceName": "@activepieces/piece-slack",
+          "actionName": "send_channel_message",
+          "sampleData": {},
+          "pieceVersion": "~0.10.18",
+          "propertySettings": {
+            "file": {
+              "type": "MANUAL"
+            },
+            "info": {
+              "type": "MANUAL"
+            },
+            "text": {
+              "type": "MANUAL"
+            },
+            "blocks": {
+              "type": "MANUAL"
+            },
+            "channel": {
+              "type": "MANUAL"
+            },
+            "threadTs": {
+              "type": "MANUAL"
+            },
+            "username": {
+              "type": "MANUAL"
+            },
+            "unfurlLinks": {
+              "type": "MANUAL"
+            },
+            "profilePicture": {
+              "type": "MANUAL"
+            },
+            "replyBroadcast": {
+              "type": "MANUAL"
+            },
+            "mentionOriginFlow": {
+              "type": "MANUAL"
+            }
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "displayName": "Send Message To A Channel"
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

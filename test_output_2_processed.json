@@ -1,0 +1,95 @@
+{
+  "displayName": "Webhook Trigger Conditional Email Or Insert Row",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "Webhook Trigger",
+    "settings": {
+      "pieceName": "@activepieces/piece-webhook",
+      "pieceVersion": "~0.0.1",
+      "triggerName": "catch_webhook",
+      "input": {},
+      "propertySettings": {}
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "ROUTER",
+      "valid": true,
+      "displayName": "Check Status",
+      "settings": {
+        "executionType": "EXECUTE_FIRST_MATCH",
+        "conditions": [
+          [
+            {
+              "firstValue": "{{trigger.body.status}}",
+              "operator": "TEXT_IS_EXACTLY",
+              "secondValue": "urgent"
+            }
+          ]
+        ],
+        "branches": [
+          {
+            "branchType": "CONDITION",
+            "branchName": "Branch 1",
+            "conditions": [
+              [
+                {
+                  "firstValue": "{{trigger.body.status}}",
+                  "operator": "TEXT_IS_EXACTLY",
+                  "secondValue": "urgent"
+                }
+              ]
+            ]
+          },
+          {
+            "branchType": "FALLBACK",
+            "branchName": "Otherwise"
+          }
+        ],
+        "input": {},
+        "propertySettings": {}
+      },
+      "children": [
+        {
+          "name": "step_2",
+          "type": "PIECE",
+          "valid": true,
+          "displayName": "send_email",
+          "settings": {
+            "pieceName": "@activepieces/piece-gmail",
+            "pieceVersion": "~0.0.1",
+            "actionName": "compose_and_send_email",
+            "input": {
+              "receiver": [
+                "support@company.com"
+              ],
+              "subject": "Notification",
+              "body": "This is a notification.",
+              "body_type": "plain_text"
+            },
+            "propertySettings": {}
+          }
+        },
+        {
+          "name": "step_3",
+          "type": "PIECE",
+          "valid": true,
+          "displayName": "insert_row",
+          "settings": {
+            "pieceName": "@activepieces/piece-google-sheets",
+            "pieceVersion": "~0.1.1",
+            "actionName": "insert_row",
+            "input": {
+              "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+              "sheetId": "__TODO_SHEET_ID__",
+              "values": "{{trigger.body}}"
+            },
+            "propertySettings": {}
+          }
+        }
+      ]
+    }
+  },
+  "schemaVersion": "10"
+}

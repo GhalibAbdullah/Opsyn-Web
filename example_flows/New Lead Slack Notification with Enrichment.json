@@ -1,0 +1,53 @@
+{
+  "created": "1766070001000",
+  "updated": "1766070001000",
+  "name": "HubSpot New Lead Alert",
+  "description": "Sends a notification to the sales team on Slack when a new contact is created.",
+  "tags": [
+    "hubspot",
+    "slack",
+    "crm"
+  ],
+  "pieces": [
+    "@activepieces/piece-hubspot",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "HubSpot New Lead Alert",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "New Contact",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "pieceName": "@activepieces/piece-hubspot",
+        "pieceVersion": "~0.3.0",
+        "input": {
+          "connection": "hubspot_connection"
+        },
+        "triggerName": "new_contact"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "pieceName": "@activepieces/piece-slack",
+          "pieceVersion": "~0.1.20",
+          "actionName": "send_message",
+          "input": {
+            "channel": "#sales-new-leads",
+            "text": "🎉 **New Lead in HubSpot!**\n\n- **Name:** {{trigger.properties.firstname}} {{trigger.properties.lastname}}\n- **Email:** {{trigger.properties.email}}\n- **Company:** {{trigger.properties.company}}\n- **Link:** [View Contact](https://app.hubspot.com/contacts/{{trigger.portalId}}/contact/{{trigger.id}})",
+            "connection": "slack_connection"
+          }
+        },
+        "displayName": "Post to Slack",
+        "nextAction": null
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

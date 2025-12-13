@@ -1,0 +1,162 @@
+﻿{
+  "created": "1765536556031",
+  "updated": "1765536556031",
+  "name": "Grading & Feedback Automation",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-forms",
+    "@activepieces/piece-ai",
+    "@activepieces/piece-google-sheets"
+  ],
+  "template": {
+    "displayName": "Grading & Feedback Automation",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "New Response",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "propertySettings": {
+          "form_id": {
+            "type": "MANUAL"
+          },
+          "include_team_drives": {
+            "type": "MANUAL"
+          }
+        },
+        "pieceName": "@activepieces/piece-google-forms",
+        "pieceVersion": "~0.3.13",
+        "input": {
+          "auth": "{{connections['dWhpwBlcpnoCMhhY556Dp']}}",
+          "form_id": "1kWBus1eY-ZY77cpGJptgJTC7jYk1LlKMXEFniBwaeaI",
+          "include_team_drives": false
+        },
+        "sampleData": {},
+        "triggerName": "new_response"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "model": "google/gemini-2.0-flash-001",
+            "prompt": "You are a TA. Grade the following student submission on a scale of 0 to 10 and provide 2 sentences of critical feedback. Submission:{{steps.trigger.answers[\"47f85747\"].textAnswers.answers[0].value}}",
+            "provider": "activepieces",
+            "webSearch": false,
+            "creativity": 100,
+            "maxOutputTokens": 2000,
+            "webSearchOptions": {}
+          },
+          "pieceName": "@activepieces/piece-ai",
+          "actionName": "askAi",
+          "sampleData": {},
+          "pieceVersion": "~0.0.2",
+          "propertySettings": {
+            "model": {
+              "type": "MANUAL"
+            },
+            "prompt": {
+              "type": "MANUAL"
+            },
+            "provider": {
+              "type": "MANUAL"
+            },
+            "webSearch": {
+              "type": "MANUAL"
+            },
+            "creativity": {
+              "type": "MANUAL"
+            },
+            "conversationKey": {
+              "type": "MANUAL"
+            },
+            "maxOutputTokens": {
+              "type": "MANUAL"
+            },
+            "webSearchOptions": {
+              "type": "MANUAL",
+              "schema": {}
+            }
+          },
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['xQVyR5SFP5CdknAW59wZT']}}",
+              "values": {
+                "values": [
+                  "{{steps.trigger.answers[\"1e420cfb\"].textAnswers.answers[0].value}}",
+                  "{{steps.ai.output}}"
+                ]
+              },
+              "sheetId": 0,
+              "as_string": false,
+              "spreadsheetId": "1f1Gug4XFDGYB0jx_FaAzOTLznXyW_rw3G2PG_uznIO0",
+              "first_row_headers": false,
+              "includeTeamDrives": false
+            },
+            "pieceName": "@activepieces/piece-google-sheets",
+            "actionName": "insert_row",
+            "sampleData": {},
+            "pieceVersion": "~0.13.1",
+            "propertySettings": {
+              "values": {
+                "type": "MANUAL",
+                "schema": {
+                  "values": {
+                    "type": "ARRAY",
+                    "required": true,
+                    "displayName": "Values"
+                  }
+                }
+              },
+              "sheetId": {
+                "type": "MANUAL"
+              },
+              "as_string": {
+                "type": "MANUAL"
+              },
+              "spreadsheetId": {
+                "type": "MANUAL"
+              },
+              "first_row_headers": {
+                "type": "MANUAL"
+              },
+              "includeTeamDrives": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Insert Row"
+        },
+        "displayName": "Ask AI"
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

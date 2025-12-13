@@ -1,0 +1,61 @@
+{
+  "name": "New Row Added Trigger Slack Message",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-slack"
+  ],
+  "template": {
+    "displayName": "New Row Added Trigger Slack Message",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "valid": true,
+      "displayName": "New Row Added Trigger",
+      "settings": {
+        "pieceName": "@activepieces/piece-google-sheets",
+        "pieceVersion": "~0.2.1",
+        "triggerName": "new_row",
+        "input": {
+          "spreadsheet_id": "__TODO_SPREADSHEET_ID__",
+          "sheet_id": "__TODO_SHEET_ID__"
+        },
+        "propertySettings": {
+          "spreadsheet_id": {
+            "type": "MANUAL"
+          },
+          "sheet_id": {
+            "type": "MANUAL"
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_1",
+        "type": "PIECE",
+        "valid": true,
+        "displayName": "Slack Message",
+        "settings": {
+          "pieceName": "@activepieces/piece-slack",
+          "pieceVersion": "~0.10.18",
+          "actionName": "send_channel_message",
+          "input": {
+            "channel": "#orders",
+            "text": "Notification from send_channel_message"
+          },
+          "propertySettings": {
+            "channel": {
+              "type": "MANUAL"
+            },
+            "text": {
+              "type": "MANUAL"
+            }
+          }
+        }
+      }
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

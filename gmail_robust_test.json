@@ -1,0 +1,77 @@
+{
+  "displayName": "New Email Arrival",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "New Email Arrival",
+    "settings": {
+      "pieceName": "@activepieces/piece-gmail",
+      "pieceVersion": "~0.9.6",
+      "triggerName": "gmail_new_email_received",
+      "input": {
+        "label": "No label",
+        "category": "primary"
+      },
+      "propertySettings": {
+        "label": {
+          "type": "MANUAL"
+        },
+        "category": {
+          "type": "MANUAL"
+        }
+      }
+    },
+    "nextAction": {
+      "name": "step_1",
+      "type": "PIECE",
+      "valid": true,
+      "displayName": "Extract Data",
+      "settings": {
+        "pieceName": "@activepieces/piece-data-mapper",
+        "pieceVersion": "~0.3.11",
+        "actionName": "advanced_mapping",
+        "input": {
+          "mapping": {
+            "email": "{{trigger.message.from[0].text}}",
+            "amount": "{{trigger.message.subject}}",
+            "sender": "{{trigger.message.date}}"
+          }
+        },
+        "propertySettings": {
+          "mapping": {
+            "type": "MANUAL"
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_2",
+        "type": "PIECE",
+        "valid": true,
+        "displayName": "Insert Row",
+        "settings": {
+          "pieceName": "@activepieces/piece-google-sheets",
+          "pieceVersion": "~0.12.20",
+          "actionName": "insert_row",
+          "input": {
+            "spreadsheetId": "__TODO_SPREADSHEET_ID__",
+            "sheetId": "__TODO_SHEET_ID__",
+            "values": "{{step_1}}"
+          },
+          "propertySettings": {
+            "spreadsheetId": {
+              "type": "MANUAL"
+            },
+            "sheetId": {
+              "type": "MANUAL"
+            },
+            "values": {
+              "type": "MANUAL"
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "10"
+}

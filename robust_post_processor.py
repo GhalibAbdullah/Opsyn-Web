@@ -16,6 +16,13 @@ import re
 from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 
+# Try to import embedding matcher (optional fallback)
+try:
+    from embedding_matcher import EmbeddingMatcher
+    EMBEDDING_AVAILABLE = True
+except ImportError:
+    EMBEDDING_AVAILABLE = False
+
 
 class NameMatcher:
     """
@@ -514,6 +521,15 @@ class PieceRegistry:
             "sendChannelMessage": "send_channel_message",
             "post_message": "send_channel_message",
             "postMessage": "send_channel_message",
+            "notify_channel": "send_channel_message",
+            "notifyChannel": "send_channel_message",
+            "notify": "send_channel_message",
+            "alert_channel": "send_channel_message",
+            "alertChannel": "send_channel_message",
+            "broadcast": "send_channel_message",
+            "broadcast_message": "send_channel_message",
+            "post_to_channel": "send_channel_message",
+            "postToChannel": "send_channel_message",
             "send_dm": "send_direct_message",
             "sendDm": "send_direct_message",
             "send_direct": "send_direct_message",
@@ -682,9 +698,19 @@ class RobustFlowPostProcessor:
     - UI field cleanup
     """
     
-    def __init__(self, target_schema_version: str = "10"):
+    def __init__(self, target_schema_version: str = "10", use_embeddings: bool = True):
         self.target_schema_version = target_schema_version
         self.registry = PieceRegistry()
+        
+        # Initialize embedding matcher if available and requested
+        self.embedding_matcher = None
+        if use_embeddings and EMBEDDING_AVAILABLE:
+            try:
+                self.embedding_matcher = EmbeddingMatcher(threshold=0.7)
+                if not self.embedding_matcher.is_available():
+                    self.embedding_matcher = None
+            except Exception:
+                self.embedding_matcher = None
     
     def process(self, flow_json: Dict[str, Any]) -> Dict[str, Any]:
         """Process a flow JSON object and fix all issues."""
@@ -838,6 +864,7 @@ class RobustFlowPostProcessor:
         Fix trigger name using multiple strategies:
         1. Hardcoded fixes (fastest)
         2. Piece registry lookup with robust pattern matching
+        3. Embedding-based semantic matching (fallback)
         """
         # First, try hardcoded fixes (common variations)
         if piece_name in self.registry.TRIGGER_FIXES:
@@ -846,6 +873,7 @@ class RobustFlowPostProcessor:
                 return fixes[trigger_name]
         
         # Then, try piece registry with robust matching
+        available_triggers = []
         try:
             registry_path = Path(__file__).parent / "piece_registry.json"
             if registry_path.exists():
@@ -867,10 +895,23 @@ class RobustFlowPostProcessor:
                         best_match, score = match
                         # Log for debugging (can be removed later)
                         if trigger_name != best_match:
-                            print(f"  ℹ️  Fixed trigger: '{trigger_name}' → '{best_match}' (score: {score:.2f})")
+                            print(f"  ℹ️  Fixed trigger: '{trigger_name}' → '{best_match}' (pattern: {score:.2f})")
                         return best_match
         except Exception as e:
-            pass  # Fall back to original if registry lookup fails
+            pass  # Continue to embedding fallback
+        
+        # Fallback: Embedding-based semantic matching
+        if self.embedding_matcher and available_triggers:
+            emb_match = self.embedding_matcher.find_best_match(
+                trigger_name,
+                available_triggers,
+                context=piece_name
+            )
+            if emb_match:
+                best_match, score = emb_match
+                if trigger_name != best_match:
+                    print(f"  ℹ️  Fixed trigger: '{trigger_name}' → '{best_match}' (embedding: {score:.2f})")
+                return best_match
         
         return trigger_name
     
@@ -879,6 +920,7 @@ class RobustFlowPostProcessor:
         Fix action name using multiple strategies:
         1. Hardcoded fixes (fastest)
         2. Piece registry lookup with robust pattern matching
+        3. Embedding-based semantic matching (fallback)
         """
         # First, try hardcoded fixes (common variations)
         if piece_name in self.registry.ACTION_FIXES:
@@ -887,6 +929,7 @@ class RobustFlowPostProcessor:
                 return fixes[action_name]
         
         # Then, try piece registry with robust matching
+        available_actions = []
         try:
             registry_path = Path(__file__).parent / "piece_registry.json"
             if registry_path.exists():
@@ -908,10 +951,23 @@ class RobustFlowPostProcessor:
                         best_match, score = match
                         # Log for debugging (can be removed later)
                         if action_name != best_match:
-                            print(f"  ℹ️  Fixed action: '{action_name}' → '{best_match}' (score: {score:.2f})")
+                            print(f"  ℹ️  Fixed action: '{action_name}' → '{best_match}' (pattern: {score:.2f})")
                         return best_match
         except Exception as e:
-            pass  # Fall back to original if registry lookup fails
+            pass  # Continue to embedding fallback
+        
+        # Fallback: Embedding-based semantic matching
+        if self.embedding_matcher and available_actions:
+            emb_match = self.embedding_matcher.find_best_match(
+                action_name,
+                available_actions,
+                context=piece_name
+            )
+            if emb_match:
+                best_match, score = emb_match
+                if action_name != best_match:
+                    print(f"  ℹ️  Fixed action: '{action_name}' → '{best_match}' (embedding: {score:.2f})")
+                return best_match
         
         return action_name
     

@@ -1,0 +1,216 @@
+{
+  "name": "Create Invoice Log",
+  "description": "",
+  "tags": [],
+  "pieces": [
+    "@activepieces/piece-gmail",
+    "@activepieces/piece-google-drive",
+    "@activepieces/piece-google-sheets",
+    "@activepieces/piece-store"
+  ],
+  "template": {
+    "displayName": "Create Invoice Log",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "valid": true,
+      "settings": {
+        "input": {
+          "auth": "{{connections['u5sOQy5wUx3kq3s4vqCwR']}}",
+          "label_name": "inbox",
+          "activity_scope": "all",
+          "include_team_drives": false
+        },
+        "pieceName": "@activepieces/piece-gmail",
+        "triggerName": "gmail_new_email_received",
+        "pieceVersion": "~0.9.6",
+        "propertySettings": {
+          "auth": {
+            "type": "MANUAL"
+          },
+          "label_name": {
+            "type": "MANUAL"
+          },
+          "activity_scope": {
+            "type": "MANUAL"
+          },
+          "include_team_drives": {
+            "type": "MANUAL"
+          }
+        },
+        "sampleDataSettings": {},
+        "errorHandlingOptions": {
+          "retryOnFailure": {
+            "value": true
+          },
+          "continueOnFailure": {
+            "value": false
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_1",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "key": "invoice_log_last_row",
+            "sheetId": 2132570119,
+            "store_scope": "COLL_FLOW",
+            "first_row_headers": true
+          },
+          "pieceName": "@activepieces/piece-store",
+          "actionName": "get",
+          "pieceVersion": "~0.6.10",
+          "propertySettings": {
+            "key": {
+              "type": "MANUAL"
+            },
+            "sheetId": {
+              "type": "MANUAL"
+            },
+            "store_scope": {
+              "type": "MANUAL"
+            },
+            "first_row_headers": {
+              "type": "MANUAL"
+            }
+          },
+          "sampleDataSettings": {},
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "key": "row_number",
+              "value": "{{step_1['row']}}"
+            },
+            "pieceName": "@activepieces/piece-store",
+            "actionName": "put",
+            "pieceVersion": "~0.6.10",
+            "propertySettings": {
+              "key": {
+                "type": "MANUAL"
+              },
+              "value": {
+                "type": "MANUAL"
+              }
+            },
+            "sampleDataSettings": {},
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_3",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "auth": "{{connections['u5sOQy5wUx3kq3s4vqCwR']}}",
+                "fileId": "{{trigger['message']['id']}}",
+                "fileName": "{{trigger['message']['subject']}}.pdf",
+                "parent": "1zr62xKq0xM18o9g7M93lJ2J1Y5ZJ2tVH",
+                "include_team_drives": false
+              },
+              "pieceName": "@activepieces/piece-google-drive",
+              "actionName": "store_file",
+              "pieceVersion": "~0.5.52",
+              "propertySettings": {
+                "auth": {
+                  "type": "MANUAL"
+                },
+                "fileId": {
+                  "type": "MANUAL"
+                },
+                "fileName": {
+                  "type": "MANUAL"
+                },
+                "parent": {
+                  "type": "MANUAL"
+                },
+                "include_team_drives": {
+                  "type": "MANUAL"
+                }
+              },
+              "sampleDataSettings": {},
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_4",
+              "skip": false,
+              "type": "PIECE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "auth": "{{connections['u5sOQy5wUx3kq3s4vqCwR']}}",
+                  "row": "{{step_1}}",
+                  "sheetId": 2132570119,
+                  "spreadsheetId": "17f6bR8Rf5qf7KlL7Kx4JiM175X0Z7wX17670f9Yl32Jv66b6",
+                  "firstRowHeaders": true,
+                  "includeTeamDrives": false
+                },
+                "pieceName": "@activepieces/piece-google-sheets",
+                "actionName": "insert_row",
+                "pieceVersion": "~0.12.20",
+                "propertySettings": {
+                  "auth": {
+                    "type": "MANUAL"
+                  },
+                  "row": {
+                    "type": "MANUAL"
+                  },
+                  "sheetId": {
+                    "type": "MANUAL"
+                  },
+                  "spreadsheetId": {
+                    "type": "MANUAL"
+                  },
+                  "firstRowHeaders": {
+                    "type": "MANUAL"
+                  },
+                  "includeTeamDrives": {
+                    "type": "MANUAL"
+                  }
+                }
+              },
+              "displayName": "step_4"
+            },
+            "displayName": "step_3"
+          },
+          "displayName": "step_2"
+        },
+        "displayName": "step_1"
+      },
+      "displayName": "Trigger"
+    },
+    "valid": true,
+    "schemaVersion": "10"
+  },
+  "blogUrl": ""
+}

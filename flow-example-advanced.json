@@ -1,0 +1,122 @@
+{
+  "type": "IMPORT_FLOW",
+  "request": {
+    "displayName": "Advanced Flow with Router and Loop",
+    "schemaVersion": null,
+    "trigger": {
+      "type": "PIECE_TRIGGER",
+      "name": "trigger_schedule_1",
+      "valid": true,
+      "displayName": "Schedule Trigger",
+      "settings": {
+        "pieceName": "@activepieces/piece-schedule",
+        "pieceVersion": "1.0.0",
+        "triggerName": "cron",
+        "input": {
+          "cronExpression": "0 9 * * *"
+        },
+        "propertySettings": {}
+      },
+      "nextAction": {
+        "type": "ROUTER",
+        "name": "action_router_1",
+        "valid": true,
+        "displayName": "Check Condition",
+        "settings": {
+          "executionType": "EXECUTE_FIRST_MATCH",
+          "branches": [
+            {
+              "branchType": "CONDITION",
+              "branchName": "If Success",
+              "conditions": [
+                [
+                  {
+                    "firstValue": "{{trigger_schedule_1.body.status}}",
+                    "secondValue": "success",
+                    "operator": "TEXT_EXACTLY_MATCHES",
+                    "caseSensitive": false
+                  }
+                ]
+              ]
+            },
+            {
+              "branchType": "FALLBACK",
+              "branchName": "Otherwise"
+            }
+          ],
+          "propertySettings": {}
+        },
+        "children": [
+          {
+            "type": "LOOP_ON_ITEMS",
+            "name": "action_loop_1",
+            "valid": true,
+            "displayName": "Loop Through Items",
+            "settings": {
+              "items": "{{trigger_schedule_1.body.items}}",
+              "propertySettings": {}
+            },
+            "firstLoopAction": {
+              "type": "PIECE",
+              "name": "action_http_loop",
+              "valid": true,
+              "displayName": "Process Each Item",
+              "settings": {
+                "pieceName": "@activepieces/piece-http",
+                "pieceVersion": "1.0.0",
+                "actionName": "send_request",
+                "input": {
+                  "url": "https://api.example.com/process",
+                  "method": "POST",
+                  "body": {
+                    "item": "{{action_loop_1.item}}"
+                  }
+                },
+                "propertySettings": {}
+              }
+            },
+            "nextAction": {
+              "type": "PIECE",
+              "name": "action_notify_success",
+              "valid": true,
+              "displayName": "Notify Success",
+              "settings": {
+                "pieceName": "@activepieces/piece-http",
+                "pieceVersion": "1.0.0",
+                "actionName": "send_request",
+                "input": {
+                  "url": "https://api.example.com/notify",
+                  "method": "POST",
+                  "body": {
+                    "message": "Processing completed successfully"
+                  }
+                },
+                "propertySettings": {}
+              }
+            }
+          },
+          {
+            "type": "PIECE",
+            "name": "action_notify_failure",
+            "valid": true,
+            "displayName": "Notify Failure",
+            "settings": {
+              "pieceName": "@activepieces/piece-http",
+              "pieceVersion": "1.0.0",
+              "actionName": "send_request",
+              "input": {
+                "url": "https://api.example.com/notify",
+                "method": "POST",
+                "body": {
+                  "message": "Processing failed"
+                }
+              },
+              "propertySettings": {}
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

@@ -1,0 +1,197 @@
+{
+  "displayName": "Add new row in Google Sheets Inbound Leads from Slack #leads",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "settings": {
+      "input": {
+        "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+        "channel": "#leads",
+        "ignoreBots": false,
+        "ignoreSelf": false
+      },
+      "pieceName": "@activepieces/piece-slack",
+      "triggerName": "new-message",
+      "pieceVersion": "~0.10.16",
+      "propertySettings": {
+        "auth": {
+          "type": "MANUAL"
+        },
+        "channel": {
+          "type": "MANUAL"
+        },
+        "ignoreBots": {
+          "type": "MANUAL"
+        },
+        "ignoreSelf": {
+          "type": "MANUAL"
+        }
+      }
+    },
+    "nextAction": {
+      "name": "step_1",
+      "skip": false,
+      "type": "PIECE",
+      "valid": true,
+      "settings": {
+        "input": {
+          "text": "{{trigger['text']}}",
+          "files": [],
+          "model": "claude-3-5-sonnet-20240514",
+          "provider": "anthropic",
+          "maxTokens": 2000,
+          "creativity": 100
+        },
+        "pieceName": "@activepieces/piece-utility-ai",
+        "actionName": "extractStructuredData",
+        "pieceVersion": "~0.5.9",
+        "propertySettings": {
+          "text": {
+            "type": "MANUAL"
+          },
+          "files": {
+            "type": "MANUAL"
+          },
+          "model": {
+            "type": "MANUAL"
+          },
+          "provider": {
+            "type": "MANUAL"
+          },
+          "maxTokens": {
+            "type": "MANUAL"
+          },
+          "creativity": {
+            "type": "MANUAL"
+          }
+        },
+        "sampleDataSettings": {},
+        "errorHandlingOptions": {
+          "retryOnFailure": {
+            "value": false
+          },
+          "continueOnFailure": {
+            "value": false
+          }
+        }
+      },
+      "nextAction": {
+        "name": "step_2",
+        "skip": false,
+        "type": "PIECE",
+        "valid": true,
+        "settings": {
+          "input": {
+            "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+            "sheetId": 0,
+            "matchCase": false,
+            "columnName": "A",
+            "searchValue": "{{trigger['user']}}",
+            "columnNameX": "B",
+            "searchValueX": "{{trigger['text']}}",
+            "spreadsheetId": "17f6bR8Rf5qf7KlL7Kx4JiM175X0Z7wX17670f9Yl32Jv66b6",
+            "includeTeamDrives": false
+          },
+          "pieceName": "@activepieces/piece-google-sheets",
+          "actionName": "find_rows",
+          "pieceVersion": "~0.12.20",
+          "propertySettings": {
+            "auth": {
+              "type": "MANUAL"
+            },
+            "sheetId": {
+              "type": "MANUAL"
+            },
+            "matchCase": {
+              "type": "MANUAL"
+            },
+            "columnName": {
+              "type": "MANUAL"
+            },
+            "searchValue": {
+              "type": "MANUAL"
+            },
+            "columnNameX": {
+              "type": "MANUAL"
+            },
+            "searchValueX": {
+              "type": "MANUAL"
+            },
+            "spreadsheetId": {
+              "type": "MANUAL"
+            },
+            "includeTeamDrives": {
+              "type": "MANUAL"
+            }
+          },
+          "sampleDataSettings": {},
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_3",
+          "skip": false,
+          "type": "LOOP_ON_ITEMS",
+          "valid": true,
+          "settings": {
+            "items": "{{step_2}}",
+            "sampleData": {},
+            "propertySettings": {},
+            "sampleDataSettings": {}
+          },
+          "displayName": "Loop on Items",
+          "firstLoopAction": {
+            "name": "step_4",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "auth": "{{connections['EVfI28s8Iq6tVWb8rLgk5']}}",
+                "row_id": "{{step_3['item']['row']}}",
+                "values": {
+                  "A": "{{trigger['user']}}",
+                  "B": "{{trigger['text']}}",
+                  "C": "{{step_1['data']['email']}}",
+                  "D": "{{trigger['ts']}}"
+                },
+                "sheetId": 1572342789,
+                "spreadsheetId": "17f6bR8Rf5qf7KlL7Kx4JiM175X0Z7wX17670f9Yl32Jv66b6"
+              },
+              "pieceVersion": "~1.0.0",
+              "propertySettings": {
+                "auth": {
+                  "type": "MANUAL"
+                },
+                "row_id": {
+                  "type": "MANUAL"
+                },
+                "values": {
+                  "type": "MANUAL"
+                },
+                "sheetId": {
+                  "type": "MANUAL"
+                },
+                "spreadsheetId": {
+                  "type": "MANUAL"
+                }
+              }
+            },
+            "displayName": "step_4"
+          }
+        },
+        "displayName": "step_2"
+      },
+      "displayName": "step_1"
+    },
+    "displayName": "Trigger"
+  },
+  "schemaVersion": "10"
+}
