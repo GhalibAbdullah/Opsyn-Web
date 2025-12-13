@@ -14,11 +14,6 @@
         "file": "new-spreadsheet.ts"
       },
       {
-        "name": "Test Document",
-        "displayName": "Test Document",
-        "file": "new-spreadsheet.ts"
-      },
-      {
         "name": "googlesheets_new_row_added",
         "displayName": "New Row Added",
         "file": "new-row-added-webhook.ts"
@@ -172,8 +167,8 @@
     ],
     "props": [
       "label",
-      "to",
       "from",
+      "to",
       "subject",
       "category"
     ]
@@ -223,13 +218,8 @@
         "file": "new-message.ts"
       },
       {
-        "name": "fun",
-        "displayName": "Channel created",
-        "file": "new-channel.ts"
-      },
-      {
         "name": "channel_created",
-        "displayName": "channel_created",
+        "displayName": "Channel created",
         "file": "new-channel.ts"
       },
       {
@@ -238,33 +228,8 @@
         "file": "new-team-custom-emoji.ts"
       },
       {
-        "name": "slackbot",
-        "displayName": "New User",
-        "file": "new-user.ts"
-      },
-      {
-        "name": "Slackbot",
-        "displayName": "Slackbot",
-        "file": "new-user.ts"
-      },
-      {
-        "name": "Slackbot",
-        "displayName": "Slackbot",
-        "file": "new-user.ts"
-      },
-      {
-        "name": "Slackbot",
-        "displayName": "Slackbot",
-        "file": "new-user.ts"
-      },
-      {
-        "name": "slackbot",
-        "displayName": "slackbot",
-        "file": "new-user.ts"
-      },
-      {
         "name": "new-user",
-        "displayName": "new-user",
+        "displayName": "New User",
         "file": "new-user.ts"
       },
       {
@@ -396,9 +361,9 @@
       }
     ],
     "props": [
-      "label",
+      "style",
       "useUserToken",
-      "style"
+      "label"
     ]
   },
   "@activepieces/piece-schedule": {
@@ -472,25 +437,198 @@
         "file": "new-file.ts"
       },
       {
-        "name": "google-drive.png",
-        "displayName": "Include File Content",
-        "file": "new-file.ts"
-      },
-      {
         "name": "new_folder",
         "displayName": "New Folder",
         "file": "new-folder.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "set_public_access",
+        "displayName": "Set public access",
+        "file": "set-public-access.ts"
       },
       {
-        "name": "New Folder WOOOO",
-        "displayName": "New Folder WOOOO",
-        "file": "new-folder.ts"
+        "name": "upload_gdrive_file",
+        "displayName": "Upload file",
+        "file": "upload-file.ts"
+      },
+      {
+        "name": "list-files",
+        "displayName": "List files",
+        "file": "list-files.action.ts"
+      },
+      {
+        "name": "update_permissions",
+        "displayName": "Update permissions",
+        "file": "add-permission.action.ts"
+      },
+      {
+        "name": "search-folder",
+        "displayName": "Search",
+        "file": "search-folder-or-file.action.ts"
+      },
+      {
+        "name": "get-file-or-folder-by-id",
+        "displayName": "Get File",
+        "file": "get-file-by-id.ts"
+      },
+      {
+        "name": "trash_gdrive_file",
+        "displayName": "Trash file",
+        "file": "send-to-trash.ts"
+      },
+      {
+        "name": "delete_permissions",
+        "displayName": "Delete permissions",
+        "file": "delete-permission.action.ts"
+      },
+      {
+        "name": "read-file",
+        "displayName": "Read file",
+        "file": "read-file.ts"
+      },
+      {
+        "name": "create_new_gdrive_file",
+        "displayName": "Create new file",
+        "file": "create-new-text-file.ts"
+      },
+      {
+        "name": "delete_gdrive_file",
+        "displayName": "Delete file",
+        "file": "delete-file.ts"
+      },
+      {
+        "name": "duplicate_file",
+        "displayName": "Duplicate File",
+        "file": "duplicate-file.action.ts"
+      },
+      {
+        "name": "create_new_gdrive_folder",
+        "displayName": "Create new folder",
+        "file": "create-new-folder.ts"
+      },
+      {
+        "name": "google-drive-move-file",
+        "displayName": "Move File",
+        "file": "move-file.ts"
+      },
+      {
+        "name": "save_file_as_pdf",
+        "displayName": "Save Document as PDF",
+        "file": "save-file-as-pdf.action.ts"
+      }
+    ],
+    "props": [
+      "include_team_drives",
+      "parentFolder"
+    ]
+  },
+  "@activepieces/piece-google-calendar": {
+    "name": "@activepieces/piece-google-calendar",
+    "version": "0.7.4",
+    "triggers": [
+      {
+        "name": "new_event",
+        "displayName": "New Event",
+        "file": "new-event.ts"
+      },
+      {
+        "name": "new_or_updated_event",
+        "displayName": "New or Updated Event",
+        "file": "calendar-event.ts"
+      },
+      {
+        "name": "new_calendar",
+        "displayName": "New Calendar",
+        "file": "new-calendar.ts"
+      },
+      {
+        "name": "event_starts_in",
+        "displayName": "Event Start (Time Before)",
+        "file": "event-start-time-before.ts"
+      },
+      {
+        "name": "event_ends",
+        "displayName": "Event Ends",
+        "file": "event-ends.ts"
+      },
+      {
+        "name": "event_cancelled",
+        "displayName": "Event Cancelled",
+        "file": "event-cancelled.ts"
+      },
+      {
+        "name": "new_event_matching_search",
+        "displayName": "New Event Matching Search",
+        "file": "new-event-matching-search.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "create_google_calendar_event",
+        "displayName": "Create Event",
+        "file": "create-event.ts"
+      },
+      {
+        "name": "google_calendar_get_event_by_id",
+        "displayName": "Get Event by ID",
+        "file": "get-event-by-id.ts"
+      },
+      {
+        "name": "create_quick_event",
+        "displayName": "Create Quick Event",
+        "file": "create-quick-event.ts"
+      },
+      {
+        "name": "delete_event",
+        "displayName": "Delete Event",
+        "file": "delete-event.action.ts"
+      },
+      {
+        "name": "google_calendar_find_busy_free_periods",
+        "displayName": "Find Busy/Free Periods in Calendar",
+        "file": "find-busy-free-periods.ts"
+      },
+      {
+        "name": "update_event",
+        "displayName": "Update Event",
+        "file": "update-event.action.ts"
+      },
+      {
+        "name": "google-calendar-add-attendees",
+        "displayName": "Add Attendees to Event",
+        "file": "add-attendees.action.ts"
+      },
+      {
+        "name": "google_calendar_get_events",
+        "displayName": "Get all Events",
+        "file": "get-events.ts"
+      },
+      {
+        "name": "addCalendarToCalendarlist",
+        "displayName": "Add Calendar to calendarList",
+        "file": "add-calendar-to-calendarlist.ts"
+      }
+    ],
+    "props": [
+      "colorId"
+    ]
+  },
+  "@activepieces/piece-google-forms": {
+    "name": "@activepieces/piece-google-forms",
+    "version": "0.3.13",
+    "triggers": [
+      {
+        "name": "new_response",
+        "displayName": "New Response",
+        "file": "new-form-response.ts"
       }
     ],
     "actions": [],
     "props": [
       "include_team_drives",
-      "parentFolder"
+      "form_id"
     ]
   },
   "@activepieces/piece-hubspot": {
@@ -508,23 +646,8 @@
         "file": "new-company.ts"
       },
       {
-        "name": "Company Name",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-company.ts"
-      },
-      {
         "name": "new-or-updated-contact",
         "displayName": "Contact Recently Created or Updated",
-        "file": "new-or-updated-contact.ts"
-      },
-      {
-        "name": "Maria",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-or-updated-contact.ts"
-      },
-      {
-        "name": "Johnson (Sample Contact)",
-        "displayName": "Johnson (Sample Contact)",
         "file": "new-or-updated-contact.ts"
       },
       {
@@ -533,18 +656,8 @@
         "file": "deal-stage-updated.ts"
       },
       {
-        "name": "Second Deal",
-        "displayName": "Deal Pipeline",
-        "file": "deal-stage-updated.ts"
-      },
-      {
         "name": "new-line-item",
         "displayName": "New Line Item",
-        "file": "new-line-item.ts"
-      },
-      {
-        "name": "Chair",
-        "displayName": "Additional properties to retrieve",
         "file": "new-line-item.ts"
       },
       {
@@ -558,23 +671,8 @@
         "file": "new-contact-in-list.ts"
       },
       {
-        "name": "Last",
-        "displayName": "Contact List",
-        "file": "new-contact-in-list.ts"
-      },
-      {
-        "name": "First",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-contact-in-list.ts"
-      },
-      {
         "name": "new-custom-object-property-change",
         "displayName": "New Custom Object Property Change",
-        "file": "new-custom-object-property-change.ts"
-      },
-      {
-        "name": "Oreo",
-        "displayName": "Oreo",
         "file": "new-custom-object-property-change.ts"
       },
       {
@@ -588,11 +686,6 @@
         "file": "new-custom-object.ts"
       },
       {
-        "name": "Oreo",
-        "displayName": "Oreo",
-        "file": "new-custom-object.ts"
-      },
-      {
         "name": "new-email-subscriptions-timeline",
         "displayName": "New Email Subscriptions Timeline",
         "file": "email-subscriptions-timeline.ts"
@@ -603,18 +696,8 @@
         "file": "new-company-property-change.ts"
       },
       {
-        "name": "Activepieces",
-        "displayName": "Property Name",
-        "file": "new-company-property-change.ts"
-      },
-      {
         "name": "new-or-updated-product",
         "displayName": "Product Recently Created or Updated",
-        "file": "new-or-updated-product.ts"
-      },
-      {
-        "name": "Chair",
-        "displayName": "Additional properties to retrieve",
         "file": "new-or-updated-product.ts"
       },
       {
@@ -628,33 +711,13 @@
         "file": "new-or-updated-line-item.ts"
       },
       {
-        "name": "Chair",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-or-updated-line-item.ts"
-      },
-      {
         "name": "new-contact",
         "displayName": "New Contact",
         "file": "new-contact.ts"
       },
       {
-        "name": "Maria",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-contact.ts"
-      },
-      {
-        "name": "Johnson (Sample Contact)",
-        "displayName": "Johnson (Sample Contact)",
-        "file": "new-contact.ts"
-      },
-      {
         "name": "new-or-updated-company",
         "displayName": "Company Recently Created or Updated",
-        "file": "new-or-updated-company.ts"
-      },
-      {
-        "name": "Activepieces",
-        "displayName": "Additional properties to retrieve",
         "file": "new-or-updated-company.ts"
       },
       {
@@ -678,11 +741,6 @@
         "file": "new-product.ts"
       },
       {
-        "name": "TEST",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-product.ts"
-      },
-      {
         "name": "new-engagement",
         "displayName": "New Engagement",
         "file": "new-engagement.ts"
@@ -693,23 +751,8 @@
         "file": "new-deal.ts"
       },
       {
-        "name": "test deal",
-        "displayName": "Additional properties to retrieve",
-        "file": "new-deal.ts"
-      },
-      {
         "name": "new-contact-property-change",
         "displayName": "New Contact Property Change",
-        "file": "new-contact-property-change.ts"
-      },
-      {
-        "name": "Maria",
-        "displayName": "Property Name",
-        "file": "new-contact-property-change.ts"
-      },
-      {
-        "name": "Johnson (Sample Contact)",
-        "displayName": "Johnson (Sample Contact)",
         "file": "new-contact-property-change.ts"
       }
     ],
@@ -936,8 +979,8 @@
       }
     ],
     "props": [
-      "StaticDropdown",
-      "Dropdown"
+      "Dropdown",
+      "StaticDropdown"
     ]
   },
   "@activepieces/piece-date-helper": {
@@ -1034,8 +1077,35 @@
   "@activepieces/piece-telegram-bot": {
     "name": "@activepieces/piece-telegram-bot",
     "version": "0.3.21",
-    "triggers": [],
-    "actions": [],
+    "triggers": [
+      {
+        "name": "new_telegram_message",
+        "displayName": "New message",
+        "file": "new-message.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "create_invite_link",
+        "displayName": "Create Invite Link",
+        "file": "create-invite-link.ts"
+      },
+      {
+        "name": "send_media",
+        "displayName": "Send Media",
+        "file": "send-media.action.ts"
+      },
+      {
+        "name": "send_text_message",
+        "displayName": "Send Text Message",
+        "file": "send-text-message.action.ts"
+      },
+      {
+        "name": "get_chat_member",
+        "displayName": "Get Chat Member",
+        "file": "get-chat-member.ts"
+      }
+    ],
     "props": []
   },
   "@activepieces/piece-store": {
@@ -1099,28 +1169,13 @@
         "file": "new-comment.ts"
       },
       {
-        "name": "Activepieces",
-        "displayName": "Activepieces",
-        "file": "new-comment.ts"
-      },
-      {
         "name": "new_database_item",
         "displayName": "New Database Item",
         "file": "new-database-item.ts"
       },
       {
-        "name": "Doing",
-        "displayName": "Doing",
-        "file": "new-database-item.ts"
-      },
-      {
         "name": "updated_database_item",
         "displayName": "Updated Database Item",
-        "file": "updated-database-item.ts"
-      },
-      {
-        "name": "Doing",
-        "displayName": "Doing",
         "file": "updated-database-item.ts"
       },
       {
@@ -1192,13 +1247,13 @@
       }
     ],
     "props": [
-      "databaseFields",
-      "database_id",
-      "page",
       "filterDatabaseFields",
-      "database_item_id",
+      "databaseFields",
       "formula",
-      "archived_database_item_id"
+      "archived_database_item_id",
+      "page",
+      "database_item_id",
+      "database_id"
     ]
   },
   "@activepieces/piece-tables": {
@@ -1249,8 +1304,8 @@
       }
     ],
     "props": [
-      "record_id",
-      "table_id"
+      "table_id",
+      "record_id"
     ]
   },
   "@activepieces/piece-openai": {
@@ -1297,11 +1352,6 @@
         "name": "extract-structured-data",
         "displayName": "Extract Structured Data from Text",
         "file": "extract-structure-data.action.ts"
-      },
-      {
-        "name": "extract_structured_data",
-        "displayName": "Model",
-        "file": "extract-structure-data.action.ts"
       }
     ],
     "props": []
@@ -1309,32 +1359,280 @@
   "@activepieces/piece-salesforce": {
     "name": "@activepieces/piece-salesforce",
     "version": "0.2.1",
-    "triggers": [],
-    "actions": [],
+    "triggers": [
+      {
+        "name": "new_or_updated_record",
+        "displayName": "New or Updated Record",
+        "file": "new-updated-record.ts"
+      },
+      {
+        "name": "new_field_history_event",
+        "displayName": "New Field History Event",
+        "file": "new-field-history-event.ts"
+      },
+      {
+        "name": "new_case_attachment",
+        "displayName": "New Case Attachment",
+        "file": "new-case-attachment.ts"
+      },
+      {
+        "name": "new_lead",
+        "displayName": "New Lead",
+        "file": "new-lead.ts"
+      },
+      {
+        "name": "new_record",
+        "displayName": "New Record",
+        "file": "new-record.ts"
+      },
+      {
+        "name": "new_contact",
+        "displayName": "New Contact",
+        "file": "new-contact.ts"
+      },
+      {
+        "name": "new_updated_file",
+        "displayName": "New or Updated File",
+        "file": "new-updated-file.ts"
+      },
+      {
+        "name": "new_outbound_message",
+        "displayName": "New Outbound Message",
+        "file": "new-outbound-message.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "create_contact",
+        "displayName": "Create Contact",
+        "file": "create-contact.ts"
+      },
+      {
+        "name": "create_lead",
+        "displayName": "Create Lead",
+        "file": "create-lead.ts"
+      },
+      {
+        "name": "delete_record",
+        "displayName": "Delete Record",
+        "file": "delete-record.ts"
+      },
+      {
+        "name": "run_report",
+        "displayName": "Run Report",
+        "file": "run-report.ts"
+      },
+      {
+        "name": "add_lead_to_campaign",
+        "displayName": "Add Lead to Campaign",
+        "file": "add-lead-to-campaign.ts"
+      },
+      {
+        "name": "find_record",
+        "displayName": "Find Record",
+        "file": "find-record.ts"
+      },
+      {
+        "name": "add_contact_to_campaign",
+        "displayName": "Add Contact to Campaign",
+        "file": "add-contact-to-campaign.ts"
+      },
+      {
+        "name": "send_email",
+        "displayName": "Send Email",
+        "file": "send-email.ts"
+      },
+      {
+        "name": "update_object_by_id",
+        "displayName": "Update Object (Advanced)",
+        "file": "update-object-by-id.ts"
+      },
+      {
+        "name": "create_attachment",
+        "displayName": "Create Attachment (Legacy)",
+        "file": "create-attachment.ts"
+      },
+      {
+        "name": "update_record",
+        "displayName": "Update Record",
+        "file": "update-record.ts"
+      },
+      {
+        "name": "update_contact",
+        "displayName": "Update Contact",
+        "file": "update-contact.ts"
+      },
+      {
+        "name": "get_record_attachments",
+        "displayName": "Get Record Attachments",
+        "file": "get-record-attachments.ts"
+      },
+      {
+        "name": "create_note",
+        "displayName": "Create Note",
+        "file": "create-note.ts"
+      },
+      {
+        "name": "upsert_by_external_id_bulk",
+        "displayName": "Bulk Upsert (Advanced)",
+        "file": "upsert-by-external-id-bulk.ts"
+      },
+      {
+        "name": "add_file_to_record",
+        "displayName": "Add File to Record",
+        "file": "add-file-to-record.ts"
+      },
+      {
+        "name": "update_lead",
+        "displayName": "Update Lead",
+        "file": "update-lead.ts"
+      },
+      {
+        "name": "find_records_by_query",
+        "displayName": "Find Records by Query (Advanced)",
+        "file": "find-records-by-query.ts"
+      },
+      {
+        "name": "delete_opportunity",
+        "displayName": "Delete Opportunity",
+        "file": "delete-opportunity.ts"
+      },
+      {
+        "name": "find_child_records",
+        "displayName": "Find Child Records",
+        "file": "find-child-records.ts"
+      },
+      {
+        "name": "create_record",
+        "displayName": "Create Record",
+        "file": "create-record.ts"
+      },
+      {
+        "name": "run_query",
+        "displayName": "Run Query (Advanced)",
+        "file": "run-sf-query.ts"
+      },
+      {
+        "name": "create_new_object",
+        "displayName": "Create Object (Advanced)",
+        "file": "create-new-object.ts"
+      },
+      {
+        "name": "create_case",
+        "displayName": "Create Case",
+        "file": "create-case.ts"
+      },
+      {
+        "name": "upsert_by_external_id",
+        "displayName": "Batch Upsert (Advanced)",
+        "file": "upsert-by-external-id.ts"
+      },
+      {
+        "name": "create_opportunity",
+        "displayName": "Create Opportunity",
+        "file": "create-opportunity.ts"
+      },
+      {
+        "name": "create_task",
+        "displayName": "Create Task",
+        "file": "create-task.ts"
+      }
+    ],
     "props": [
       "leadSource",
-      "childRelationship",
+      "campaign",
       "object",
+      "childRelationship",
+      "record",
+      "account",
+      "field",
+      "status",
+      "owner",
+      "contact",
+      "report",
+      "optionalContact",
+      "recipient",
+      "lead",
       "opportunity",
       "environment",
-      "owner",
-      "status",
-      "lead",
-      "contact",
-      "recipient",
-      "optionalContact",
-      "report",
-      "record",
-      "field",
-      "account",
-      "parentRecord",
-      "campaign"
+      "parentRecord"
     ]
   },
   "@activepieces/piece-pipedrive": {
     "name": "@activepieces/piece-pipedrive",
     "version": "0.7.7",
-    "triggers": [],
+    "triggers": [
+      {
+        "name": "updated_deal",
+        "displayName": "Updated Deal",
+        "file": "updated-deal.ts"
+      },
+      {
+        "name": "activity-matching-filter",
+        "displayName": "Activity Matching Filter",
+        "file": "activity-matching-filter.ts"
+      },
+      {
+        "name": "new-organization",
+        "displayName": "New Organization",
+        "file": "new-organization.ts"
+      },
+      {
+        "name": "person-matching-filter",
+        "displayName": "Person Matching Filter",
+        "file": "person-matching-filter.ts"
+      },
+      {
+        "name": "new_activity",
+        "displayName": "New Activity",
+        "file": "new-activity.ts"
+      },
+      {
+        "name": "new-note",
+        "displayName": "New Note",
+        "file": "new-note.ts"
+      },
+      {
+        "name": "new-lead",
+        "displayName": "New Lead",
+        "file": "new-lead.ts"
+      },
+      {
+        "name": "deal-matching-filter",
+        "displayName": "Deal Matching Filter",
+        "file": "deal-matching-filter.ts"
+      },
+      {
+        "name": "organization-matching-filter",
+        "displayName": "Organization Matching Filter",
+        "file": "organization-matching-filter.ts"
+      },
+      {
+        "name": "updated-organization",
+        "displayName": "Updated Organization",
+        "file": "updated-organization.ts"
+      },
+      {
+        "name": "updated-deal-stage",
+        "displayName": "Updated Deal Stage",
+        "file": "updated-deal-stage.ts"
+      },
+      {
+        "name": "new_deal",
+        "displayName": "New Deal",
+        "file": "new-deal.ts"
+      },
+      {
+        "name": "new_person",
+        "displayName": "New Person",
+        "file": "new-person.ts"
+      },
+      {
+        "name": "updated_person",
+        "displayName": "Updated Person",
+        "file": "updated-person.ts"
+      }
+    ],
     "actions": [
       {
         "name": "create-lead",
@@ -1354,11 +1652,6 @@
       {
         "name": "find-organization",
         "displayName": "Find Organization",
-        "file": "find-organization.ts"
-      },
-      {
-        "name": "Activepieces Find Organization Filter",
-        "displayName": "Activepieces Find Organization Filter",
         "file": "find-organization.ts"
       },
       {
@@ -1457,11 +1750,6 @@
         "file": "find-person.ts"
       },
       {
-        "name": "Activepieces Find Person Filter",
-        "displayName": "Activepieces Find Person Filter",
-        "file": "find-person.ts"
-      },
-      {
         "name": "update-activity",
         "displayName": "Update Activity",
         "file": "update-activity.ts"
@@ -1483,28 +1771,28 @@
       }
     ],
     "props": [
-      "dealValueCurrency",
       "dueDate",
-      "dealValue",
-      "isDone",
-      "probability",
-      "address",
+      "note",
+      "status",
+      "marketing_status",
       "busy",
-      "channel",
+      "lastName",
       "dueTime",
       "firstName",
-      "expectedCloseDate",
-      "note",
-      "publicDescription",
-      "leadValue",
-      "lastName",
-      "phone",
-      "creationTime",
-      "marketing_status",
+      "probability",
+      "address",
+      "email",
       "leadValueCurrency",
-      "status",
+      "expectedCloseDate",
+      "phone",
+      "leadValue",
+      "publicDescription",
+      "dealValueCurrency",
+      "creationTime",
+      "isDone",
       "duration",
-      "email"
+      "channel",
+      "dealValue"
     ]
   },
   "@activepieces/piece-data-mapper": {
@@ -1519,5 +1807,723 @@
       }
     ],
     "props": []
+  },
+  "@activepieces/piece-github": {
+    "name": "@activepieces/piece-github",
+    "version": "0.5.10",
+    "triggers": [
+      {
+        "name": "new_milestone",
+        "displayName": "New Milestone",
+        "file": "new-milestone.ts"
+      },
+      {
+        "name": "trigger_${name}",
+        "displayName": "trigger_${name}",
+        "file": "register-trigger.ts"
+      },
+      {
+        "name": "new_branch",
+        "displayName": "New Branch",
+        "file": "new-branch.ts"
+      },
+      {
+        "name": "new_release",
+        "displayName": "New Release",
+        "file": "new-release.ts"
+      },
+      {
+        "name": "new_label",
+        "displayName": "New Label",
+        "file": "new-label.ts"
+      },
+      {
+        "name": "new_collaborator",
+        "displayName": "New Collaborator",
+        "file": "new-collaborator.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "getIssueInformation",
+        "displayName": "Get issue information",
+        "file": "get-issue-information.ts"
+      },
+      {
+        "name": "add_labels_to_issue",
+        "displayName": "Add Labels to Issue",
+        "file": "add-labels-to-issue.ts"
+      },
+      {
+        "name": "github_create_issue",
+        "displayName": "Create Issue",
+        "file": "create-issue.ts"
+      },
+      {
+        "name": "github_create_pull_request_review_comment",
+        "displayName": "Create Pull Request Review Comment",
+        "file": "create-pull-request-review-comment.ts"
+      },
+      {
+        "name": "find_issue",
+        "displayName": "Find Issue",
+        "file": "find-issue.ts"
+      },
+      {
+        "name": "create_branch",
+        "displayName": "Create Branch",
+        "file": "create-branch.ts"
+      },
+      {
+        "name": "find_user",
+        "displayName": "Find User",
+        "file": "find-user.ts"
+      },
+      {
+        "name": "update_issue",
+        "displayName": "Update Issue",
+        "file": "update-issue.ts"
+      },
+      {
+        "name": "github_create_discussion_comment",
+        "displayName": "Create Discussion Comment",
+        "file": "create-discussion-comment.ts"
+      },
+      {
+        "name": "find_branch",
+        "displayName": "Find Branch",
+        "file": "find-branch.ts"
+      },
+      {
+        "name": "rawGraphqlQuery",
+        "displayName": "Raw GraphQL query",
+        "file": "raw-graphql-query.ts"
+      },
+      {
+        "name": "github_create_commit_comment",
+        "displayName": "Create Commit Comment",
+        "file": "create-commit-comment.ts"
+      },
+      {
+        "name": "delete_branch",
+        "displayName": "Delete Branch",
+        "file": "delete-branch.ts"
+      },
+      {
+        "name": "createCommentOnAIssue",
+        "displayName": "Create comment on a issue",
+        "file": "create-comment-on-a-issue.ts"
+      },
+      {
+        "name": "unlockIssue",
+        "displayName": "Unlock issue",
+        "file": "unlock-issue.ts"
+      },
+      {
+        "name": "lockIssue",
+        "displayName": "Lock issue",
+        "file": "lock-issue.ts"
+      }
+    ],
+    "props": [
+      "repositoryDropdown"
+    ]
+  },
+  "@activepieces/piece-airtable": {
+    "name": "@activepieces/piece-airtable",
+    "version": "0.5.2",
+    "triggers": [
+      {
+        "name": "updated_record",
+        "displayName": "New or Updated Record",
+        "file": "update-record.trigger.ts"
+      },
+      {
+        "name": "new_record",
+        "displayName": "New Record",
+        "file": "new-record.trigger.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "airtable_delete_record",
+        "displayName": "Delete Airtable Record",
+        "file": "delete-record.ts"
+      },
+      {
+        "name": "airtable_find_record",
+        "displayName": "Find Airtable Record",
+        "file": "find-record.ts"
+      },
+      {
+        "name": "airtable_add_comment_to_record",
+        "displayName": "Add Comment to Record",
+        "file": "add-comment-to-record.ts"
+      },
+      {
+        "name": "airtable_find_base",
+        "displayName": "Find Base",
+        "file": "find-base.ts"
+      },
+      {
+        "name": "airtable_update_record",
+        "displayName": "Update Airtable Record",
+        "file": "update-record.ts"
+      },
+      {
+        "name": "airtable_find_table_by_id",
+        "displayName": "Find Table by ID",
+        "file": "find-table-by-id.ts"
+      },
+      {
+        "name": "airtable_upload_file_to_column",
+        "displayName": "Upload File to Column",
+        "file": "upload-file-to-column.ts"
+      },
+      {
+        "name": "airtable_create_base",
+        "displayName": "Create Base",
+        "file": "create-base.ts"
+      },
+      {
+        "name": "airtable_get_base_schema",
+        "displayName": "Get Base Schema",
+        "file": "get-base-schema.ts"
+      },
+      {
+        "name": "airtable_get_record_by_id",
+        "displayName": "Get Record by ID",
+        "file": "find-record-by-id.ts"
+      },
+      {
+        "name": "airtable_create_record",
+        "displayName": "Create Airtable Record",
+        "file": "create-record.ts"
+      },
+      {
+        "name": "airtable_create_table",
+        "displayName": "Create Table",
+        "file": "create-table.ts"
+      },
+      {
+        "name": "airtable_find_table",
+        "displayName": "Find Table",
+        "file": "find-table.ts"
+      }
+    ],
+    "props": [
+      "dateTime",
+      "createdTime",
+      "formula",
+      "multipleLookupValues",
+      "url",
+      "checkbox",
+      "autoNumber",
+      "lastModifiedTime",
+      "multilineText",
+      "button",
+      "singleLineText",
+      "date",
+      "number",
+      "multipleSelects",
+      "lookup",
+      "createdBy",
+      "singleSelect",
+      "rollup",
+      "barcode",
+      "fieldNames",
+      "count",
+      "tableId",
+      "email",
+      "multipleAttachments",
+      "currency",
+      "rating",
+      "percent",
+      "fields",
+      "externalSyncSource",
+      "phoneNumber",
+      "views",
+      "multipleRecordLinks",
+      "recordId",
+      "recordIdDropdown",
+      "workspaceId",
+      "duration",
+      "richText",
+      "lastModifiedBy",
+      "base"
+    ]
+  },
+  "@activepieces/piece-discord": {
+    "name": "@activepieces/piece-discord",
+    "version": "0.3.24",
+    "triggers": [
+      {
+        "name": "new_member",
+        "displayName": "New Member",
+        "file": "new-member.ts"
+      },
+      {
+        "name": "new_message",
+        "displayName": "New message",
+        "file": "new-message.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "createGuildRole",
+        "displayName": "Create guild role",
+        "file": "create-guild-role.ts"
+      },
+      {
+        "name": "send_message_webhook",
+        "displayName": "Send Message Webhook",
+        "file": "send-message-webhook.ts"
+      },
+      {
+        "name": "delete_channel",
+        "displayName": "Delete channel",
+        "file": "delete-channel.ts"
+      },
+      {
+        "name": "find_channel",
+        "displayName": "Find channel",
+        "file": "find-channel.ts"
+      },
+      {
+        "name": "add_role_to_member",
+        "displayName": "Add role to member",
+        "file": "add-role-to-member.ts"
+      },
+      {
+        "name": "deleteGuildRole",
+        "displayName": "Delete guild role",
+        "file": "delete-guild-role.ts"
+      },
+      {
+        "name": "request_approval_message",
+        "displayName": "Request Approval in a Channel",
+        "file": "send-approval-message.ts"
+      },
+      {
+        "name": "sendMessageWithBot",
+        "displayName": "Send Message with Bot",
+        "file": "send-message-with-bot.ts"
+      },
+      {
+        "name": "remove_ban_from_user",
+        "displayName": "Remove ban from user",
+        "file": "remove-ban-from-user.ts"
+      },
+      {
+        "name": "ban_guild_member",
+        "displayName": "Ban guild member",
+        "file": "ban-a-guild-member.ts"
+      },
+      {
+        "name": "remove_role_from_member",
+        "displayName": "Remove role from member",
+        "file": "remove-role-from-member.ts"
+      },
+      {
+        "name": "list_guild_members",
+        "displayName": "List guild members",
+        "file": "find-guild-member.ts"
+      },
+      {
+        "name": "create_channel",
+        "displayName": "Create channel",
+        "file": "create-channel.ts"
+      },
+      {
+        "name": "rename_channel",
+        "displayName": "Rename channel",
+        "file": "rename-channel.ts"
+      },
+      {
+        "name": "remove_member_from_guild",
+        "displayName": "Remove member from guild",
+        "file": "remove-member-from-guild.ts"
+      }
+    ],
+    "props": [
+      "roles",
+      "guilds",
+      "channel"
+    ]
+  },
+  "@activepieces/piece-trello": {
+    "name": "@activepieces/piece-trello",
+    "version": "0.3.19",
+    "triggers": [
+      {
+        "name": "deadline",
+        "displayName": "Card Deadline",
+        "file": "deadline.ts"
+      },
+      {
+        "name": "new_card",
+        "displayName": "New Card",
+        "file": "newCard.ts"
+      },
+      {
+        "name": "card_moved_to_list",
+        "displayName": "Card Moved to list",
+        "file": "cardMoved.ts"
+      }
+    ],
+    "actions": [],
+    "props": [
+      "board_id",
+      "board_id_opt",
+      "board_labels",
+      "list_id_opt",
+      "list_id"
+    ]
+  },
+  "@activepieces/piece-asana": {
+    "name": "@activepieces/piece-asana",
+    "version": "0.3.11",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "create_task",
+        "displayName": "Create Task",
+        "file": "create-task.ts"
+      }
+    ],
+    "props": [
+      "workspace",
+      "project",
+      "assignee",
+      "tags"
+    ]
+  },
+  "@activepieces/piece-jira-cloud": {
+    "name": "@activepieces/piece-jira-cloud",
+    "version": "0.1.19",
+    "triggers": [
+      {
+        "name": "updated_issue",
+        "displayName": "Updated Issue",
+        "file": "updated-issue.ts"
+      },
+      {
+        "name": "new_issue",
+        "displayName": "New Issue",
+        "file": "new-issue.ts"
+      },
+      {
+        "name": "updated_issue_status",
+        "displayName": "Updated Issue Status",
+        "file": "updated-issue-status.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "update_issue_comment",
+        "displayName": "Update Issue Comment",
+        "file": "update-issue-comment.ts"
+      },
+      {
+        "name": "get-issue-attachment",
+        "displayName": "Get Issue Attachment",
+        "file": "get-issue-attachment.ts"
+      },
+      {
+        "name": "list_issue_comments",
+        "displayName": "List Issue Comments",
+        "file": "list-issue-comments.ts"
+      },
+      {
+        "name": "link-issues",
+        "displayName": "Link Issues",
+        "file": "link-issues.ts"
+      },
+      {
+        "name": "create_issue",
+        "displayName": "Create Issue",
+        "file": "create-issue.ts"
+      },
+      {
+        "name": "markdownToJiraFormat",
+        "displayName": "Markdown to Jira format",
+        "file": "markdown-to-jira-format.ts"
+      },
+      {
+        "name": "delete_issue_comment",
+        "displayName": "Delete Issue Comment",
+        "file": "delete-issue-comment.ts"
+      },
+      {
+        "name": "add_issue_comment",
+        "displayName": "Add Issue Comment",
+        "file": "add-comment-to-issue.ts"
+      },
+      {
+        "name": "add-watcher-to-issue",
+        "displayName": "Add Watcher to Issue",
+        "file": "add-watcher-to-issue.ts"
+      },
+      {
+        "name": "add_issue_attachment",
+        "displayName": "Add Attachment to Issue",
+        "file": "add-attachment-to-issue.ts"
+      },
+      {
+        "name": "find-user",
+        "displayName": "Find User",
+        "file": "find-user.ts"
+      },
+      {
+        "name": "update_issue",
+        "displayName": "Update Issue",
+        "file": "update-issue.ts"
+      },
+      {
+        "name": "search_issues",
+        "displayName": "Search Issues",
+        "file": "search-issues.ts"
+      },
+      {
+        "name": "assign_issue",
+        "displayName": "Assign Issue",
+        "file": "assign-issue.ts"
+      }
+    ],
+    "props": []
+  },
+  "@activepieces/piece-stripe": {
+    "name": "@activepieces/piece-stripe",
+    "version": "0.5.16",
+    "triggers": [
+      {
+        "name": "updated_subscription",
+        "displayName": "Updated Subscription",
+        "file": "updated-subscription.ts"
+      },
+      {
+        "name": "canceled_subscription",
+        "displayName": "Canceled Subscription",
+        "file": "canceled-subscription.ts"
+      },
+      {
+        "name": "new_payment_link",
+        "displayName": "New Payment Link",
+        "file": "new-payment-link.ts"
+      },
+      {
+        "name": "new_payment",
+        "displayName": "New Payment",
+        "file": "new-payment.ts"
+      },
+      {
+        "name": "checkout_session_completed",
+        "displayName": "Checkout Session Completed",
+        "file": "checkout-session-completed.ts"
+      },
+      {
+        "name": "payment_failed",
+        "displayName": "Payment Failed",
+        "file": "payment-failed.ts"
+      },
+      {
+        "name": "new_subscription",
+        "displayName": "New Subscription",
+        "file": "new-subscription.ts"
+      },
+      {
+        "name": "new_refund",
+        "displayName": "New Refund",
+        "file": "new-refund.ts"
+      },
+      {
+        "name": "invoice_payment_failed",
+        "displayName": "Invoice Payment Failed",
+        "file": "invoice-payment-failed.ts"
+      },
+      {
+        "name": "new_charge",
+        "displayName": "New Charge",
+        "file": "new-charge.ts"
+      },
+      {
+        "name": "new_invoice",
+        "displayName": "New Invoice",
+        "file": "new-invoice.ts"
+      },
+      {
+        "name": "new_dispute",
+        "displayName": "New Dispute",
+        "file": "new-dispute.ts"
+      },
+      {
+        "name": "new_customer",
+        "displayName": "New Customer",
+        "file": "new-customer.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "search_subscriptions",
+        "displayName": "Search Subscriptions",
+        "file": "search-subscriptions.ts"
+      },
+      {
+        "name": "retrieve_payment_intent",
+        "displayName": "Find Payment (by Payment Intent ID)",
+        "file": "retrieve-payment-intent.ts"
+      },
+      {
+        "name": "retrieve_payout",
+        "displayName": "Retrieve a Payout",
+        "file": "retrieve-payout.ts"
+      },
+      {
+        "name": "create_customer",
+        "displayName": "Create Customer",
+        "file": "create-customer.ts"
+      },
+      {
+        "name": "retrieve_invoice",
+        "displayName": "Retrieve an Invoice",
+        "file": "retrieve-invoice.ts"
+      },
+      {
+        "name": "create_subscription",
+        "displayName": "Create Subscription",
+        "file": "create-subscription.ts"
+      },
+      {
+        "name": "cancel_subscription",
+        "displayName": "Cancel Subscription",
+        "file": "cancel-subscription.ts"
+      },
+      {
+        "name": "find_invoice",
+        "displayName": "Find Invoice",
+        "file": "find-invoice.ts"
+      },
+      {
+        "name": "create_payment_intent",
+        "displayName": "Create Payment (Payment Intent)",
+        "file": "create-payment-intent.ts"
+      },
+      {
+        "name": "create_price",
+        "displayName": "Create Price",
+        "file": "create-price.ts"
+      },
+      {
+        "name": "deactivate_payment_link",
+        "displayName": "Deactivate Payment Link",
+        "file": "deactivate-payment-link.ts"
+      },
+      {
+        "name": "create_refund",
+        "displayName": "Create a Refund",
+        "file": "create-refund.ts"
+      },
+      {
+        "name": "update_customer",
+        "displayName": "Update Customer",
+        "file": "update-customer.ts"
+      },
+      {
+        "name": "create_product",
+        "displayName": "Create Product",
+        "file": "create-product.ts"
+      },
+      {
+        "name": "retrieve_customer",
+        "displayName": "Retrieve Customer",
+        "file": "retrieve-customer.ts"
+      },
+      {
+        "name": "create_invoice",
+        "displayName": "Create Invoice",
+        "file": "create-invoice.ts"
+      },
+      {
+        "name": "create_payment_link",
+        "displayName": "Create Payment Link",
+        "file": "create-payment-link.ts"
+      },
+      {
+        "name": "search_customer",
+        "displayName": "Search Customer",
+        "file": "search-customer.ts"
+      }
+    ],
+    "props": [
+      "paymentIntent",
+      "price",
+      "paymentLink",
+      "invoice",
+      "product",
+      "subscription",
+      "customer",
+      "payout"
+    ]
+  },
+  "@activepieces/piece-twilio": {
+    "name": "@activepieces/piece-twilio",
+    "version": "0.3.13",
+    "triggers": [
+      {
+        "name": "new_recording",
+        "displayName": "New Recording",
+        "file": "new-recording.ts"
+      },
+      {
+        "name": "new_phone_number",
+        "displayName": "New Phone Number",
+        "file": "new-phone-number.ts"
+      },
+      {
+        "name": "new_call",
+        "displayName": "New Call",
+        "file": "new-call.ts"
+      },
+      {
+        "name": "new_incoming_sms",
+        "displayName": "New Incoming SMS",
+        "file": "new-incoming-sms.ts"
+      },
+      {
+        "name": "new_transcription",
+        "displayName": "New Transcription",
+        "file": "new-transcription.ts"
+      }
+    ],
+    "actions": [
+      {
+        "name": "send_sms",
+        "displayName": "Send SMS",
+        "file": "send-sms.ts"
+      },
+      {
+        "name": "get_message",
+        "displayName": "Get Message",
+        "file": "get-message.ts"
+      },
+      {
+        "name": "make_call",
+        "displayName": "Call Phone",
+        "file": "make-call.ts"
+      },
+      {
+        "name": "phone_number_lookup",
+        "displayName": "Phone Number Lookup",
+        "file": "phone-number-lookup.ts"
+      },
+      {
+        "name": "download_recording_media",
+        "displayName": "Download Recording Media",
+        "file": "download-recording-media.ts"
+      }
+    ],
+    "props": [
+      "phone_number"
+    ]
   }
 }
