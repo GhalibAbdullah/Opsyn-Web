@@ -1,0 +1,12 @@
+# RAG System Requirements
+
+# Embeddings (local, free)
+sentence-transformers>=2.2.0
+
+# LLM Clients
+google-generativeai>=0.3.0  # Gemini (free tier)
+openai>=1.0.0  # OpenAI (optional, paid)
+
+# Utilities
+numpy>=1.21.0
+
