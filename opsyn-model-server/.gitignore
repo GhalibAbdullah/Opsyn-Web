@@ -1,0 +1,108 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights (too large for git)
+qwen25_coder_7b_opsyn_lora_quality/
+
+# Training data and intermediate files
+training_data*.json
+*_dataset*.json
+*_output*.json
+instructions_*.json
+augmentation_*.json
+*_instructions_*.json
+
+# Test outputs
+test_*.json
+*_test.json
+*_sample.json
+deployed_model_curl_tests/
+
+# Temp/intermediate scripts
+gen_batch_*.py
+fix_*.py
+validate_*.py
+verify_*.py
+analyze_*.py
+merge_*.py
+combine_*.py
+regenerate_*.py
+convert_*.py
+extract_*.py
+clean_*.py
+apply_*.py
+process_*.py
+export_*.py
+show_*.py
+count_*.py
+debug_*.py
+manual_*.py
+
+# Generated/temp folders
+fixed_workflows/
+fixed_workflows_with_instructions/
+merged_workflows/
+sample_workflows/
+generated_templates/
+workflows/
+abd_flows/
+
+# RAG embeddings and temp
+rag/__pycache__/
+rag/*.npy
+rag/test_*.json
+rag/pieces_embeddings*.json
+
+# Reports and analysis
+*_report.json
+*_analysis.json
+*_stats.json
+placeholder_analysis.json
+
+# Windows Zone.Identifier files
+*:Zone.Identifier
+
+# Markdown docs (keep README.md only)
+*.md
+!README.md
+
+# Old/unused scripts
+postprocess.py
+server.py
+modal_app.py
+rag_workflow_generator*.py
+logical_workflow_generator.py
+generate_*.py
+augment_*.py
+build_piece_registry.py
+dynamic_piece_registry.py
+comprehensive_*.py
+compare_*.py
+curated_*.py
+quick_analyze.py
+accurate_validation.py
+workflow_postprocessor.py
+workflow_templates.py
+
+# Temp JSON examples
+*_example.json
+*_sample.json
+*_router*.json
+*_test.json
+*_clear_prompt*.json
+*.jsoclear
+weekly_workflow_template.json
+
+# Old RAG files (if not using)
+rag/env_template.txt
+rag/pieces_knowledge_base.json
+
+# Misc temp files
+raw_response.txt
+response.json
+bunfig.toml
+*.sh
+!setup_venv.sh

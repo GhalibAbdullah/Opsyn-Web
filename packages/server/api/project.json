@@ -20,6 +20,13 @@
         "bundle": true,
         "sourcemap": true,
         "generatePackageJson": true,
+        "external": [
+          "onnxruntime-node",
+          "sharp",
+          "@swc/core",
+          "isolated-vm",
+          "@xenova/transformers"
+        ],
         "assets": [
           {
             "glob": "packages/server/api/README.md",

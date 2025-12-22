@@ -6,21 +6,27 @@ import {
     CountFlowsRequest,
     CreateFlowRequest,
     ErrorCode,
+    FlowAction,
+    FlowActionType,
     FlowOperationRequest,
     FlowOperationType,
     FlowStatus,
     flowStructureUtil,
     FlowTemplateWithoutProjectInformation,
     FlowTrigger,
+    FlowTriggerType,
     FlowVersionState,
     GetFlowQueryParamsRequest,
     GetFlowTemplateRequestQuery,
     isNil,
     ListFlowsRequest,
     Permission,
+    PieceActionSettings,
+    PieceTriggerSettings,
     PlatformUsageMetric,
     PopulatedFlow,
     PrincipalType,
+    PropertyExecutionType,
     SeekPage,
     SERVICE_KEY_SECURITY_OPENAPI,
 } from '@activepieces/shared'
@@ -239,6 +245,85 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
     })
 }
 
+/**
+ * Normalize propertySettings to ensure all entries have the required 'type' field
+ */
+function normalizePropertySettings(
+    propertySettings: Record<string, unknown> | undefined | null,
+): Record<string, { type: PropertyExecutionType; schema?: unknown }> {
+    const normalized: Record<string, { type: PropertyExecutionType; schema?: unknown }> = {}
+    
+    if (propertySettings && typeof propertySettings === 'object') {
+        for (const [key, value] of Object.entries(propertySettings)) {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                const propSetting = value as Record<string, unknown>
+                // Ensure type field exists, defaulting to 'MANUAL' if missing or invalid
+                normalized[key] = {
+                    type: (propSetting.type === PropertyExecutionType.DYNAMIC 
+                        ? PropertyExecutionType.DYNAMIC 
+                        : PropertyExecutionType.MANUAL),
+                    ...(propSetting.schema !== undefined ? { schema: propSetting.schema } : {}),
+                }
+            } else {
+                // If value is not an object, create a valid PropertySettings entry
+                normalized[key] = { type: PropertyExecutionType.MANUAL }
+            }
+        }
+    }
+    
+    return normalized
+}
+
+/**
+ * Recursively normalize propertySettings in a step (trigger or action)
+ */
+function normalizeStepPropertySettings(step: FlowTrigger | FlowAction): FlowTrigger | FlowAction {
+    let normalizedStep: FlowTrigger | FlowAction = { ...step }
+    
+    // Normalize propertySettings for PIECE triggers and actions
+    if (normalizedStep.type === FlowTriggerType.PIECE || normalizedStep.type === FlowActionType.PIECE) {
+        const settings = normalizedStep.settings as PieceTriggerSettings | PieceActionSettings
+        if (settings && typeof settings === 'object') {
+            const normalizedPropertySettings = normalizePropertySettings(settings.propertySettings)
+            normalizedStep = {
+                ...normalizedStep,
+                settings: {
+                    ...settings,
+                    propertySettings: normalizedPropertySettings,
+                },
+            }
+        }
+    }
+    
+    // Recursively normalize nextAction
+    if ('nextAction' in normalizedStep && normalizedStep.nextAction) {
+        normalizedStep = {
+            ...normalizedStep,
+            nextAction: normalizeStepPropertySettings(normalizedStep.nextAction) as FlowAction,
+        }
+    }
+    
+    // Recursively normalize firstLoopAction
+    if ('firstLoopAction' in normalizedStep && normalizedStep.firstLoopAction) {
+        normalizedStep = {
+            ...normalizedStep,
+            firstLoopAction: normalizeStepPropertySettings(normalizedStep.firstLoopAction) as FlowAction,
+        }
+    }
+    
+    // Recursively normalize router children
+    if ('children' in normalizedStep && Array.isArray(normalizedStep.children)) {
+        normalizedStep = {
+            ...normalizedStep,
+            children: normalizedStep.children.map(child => 
+                child ? normalizeStepPropertySettings(child) as FlowAction : null
+            ),
+        }
+    }
+    
+    return normalizedStep
+}
+
 function cleanOperation(operation: FlowOperationRequest): FlowOperationRequest {
     if (operation.type === FlowOperationType.IMPORT_FLOW) {
         const clearSampleData = {
@@ -258,16 +343,20 @@ function cleanOperation(operation: FlowOperationRequest): FlowOperationRequest {
                 },
             }
         }) as FlowTrigger
+        
+        // Normalize propertySettings in the trigger and all nested actions
+        const normalizedTrigger = normalizeStepPropertySettings(trigger) as FlowTrigger
+        
         return {
             ...operation,
             request: {
                 ...operation.request,
                 trigger: {
-                    ...trigger,
+                    ...normalizedTrigger,
                     settings: {
-                        ...trigger.settings,
+                        ...normalizedTrigger.settings,
                         sampleData: {
-                            ...trigger.settings.sampleData,
+                            ...normalizedTrigger.settings.sampleData,
                             ...clearSampleData,
                         },
                     },

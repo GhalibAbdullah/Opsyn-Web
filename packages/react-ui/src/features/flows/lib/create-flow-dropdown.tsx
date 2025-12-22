@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { ChevronDown, Plus, Upload, Workflow } from 'lucide-react';
+import { ChevronDown, Plus, Sparkles, Upload, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +28,8 @@ import {
   UncategorizedFolderId,
 } from '@activepieces/shared';
 
+import { GenerateWorkflowDialog } from '@/features/opsyn';
+
 import { ImportFlowDialog } from '../components/import-flow-dialog';
 import { SelectFlowTemplateDialog } from '../components/select-flow-template-dialog';
 
@@ -52,6 +54,7 @@ export const CreateFlowDropdown = ({
   const doesUserHavePermissionToWriteFlow =
     canWriteFlows ?? checkAccess(Permission.WRITE_FLOW);
   const [refresh, setRefresh] = useState(0);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { embedState } = useEmbedding();
   const { mutate: createFlow, isPending: isCreateFlowPending } = useMutation<
@@ -131,6 +134,17 @@ export const CreateFlowDropdown = ({
             </DropdownMenuItem>
           </SelectFlowTemplateDialog>
 
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setIsGenerateDialogOpen(true);
+            }}
+            disabled={isCreateFlowPending}
+          >
+            <Sparkles className="h-4 w-4 me-2" />
+            <span>{t('Generate with AI')}</span>
+          </DropdownMenuItem>
+
           {!embedState.hideExportAndImportFlow && (
             <ImportFlowDialog
               insideBuilder={false}
@@ -151,6 +165,15 @@ export const CreateFlowDropdown = ({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <GenerateWorkflowDialog
+        open={isGenerateDialogOpen}
+        onOpenChange={setIsGenerateDialogOpen}
+        onSuccess={() => {
+          setIsGenerateDialogOpen(false);
+          if (refetch) refetch();
+        }}
+      />
     </PermissionNeededTooltip>
   );
 };

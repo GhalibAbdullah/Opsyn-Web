@@ -1,0 +1,23 @@
+# OPSYN Model Server Dependencies
+# Run: pip install -r requirements.txt
+
+# FastAPI server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# Model inference
+torch>=2.0.0
+transformers>=4.45.0  # Updated to support huggingface-hub>=1.0
+peft>=0.7.0
+accelerate>=0.25.0
+safetensors>=0.4.0
+bitsandbytes>=0.41.0
+
+# Embedding model for post-processing
+sentence-transformers>=2.2.0
+numpy>=1.24.0
+
+# Utilities
+python-dotenv==1.0.0
+

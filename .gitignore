@@ -73,3 +73,41 @@ scratch.md
 /blob-report/
 /playwright/.cache/
 /redis-binaries/
+
+# OpSyn temp files (root level)
+__pycache__/
+*.pyc
+*.pyo
+piece_registry.json
+bunfig.toml
+*:Zone.Identifier
+enrich_piece_registry.py
+PIPELINE_SUMMARY.md
+
+# OpSyn temp docs
+EMBEDDING_*.md
+INTEGRATION_*.md
+OPSYN_*.md
+PIPELINE_*.md
+STANDALONE_*.md
+TYPESCRIPT_*.md
+VERIFICATION_*.md
+WHY_*.md
+
+# OpSyn temp scripts
+run_pipeline*.py
+run_pipeline*.sh
+test_*.ts
+test_*.py
+verify_*.py
+verify_*.ts
+pipeline.ts
+
+# OpSyn test outputs
+*_test.json
+*_final.json
+
+# OpSyn model server (handled by its own .gitignore)
+opsyn-model-server/venv/
+opsyn-model-server/__pycache__/
+opsyn-model-server/qwen25_coder_7b_opsyn_lora_quality/
