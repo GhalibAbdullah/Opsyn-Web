@@ -7,7 +7,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { Sparkles, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, Download, AlertCircle, CheckCircle2, Loader2, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,7 +41,18 @@ export const GenerateWorkflowDialog: React.FC<GenerateWorkflowDialogProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState<GenerateWorkflowResponse | null>(null);
+  const [showSupportedPieces, setShowSupportedPieces] = useState(false);
   const navigate = useNavigate();
+
+  // Supported pieces - trained on these integrations
+  const supportedPieces = [
+    'Slack', 'Gmail', 'Google Sheets', 'Google Drive', 'Notion', 'Discord',
+    'GitHub', 'Airtable', 'Trello', 'HubSpot', 'Stripe', 'Shopify',
+    'Telegram', 'Twilio', 'Linear', 'Jira', 'Calendly', 'Typeform',
+    'Google Calendar', 'Google Forms', 'Webhook', 'HTTP', 'Schedule',
+    'WooCommerce', 'Mailchimp', 'PostgreSQL', 'Amazon S3', 'Webflow',
+    'Todoist', 'Intercom', 'OpenAI', 'SendGrid', 'Zoom'
+  ];
 
   // Check model status
   const { data: modelStatus, isLoading: isCheckingModel } = useQuery({
@@ -219,16 +230,57 @@ export const GenerateWorkflowDialog: React.FC<GenerateWorkflowDialogProps> = ({
             </label>
             <Textarea
               id="prompt"
-              placeholder={t('e.g., When a new row is added to Google Sheets, send a Slack message to the #updates channel with the row data')}
+              placeholder={t('e.g., When a new email arrives in Gmail, add the sender to a Google Sheet and send a Slack notification')}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={4}
               className="resize-none"
               disabled={isLoading}
             />
-            <p className="text-xs text-muted-foreground">
-              {t('Be specific about triggers, actions, and any conditions.')}
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">{t('Tips for best results:')}</p>
+              <ul className="list-disc list-inside space-y-0.5 ml-1">
+                <li>{t('Start with "When..." to describe what starts the workflow')}</li>
+                <li>{t('Then describe each step in order')}</li>
+                <li>{t('Use "if...then...otherwise" for conditions')}</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Supported Pieces Info */}
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <button
+              type="button"
+              onClick={() => setShowSupportedPieces(!showSupportedPieces)}
+              className="flex items-center gap-2 w-full text-left text-sm"
+            >
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground flex-1">
+                {t('Supported integrations')} ({supportedPieces.length}+ pieces)
+              </span>
+              {showSupportedPieces ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+            {showSupportedPieces && (
+              <div className="mt-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-2">
+                  {t('The AI works best with these integrations and simple if/else conditions. Complex multi-branch logic may need manual adjustments.')}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {supportedPieces.map((piece) => (
+                    <span
+                      key={piece}
+                      className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary"
+                    >
+                      {piece}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Result */}
