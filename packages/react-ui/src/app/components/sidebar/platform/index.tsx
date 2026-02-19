@@ -69,7 +69,7 @@ export function PlatformSidebar() {
       icon: LineChart,
       locked: !platform.plan.analyticsEnabled,
       isSubItem: false,
-      show: edition !== ApEdition.COMMUNITY,
+      show: Boolean(edition && [ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)),
     },
     {
       type: 'link',
@@ -227,13 +227,15 @@ export function PlatformSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {items.map((item) =>
-              item.type === 'group' ? (
-                <ApSidebareGroup key={item.label} {...item} />
-              ) : (
-                <ApSidebarItem key={item.label} {...item} />
-              ),
-            )}
+            {items
+              .filter((item) => item.type === 'group' || item.show !== false)
+              .map((item) =>
+                item.type === 'group' ? (
+                  <ApSidebareGroup key={item.label} {...item} />
+                ) : (
+                  <ApSidebarItem key={item.label} {...item} />
+                ),
+              )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

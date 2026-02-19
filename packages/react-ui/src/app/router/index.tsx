@@ -9,7 +9,7 @@ import {
 import { PageTitle } from '@/app/components/page-title';
 import { ChatPage } from '@/app/routes/chat';
 import { EmbedPage } from '@/app/routes/embed';
-import AnalyticsPage from '@/app/routes/platform/analytics';
+import { AnalyticsGuard } from '@/app/routes/platform/analytics/analytics-guard';
 import { ApiKeysPage } from '@/app/routes/platform/security/api-keys';
 import { SigningKeysPage } from '@/app/routes/platform/security/signing-keys';
 import { SSOPage } from '@/app/routes/platform/security/sso';
@@ -461,7 +461,7 @@ const routes = [
         <PageTitle title="Analytics">
           <div className="flex flex-col gap-4 w-full">
             <PlatformMessages />
-            <AnalyticsPage />
+            <AnalyticsGuard />
           </div>
         </PageTitle>
       </PlatformLayout>
@@ -472,7 +472,7 @@ const routes = [
     element: (
       <PlatformLayout>
         <PageTitle title="Platform">
-          <Navigate to="/platform/analytics" />
+          <Navigate to="/platform/projects" replace />
         </PageTitle>
       </PlatformLayout>
     ),
