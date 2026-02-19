@@ -1,0 +1,108 @@
+---
+title: "Releases & Environments"
+icon: "package"
+description: "Deploy flows across environments with version control and release management"
+---
+
+Releases let you manage deployment of your flows across multiple environments — development, staging, and production. Combined with Git integration, you get full version control and team collaboration on workflow changes.
+
+## Accessing Releases
+
+Navigate to **Releases** in the project sidebar (or visit `/projects/:id/releases`).
+
+<Note>
+  Releases must be enabled for your project. A platform admin can enable this in the project settings. The feature also requires `READ_PROJECT_RELEASE` permission.
+</Note>
+
+## What Are Releases?
+
+A release is a snapshot of your project's flows at a specific point in time. When you create a release, it captures the current state of all flows and applies them to a target environment. This lets you:
+
+- **Develop safely** — Build and test flows in a dev project without affecting production
+- **Review changes** — See exactly what changed before deploying
+- **Roll back** — Return to a previous release if something goes wrong
+- **Audit deployments** — Track who deployed what and when
+
+## Release Types
+
+| Type | Source | Description |
+|------|--------|-------------|
+| **Project** | Another OpSyn project | Push flows from one project to another (e.g., dev → production) |
+| **Git** | Git repository | Pull flows from a Git repository branch |
+| **Rollback** | Previous release | Revert to a prior release state |
+
+## Creating a Release
+
+### Push from Project
+
+1. Go to **Releases** in your target project
+2. Click **Create Release → Push Everything** or **Select Flows**
+3. Choose the source project
+4. Review the changes (new, modified, deleted flows)
+5. Name the release and confirm
+
+### From Git
+
+1. First configure Git in **Settings → Environments**
+2. Connect your Git repository (see [Environments](#environments) below)
+3. Go to **Releases** and create a release from Git
+4. The flows from the repository branch are applied to the project
+
+## Release History
+
+The releases table shows all past deployments:
+
+| Column | Description |
+|--------|-------------|
+| **Name** | Release name/description |
+| **Source** | Project name or Git branch |
+| **Created** | When the release was deployed |
+| **Created By** | Who triggered the release |
+| **Actions** | View details, rollback |
+
+### Viewing a Release
+
+Click on a release to see what was included — the specific flows and versions that were part of that deployment.
+
+### Rolling Back
+
+1. Find the release you want to revert to
+2. Click the **rollback** icon
+3. Confirm — a new "Rollback" release is created that restores the previous state
+
+## Environments
+
+Environments connect your project to a Git repository for version-controlled deployment.
+
+### Setting Up Git Sync
+
+1. Navigate to **More → Environments** in the project sidebar
+2. Click **Connect Git Repository**
+3. Enter:
+   - **Repository URL** — Your Git repo URL (HTTPS)
+   - **Branch** — The branch to sync with
+   - **SSH Key** or **Access Token** — Authentication credentials
+4. Click **Connect**
+
+Once connected, the environments page shows:
+- **Repository URL** — The connected repo
+- **Branch** — The active branch
+- **Disconnect** button — To remove the Git connection
+
+### How Git Sync Works
+
+1. Flows in your project can be pushed to the Git repository
+2. Other projects can pull from the same repository
+3. This enables a proper CI/CD pipeline: dev → staging → production
+
+<Tip>
+  Use Git sync for team workflows where multiple developers need to collaborate on flows, review changes, and deploy through a controlled pipeline.
+</Tip>
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View Releases** | Users with `READ_PROJECT_RELEASE` permission |
+| **Create Releases** | Users with `WRITE_PROJECT_RELEASE` permission |
+| **Configure Git** | Users with `WRITE_PROJECT_RELEASE` permission |

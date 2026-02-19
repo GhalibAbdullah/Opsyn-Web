@@ -3,7 +3,7 @@ import {
   CreateOtpRequestBody,
   ResetPasswordRequestBody,
   VerifyEmailRequestBody,
-} from '@activepieces/ee-shared';
+} from '@/features/authentication/lib/authn-types';
 import {
   AuthenticationResponse,
   ClaimTokenRequest,

@@ -1,0 +1,109 @@
+---
+title: "Connections"
+icon: "link"
+description: "Manage API credentials and connect to third-party services"
+---
+
+Connections store the credentials needed to interact with third-party services like Google, Slack, GitHub, and more. They're securely stored and shared across flows within your project.
+
+<Note>
+  Looking to browse available services? Visit the [Integrations](/user-guide/integrations) page for a visual catalog of all available apps.
+</Note>
+
+## What is a Connection?
+
+A connection is a saved set of credentials for a specific service. Once you create a connection to Slack, for example, all your flows can use it to send messages, read channels, and more — without re-entering credentials each time.
+
+## Creating a Connection
+
+### During Flow Building
+
+The most common way to create a connection is while building a flow:
+
+1. Add a step that requires a connection (e.g., "Send Slack Message")
+2. Click **+ New Connection** in the step settings
+3. Follow the authentication flow (OAuth, API key, etc.)
+4. Name your connection
+5. It's now available for all flows in the project
+
+### From the Connections Page
+
+1. Navigate to **Connections** in the sidebar
+2. Click **+ New Connection**
+3. Select the service (piece)
+4. Complete the authentication
+5. Name and save the connection
+
+## Connection Types
+
+Different services use different authentication methods:
+
+| Type | How It Works | Examples |
+|------|-------------|---------|
+| **OAuth 2.0** | "Sign in with..." button, auto-refreshing tokens | Google, Slack, GitHub, HubSpot |
+| **API Key** | Paste your API key or token | OpenAI, SendGrid, Airtable |
+| **Basic Auth** | Username and password | SMTP, some REST APIs |
+| **Custom Auth** | Multiple fields (key-value pairs) | Custom APIs, complex services |
+| **No Auth** | No credentials needed | Public webhooks, RSS feeds |
+
+## Managing Connections
+
+### Viewing Connections
+
+Navigate to **Connections** in the sidebar to see all connections in your project:
+- Connection name
+- Connected service
+- Status (Active, Error, Missing)
+- Creation date
+
+### Connection Status
+
+| Status | Meaning |
+|--------|---------|
+| **Active** ✅ | Credentials are valid and working |
+| **Error** ❌ | Credentials expired or became invalid |
+| **Missing** ⚠️ | Credentials haven't been configured yet |
+
+### Renaming Connections
+
+1. Click the menu on a connection
+2. Select **Rename**
+3. Enter the new name
+
+### Deleting Connections
+
+1. Click the menu on a connection
+2. Select **Delete**
+3. Confirm
+
+<Warning>
+  Deleting a connection will break any flows that use it. Check which flows reference a connection before deleting.
+</Warning>
+
+## Global Connections (Platform-Wide)
+
+Platform administrators can create **global connections** that are shared across all projects:
+
+1. Go to **Platform → Setup → Connections**
+2. Create a connection
+3. Assign it to specific projects or all projects
+
+Global connections are useful for:
+- Company-wide API keys (e.g., shared OpenAI key)
+- Centrally managed OAuth apps
+- Reducing credential duplication
+
+## Connection Security
+
+- **Encrypted at rest** — All credentials are encrypted in the database
+- **Project isolation** — Connections are scoped to projects (or platform for global)
+- **Auto-cleanup** — When a member is removed, their connections follow the project cleanup policy
+- **Permission-based** — Only users with `READ_APP_CONNECTION` can view connections
+
+## Permissions
+
+| Permission | Roles |
+|------------|-------|
+| **View Connections** | Admin, Editor, Operator, Viewer |
+| **Create/Edit Connections** | Admin, Editor, Operator |
+| **Delete Connections** | Admin, Editor |

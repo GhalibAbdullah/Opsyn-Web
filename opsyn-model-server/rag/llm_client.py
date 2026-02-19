@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-LLM Client - Unified interface for Gemini and OpenAI.
+LLM Client - Unified interface for multiple LLM providers.
 
 Supports:
-- Google Gemini (free tier: 15 RPM, 1M tokens/day)
+- Groq (free tier - Llama 3.1 70B) - RECOMMENDED
+- Google Gemini (free tier)
 - OpenAI GPT-4/GPT-3.5 (paid)
+
+The LLM produces MINIMAL output - post-processing handles the rest.
 """
 
 import os
@@ -12,6 +15,35 @@ import json
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
+from pathlib import Path
+
+
+def _load_env():
+    """Load environment variables from .env file."""
+    env_paths = [
+        Path(__file__).parent.parent / ".env",
+        Path(__file__).parent / ".env",
+        Path.cwd() / ".env",
+    ]
+    
+    for env_path in env_paths:
+        if env_path.exists():
+            try:
+                with open(env_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip().strip('"').strip("'")
+                            if key and value and key not in os.environ:
+                                os.environ[key] = value
+                print(f"Loaded environment from: {env_path}")
+                return
+            except Exception as e:
+                print(f"Warning: Could not load {env_path}: {e}")
+
+_load_env()
 
 
 @dataclass
@@ -28,101 +60,77 @@ class LLMClient(ABC):
     
     @abstractmethod
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
-        """Generate a response from the LLM."""
         pass
     
     @abstractmethod
     def is_available(self) -> bool:
-        """Check if the LLM client is available (API key set, etc.)."""
         pass
 
 
 class GeminiClient(LLMClient):
-    """Google Gemini client (free tier available)."""
+    """Google Gemini client."""
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-1.5-flash"):
-        """
-        Initialize Gemini client.
-        
-        Args:
-            api_key: Gemini API key (or set GEMINI_API_KEY env var)
-            model: Model to use (gemini-1.5-flash is free tier)
-        """
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.0-flash"):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model = model
         self._client = None
     
     def _get_client(self):
-        """Lazy load Gemini client."""
         if self._client is None:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self._client = genai.GenerativeModel(self.model)
-            except ImportError:
-                raise ImportError(
-                    "google-generativeai not installed. Run: pip install google-generativeai"
-                )
+            from google import genai
+            self._client = genai.Client(api_key=self.api_key)
         return self._client
     
     def is_available(self) -> bool:
-        """Check if Gemini is available."""
         return bool(self.api_key)
     
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
-        """Generate response from Gemini."""
+        import time
         client = self._get_client()
         
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
         
-        response = client.generate_content(full_prompt)
-        
-        return LLMResponse(
-            content=response.text,
-            model=self.model,
-            usage={
-                "prompt_tokens": response.usage_metadata.prompt_token_count if hasattr(response, 'usage_metadata') else None,
-                "completion_tokens": response.usage_metadata.candidates_token_count if hasattr(response, 'usage_metadata') else None,
-            },
-            raw_response=response
-        )
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(model=self.model, contents=full_prompt)
+                return LLMResponse(
+                    content=response.text,
+                    model=self.model,
+                    usage={"prompt_tokens": getattr(response.usage_metadata, 'prompt_token_count', None)},
+                    raw_response=response
+                )
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    wait_time = 20 * (attempt + 1)
+                    print(f"Rate limited. Waiting {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+        raise Exception("Max retries exceeded")
 
 
-class OpenAIClient(LLMClient):
-    """OpenAI client (GPT-4, GPT-3.5)."""
+class GroqClient(LLMClient):
+    """Groq client - FREE Llama 3.3 70B access."""
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
-        """
-        Initialize OpenAI client.
-        
-        Args:
-            api_key: OpenAI API key (or set OPENAI_API_KEY env var)
-            model: Model to use (gpt-4o-mini, gpt-4o, gpt-3.5-turbo)
-        """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, model: str = "llama-3.3-70b-versatile"):
+        self.api_key = api_key or os.getenv("GROQ_API_KEY")
         self.model = model
         self._client = None
     
     def _get_client(self):
-        """Lazy load OpenAI client."""
         if self._client is None:
-            try:
-                from openai import OpenAI
-                self._client = OpenAI(api_key=self.api_key)
-            except ImportError:
-                raise ImportError(
-                    "openai not installed. Run: pip install openai"
-                )
+            from openai import OpenAI
+            self._client = OpenAI(
+                api_key=self.api_key,
+                base_url="https://api.groq.com/openai/v1"
+            )
         return self._client
     
     def is_available(self) -> bool:
-        """Check if OpenAI is available."""
         return bool(self.api_key)
     
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
-        """Generate response from OpenAI."""
         client = self._get_client()
         
         messages = []
@@ -133,8 +141,51 @@ class OpenAIClient(LLMClient):
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
-            temperature=0.7,
-            max_tokens=4096,
+            temperature=0.1,  # Very low for consistency
+            max_tokens=4096,  # Enough for complex workflows
+        )
+        
+        return LLMResponse(
+            content=response.choices[0].message.content,
+            model=f"groq/{self.model}",
+            usage={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+            },
+            raw_response=response
+        )
+
+
+class OpenAIClient(LLMClient):
+    """OpenAI client."""
+    
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.model = model
+        self._client = None
+    
+    def _get_client(self):
+        if self._client is None:
+            from openai import OpenAI
+            self._client = OpenAI(api_key=self.api_key)
+        return self._client
+    
+    def is_available(self) -> bool:
+        return bool(self.api_key)
+    
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> LLMResponse:
+        client = self._get_client()
+        
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.1,  # Very low for consistency
+            max_tokens=4096,  # Enough for complex workflows
         )
         
         return LLMResponse(
@@ -143,7 +194,6 @@ class OpenAIClient(LLMClient):
             usage={
                 "prompt_tokens": response.usage.prompt_tokens,
                 "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
             },
             raw_response=response
         )
@@ -153,137 +203,62 @@ class LLMFactory:
     """Factory for creating LLM clients."""
     
     @staticmethod
-    def create(
-        provider: str = "auto",
-        api_key: Optional[str] = None,
-        model: Optional[str] = None
-    ) -> LLMClient:
-        """
-        Create an LLM client.
-        
-        Args:
-            provider: "gemini", "openai", or "auto" (try gemini first)
-            api_key: API key (optional, uses env vars)
-            model: Model name (optional, uses defaults)
-        
-        Returns:
-            LLMClient instance
-        """
-        if provider == "gemini":
-            return GeminiClient(api_key=api_key, model=model or "gemini-1.5-flash")
-        
+    def create(provider: str = "auto", api_key: Optional[str] = None, model: Optional[str] = None) -> LLMClient:
+        if provider == "groq":
+            return GroqClient(api_key=api_key, model=model or "llama-3.3-70b-versatile")
+        elif provider == "gemini":
+            return GeminiClient(api_key=api_key, model=model or "gemini-2.0-flash")
         elif provider == "openai":
             return OpenAIClient(api_key=api_key, model=model or "gpt-4o-mini")
-        
         elif provider == "auto":
-            # Try Gemini first (free), then OpenAI
+            # Try Groq first (free + powerful), then Gemini, then OpenAI
+            groq = GroqClient(api_key=api_key)
+            if groq.is_available():
+                print("Using Groq (Llama 3.3 70B)")
+                return groq
             gemini = GeminiClient(api_key=api_key)
             if gemini.is_available():
+                print("Using Gemini")
                 return gemini
-            
             openai = OpenAIClient(api_key=api_key)
             if openai.is_available():
+                print("Using OpenAI")
                 return openai
-            
-            raise ValueError(
-                "No LLM API key found. Set GEMINI_API_KEY or OPENAI_API_KEY"
-            )
-        
+            raise ValueError("No LLM API key found. Set GROQ_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY")
         else:
-            raise ValueError(f"Unknown provider: {provider}")
+            raise ValueError(f"Unknown provider: {provider}. Use 'groq', 'gemini', 'openai', or 'auto'")
 
 
-# System prompt for workflow generation
-WORKFLOW_SYSTEM_PROMPT = """You are an expert Activepieces workflow builder. Your job is to create valid Activepieces workflow JSON based on user descriptions.
+# ============================================================================
+# MINIMAL SYSTEM PROMPT - Post-processor handles the rest!
+# ============================================================================
+WORKFLOW_SYSTEM_PROMPT = """Generate Activepieces workflow JSON. Output ONLY valid JSON, nothing else.
 
-CRITICAL RULES:
-1. Use ONLY the piece names, action names, and trigger names provided in the context
-2. NEVER invent action names - use exactly what's listed
-3. Use the exact package names (e.g., @activepieces/piece-gmail)
-4. All workflows must have a trigger that starts the flow
-5. Use {{variable}} syntax for dynamic values
-6. Each step needs: name, type, displayName, valid, settings
+STRUCTURE:
+{"displayName":"Name","trigger":{"name":"trigger","type":"PIECE_TRIGGER","settings":{"pieceName":"@activepieces/piece-xxx","triggerName":"yyy","input":{}},"nextAction":{...}}}
 
-OUTPUT FORMAT:
-Return ONLY valid JSON in this exact format:
-{
-  "displayName": "Workflow Name",
-  "trigger": {
-    "name": "trigger",
-    "type": "PIECE_TRIGGER",
-    "displayName": "Trigger Display Name",
-    "valid": true,
-    "settings": {
-      "pieceName": "@activepieces/piece-xxx",
-      "pieceVersion": "~1.0.0",
-      "triggerName": "exact_trigger_name_from_context",
-      "input": {},
-      "propertySettings": {}
-    },
-    "nextAction": {
-      "name": "step_1",
-      "type": "PIECE",
-      "displayName": "Action Display Name",
-      "valid": true,
-      "settings": {
-        "pieceName": "@activepieces/piece-xxx",
-        "pieceVersion": "~1.0.0",
-        "actionName": "exact_action_name_from_context",
-        "input": {},
-        "propertySettings": {}
-      }
-    }
-  }
-}
+ACTIONS chain via nextAction. For conditions use elseNextAction.
 
-For conditional logic, use ROUTER:
-{
-  "name": "router_1",
-  "type": "ROUTER",
-  "displayName": "Check Condition",
-  "valid": true,
-  "settings": {
-    "executionType": "EXECUTE_FIRST_MATCH",
-    "branches": [
-      {
-        "branchType": "CONDITION",
-        "branchName": "If condition",
-        "conditions": [[{"firstValue": "{{step.value}}", "operator": "TEXT_CONTAINS", "secondValue": "text"}]]
-      },
-      {
-        "branchType": "FALLBACK",
-        "branchName": "Otherwise"
-      }
-    ]
-  },
-  "children": [
-    { /* first branch action */ },
-    { /* fallback action */ }
-  ]
-}
+CRITICAL - Use EXACT names from AVAILABLE PIECES list:
+- Slack send: "send_channel_message"
+- Gmail send: "send_email"
+- Sheets add: "insert_row"
+- Sheets read: "find_rows"
 
-Valid condition operators: TEXT_CONTAINS, TEXT_EXACTLY_MATCHES, NUMBER_IS_GREATER_THAN, NUMBER_IS_LESS_THAN, BOOLEAN_IS_TRUE, EXISTS, DOES_NOT_EXIST, LIST_IS_EMPTY
-
-REMEMBER: Use ONLY the action/trigger names from the AVAILABLE PIECES section. Do not guess or invent names."""
+EXAMPLE:
+{"displayName":"Email to Slack","trigger":{"name":"trigger","type":"PIECE_TRIGGER","settings":{"pieceName":"@activepieces/piece-gmail","triggerName":"gmail_new_email_received","input":{}},"nextAction":{"name":"step_1","type":"PIECE","settings":{"pieceName":"@activepieces/piece-slack","actionName":"send_channel_message","input":{}},"nextAction":null}}}"""
 
 
 def main():
     """Test LLM clients."""
-    # Test factory
     try:
         client = LLMFactory.create("auto")
         print(f"Using: {client.__class__.__name__}")
-        
-        response = client.generate(
-            "Say hello in JSON format: {\"greeting\": \"...\"}",
-            system_prompt="You are a helpful assistant. Return only valid JSON."
-        )
+        response = client.generate('{"test": "hello"}', system_prompt="Echo back the JSON.")
         print(f"Response: {response.content}")
-        print(f"Usage: {response.usage}")
     except Exception as e:
         print(f"Error: {e}")
 
 
 if __name__ == "__main__":
     main()
-

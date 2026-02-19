@@ -1,66 +1,120 @@
 ---
-sidebarTitle: "What is Activepieces?"
-title: "🥳 Welcome to Activepieces" 
+sidebarTitle: "What is OpSyn?"
+title: "Welcome to OpSyn"
 icon: 'hand-wave'
-description: "Your friendliest open source all-in-one automation tool, designed to be extensible."
+description: "An open-source workflow automation platform with AI-powered workflow generation, real-time collaboration, and enterprise features."
 ---
+
 <CardGroup cols={2}>
   <Card
     href="/flows/building-flows"
-    title="Learn Concepts"
-    icon="shapes"
+    title="Build Workflows"
+    icon="bolt"
     color="#8143E3"
   >
-    Learn how to work with Activepieces
+    Learn how to build automation workflows
   </Card>
   <Card
-    href="https://www.activepieces.com/pieces"
-    title="Pieces"
-    icon="puzzle-piece"
+    href="/user-guide/tables"
+    title="Tables"
+    icon="table"
     color="#8143E3"
   >
-    Browse available pieces
+    Store and manage data with built-in tables
+  </Card>
+  <Card
+    href="/user-guide/ai-workflow-generation"
+    title="AI Workflow Generation"
+    icon="wand-magic-sparkles"
+    color="#8143E3"
+  >
+    Generate workflows from natural language
+  </Card>
+  <Card
+    href="/user-guide/collaboration"
+    title="Collaborate"
+    icon="users"
+    color="#8143E3"
+  >
+    Work on workflows with your team in real-time
+  </Card>
+  <Card
+    href="/user-guide/connections"
+    title="Connections"
+    icon="link"
+    color="#8143E3"
+  >
+    Manage integrations and API credentials
   </Card>
   <Card
     href="/install/overview"
-    title="Install"
+    title="Deploy"
     icon="server"
     color="#8143E3"
   >
-    Learn how to install Activepieces
-  </Card>
-    <Card
-    href="/developers/building-pieces/overview"
-    title="Developers"
-    icon="code"
-    color="#8143E3"
-  >
-    How to Build Pieces and Contribute 
+    Install and deploy OpSyn
   </Card>
 </CardGroup>
 
-# 🔥 Why Activepieces is Different:
+## What is OpSyn?
 
-- **💖 Loved by Everyone**: Intuitive interface and great experience for both technical and non-technical users with a quick learning curve.
-  
+OpSyn is an open-source workflow automation platform. It lets you connect 200+ apps and services, build powerful automations, and collaborate with your team — all with enterprise-grade security.
 
-![](/resources/templates.gif)
-- **🌐 Open Ecosystem:** All pieces are open source and available on npmjs.com, **60% of the pieces are contributed by the community**.
+## Key Features
 
-- **🛠️  Pieces are written in Typescript**: Pieces are npm packages in TypeScript, offering full customization with the best developer experience, including **hot reloading** for **local** piece development on your machine. 😎
+### Workflow Automation
+- **Visual Flow Builder** — Drag-and-drop interface for building complex workflows
+- **200+ Integrations** — Connect Google, Slack, GitHub, OpenAI, and many more
+- **Flow Versioning** — Full version history with draft/publish lifecycle
+- **Triggers & Actions** — Schedule, webhook, and event-driven automations
 
+### AI-Powered
+- **AI Workflow Generation** — Describe what you want in plain English and get a complete workflow
+- **AI Agents** — Create AI agents that use tools to accomplish tasks
+- **MCP (Model Context Protocol)** — Expose your tools to AI models like Claude and ChatGPT
+- **AI Providers** — Configure OpenAI, Anthropic, Google AI, and more
 
-![](/resources/create-action.png)
+### Team Collaboration
+- **Real-Time Co-Editing** — Multiple people can edit flows simultaneously
+- **Flow Comments** — Leave comments on workflows and individual steps
+- **Activity Audit Trail** — Track every change made to a flow
+- **Active Editors** — See who else is working on a flow
 
+### Data Management
+- **Tables** — Built-in spreadsheet-like database with typed columns
+- **Table Automations** — Trigger flows when table data changes
+- **Todos** — Task management with human-in-the-loop approval workflows
 
-- **🤖 AI-Ready**: Native AI pieces let you experiment with various providers, or create your own agents using our AI SDK to help you build flows inside the builder.
+### Enterprise Ready
+- **Projects** — Organize work into isolated projects
+- **Platform Admin** — Manage branding, users, billing, and security
+- **Role-Based Access Control** — Granular permissions with custom roles
+- **Self-Hosted** — Deploy on your own infrastructure
 
-- **🏢 Enterprise-Ready**: Developers set up the tools, and anyone in the organization can use the no-code builder. Full customization from branding to control.
+### Developer Friendly
+- **TypeScript Pieces** — Build custom integrations as npm packages
+- **Hot Reloading** — Develop pieces locally with instant feedback
+- **REST API** — Complete API for programmatic access
+- **WebSocket Events** — Real-time event subscriptions
 
-- **🔒 Secure by Design**: Self-hosted and network-gapped for maximum security and control over your data.
+## Platform Architecture
 
-- **🧠 Human in Loop**: Delay execution for a period of time or require approval. These are just pieces built on top of the piece framework, and you can build many pieces like that. 🎨
+OpSyn uses a multi-tenant architecture with two levels:
 
-- **💻 Human Input Interfaces**: Built-in support for human input triggers like "Chat Interface" 💬 and "Form Interface" 📝
+- **Platform** — Your organization. Controls branding, authentication, billing, and user management.
+- **Projects** — Workspaces within your platform. Each project has its own flows, tables, connections, and team.
 
-
+```
+Platform (Organization)
+├── Project A (Marketing Team)
+│   ├── Flows, Tables, Todos, Connections
+│   └── Team Members (with roles)
+├── Project B (Engineering Team)
+│   ├── Flows, Tables, Todos, Connections
+│   └── Team Members (with roles)
+└── Platform Admin
+    ├── Branding & Appearance
+    ├── User Management
+    ├── Security (API Keys, Project Roles)
+    └── Billing
+```

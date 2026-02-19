@@ -1,0 +1,246 @@
+---
+title: "Database & Storage"
+icon: "database"
+description: "PostgreSQL schema, Redis usage, and data architecture"
+---
+
+OpSyn uses **PostgreSQL** as the primary data store and **Redis** for caching, job queues, distributed locks, and real-time pub/sub.
+
+## Tech Stack
+
+| Technology | Purpose |
+|-----------|---------|
+| **PostgreSQL** | Primary relational database (production) |
+| **SQLite** | Lightweight alternative (development/testing) |
+| **TypeORM** | Object-Relational Mapper with EntitySchema pattern |
+| **Redis** | Caching, job queues (BullMQ), distributed locks, Socket.IO adapter |
+
+## PostgreSQL — Entity Map
+
+All entities are registered in `packages/server/api/src/app/database/database-connection.ts`. The system uses TypeORM's `EntitySchema` pattern (not decorators).
+
+### Core Entities (All Editions)
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `UserEntity` | `user` | User accounts |
+| `UserIdentityEntity` | `user_identity` | Authentication identity (email/password, SSO) |
+| `PlatformEntity` | `platform` | Multi-tenant platform configuration |
+| `ProjectEntity` | `project` | Projects within a platform |
+| `ProjectPlanEntity` | `project_plan` | Project usage limits and quotas |
+| `FlagEntity` | `flag` | Feature flags and system settings |
+
+### Flows & Execution
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `FlowEntity` | `flow` | Workflow definitions |
+| `FlowVersionEntity` | `flow_version` | Versioned workflow snapshots |
+| `FlowRunEntity` | `flow_run` | Execution run records |
+| `FlowCommentEntity` | `flow_comment` | Inline comments on flows |
+| `FlowActivityEntity` | `flow_activity` | Audit log of flow changes |
+| `FolderEntity` | `folder` | Folder organization for flows |
+| `FileEntity` | `file` | Uploaded files and artifacts |
+| `StoreEntryEntity` | `store_entry` | Key-value store for flow steps |
+
+### Connections & Triggers
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `AppConnectionEntity` | `app_connection` | OAuth/API key credentials |
+| `TriggerEventEntity` | `trigger_event` | Incoming trigger payloads |
+| `TriggerSourceEntity` | `trigger_source` | Registered trigger sources |
+| `AppEventRoutingEntity` | `app_event_routing` | Webhook → flow routing |
+
+### Tables (Built-in Database)
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `TableEntity` | `table` | User-created data tables |
+| `FieldEntity` | `field` | Column definitions for tables |
+| `RecordEntity` | `record` | Row records in tables |
+| `CellEntity` | `cell` | Individual cell values |
+| `TableWebhookEntity` | `table_webhook` | Webhooks triggered on table changes |
+
+### Todos
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `TodoEntity` | `todo` | Task items with status tracking |
+| `TodoActivityEntity` | `todo_activity` | Comments and activity on todos |
+
+### MCP (Model Context Protocol)
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `McpEntity` | `mcp` | MCP server configurations |
+| `McpToolEntity` | `mcp_tool` | Tools registered on MCP servers |
+| `McpRunEntity` | `mcp_run` | MCP execution logs |
+
+### AI
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `AIProviderEntity` | `ai_provider` | Configured AI provider keys |
+| `AIUsageEntity` | `ai_usage` | AI token usage tracking |
+
+### Pieces
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `PieceMetadataEntity` | `piece_metadata` | Installed piece metadata |
+| `TagEntity` | `tag` | Piece tags |
+| `PieceTagEntity` | `piece_tag` | Piece ↔ tag join table |
+
+### Platform & Users
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `UserInvitationEntity` | `user_invitation` | Pending user invitations |
+| `AlertEntity` | `alert` | Alert notification subscriptions |
+| `WorkerMachineEntity` | `worker_machine` | Registered worker instances |
+
+### Enterprise Edition Entities
+
+These are only loaded for `CLOUD` and `ENTERPRISE` editions:
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `ProjectMemberEntity` (EE) | `project_member` | Project membership with roles |
+| `ProjectRoleEntity` | `project_role` | Custom project roles (RBAC) |
+| `ProjectReleaseEntity` | `project_release` | Versioned project releases |
+| `GitRepoEntity` | `git_repo` | Git sync configuration |
+| `FlowTemplateEntity` | `flow_template` | Shared flow templates |
+| `SigningKeyEntity` | `signing_key` | JWT signing keys |
+| `OAuthAppEntity` | `oauth_app` | OAuth app configurations |
+| `OtpEntity` | `otp` | One-time passwords |
+| `ApiKeyEntity` | `api_key` | API key management |
+| `AuditEventEntity` | `audit_event` | Audit log entries |
+| `CustomDomainEntity` | `custom_domain` | Custom domain mappings |
+| `PlatformPlanEntity` | `platform_plan` | Platform-level usage plans |
+| `PlatformAnalyticsReportEntity` | `platform_analytics_report` | Analytics snapshots |
+| `AppSumoEntity` | `appsumo` | AppSumo integration (Cloud only) |
+| `ConnectionKeyEntity` | `connection_key` | Connection encryption keys (Cloud only) |
+| `AppCredentialEntity` | `app_credential` | App credentials (Cloud only) |
+
+### Community Edition
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `ProjectMemberEntity` (CE) | `project_member` | Simplified project membership |
+| `ProjectPlanEntity` (CE) | `project_plan` | Community plan limits |
+
+## Database Connection
+
+The database type is determined by the `AP_DB_TYPE` environment variable:
+
+```typescript
+// database-connection.ts
+const databaseType = system.get(AppSystemProp.DB_TYPE)
+
+export const databaseConnection = () => {
+    return databaseType === DatabaseType.SQLITE3
+        ? createSqlLiteDataSource()
+        : createPostgresDataSource()
+}
+```
+
+| Variable | Options | Default |
+|----------|---------|---------|
+| `AP_DB_TYPE` | `POSTGRES`, `SQLITE3` | `POSTGRES` |
+| `AP_POSTGRES_DATABASE` | Database name | `activepieces` |
+| `AP_POSTGRES_HOST` | Host | `localhost` |
+| `AP_POSTGRES_PORT` | Port | `5432` |
+| `AP_POSTGRES_USERNAME` | Username | — |
+| `AP_POSTGRES_PASSWORD` | Password | — |
+| `AP_POSTGRES_USE_SSL` | Enable SSL | `false` |
+
+## Migrations
+
+TypeORM migrations manage all schema changes:
+
+- **Location**: `packages/server/api/src/app/database/migration/`
+  - `postgres/` — PostgreSQL migrations
+  - `sqlite3/` — SQLite migrations
+  - `common/` — Shared migrations
+- **Count**: 416+ migration files
+- **Execution**: Run automatically on server startup
+- **Naming**: Timestamped (e.g., `1734537372703-AddFlowComments`)
+
+### Creating a New Migration
+
+```bash
+nx db-migration server-api --name=AddNewFeature
+```
+
+This generates a migration file with `up()` and `down()` methods.
+
+## Redis — Usage Breakdown
+
+Redis serves multiple roles in OpSyn:
+
+### 1. Job Queues (BullMQ)
+
+| Queue | Purpose |
+|-------|---------|
+| `flow-engine` | Execute flow steps |
+| `webhook` | Process incoming webhooks |
+| `system-jobs` | Scheduled maintenance (cleanup, alerts) |
+
+Workers (`packages/server/worker/`) consume from these queues in separate processes.
+
+### 2. Distributed Locks
+
+```typescript
+// Prevents concurrent execution of critical sections
+const lock = await distributedLock(log).acquire('lock-key', timeout)
+try {
+    // critical section
+} finally {
+    await lock.release()
+}
+```
+
+Used for:
+- Flow publishing (prevent concurrent publishes)
+- Trigger registration/deregistration
+- Migration execution
+
+### 3. Socket.IO Adapter
+
+```typescript
+import { createAdapter } from '@socket.io/redis-adapter'
+const adapter = createAdapter(pub, sub)
+```
+
+Enables WebSocket room broadcasts across multiple server instances for horizontal scaling.
+
+### 4. Distributed Store
+
+Key-value cache for cross-instance data sharing (e.g., engine response tracking).
+
+### Redis Configuration
+
+| Variable | Options | Default |
+|----------|---------|---------|
+| `AP_REDIS_TYPE` | `default`, `sentinel` | `default` |
+| `AP_REDIS_HOST` | Host | `localhost` |
+| `AP_REDIS_PORT` | Port | `6379` |
+| `AP_REDIS_PASSWORD` | Password | — |
+| `AP_REDIS_DB` | Database number | `0` |
+| `AP_REDIS_URL` | Full connection URL | — |
+| `AP_REDIS_USE_SSL` | Enable SSL | `false` |
+| `AP_REDIS_SENTINEL_HOSTS` | Sentinel hosts | — |
+| `AP_REDIS_SENTINEL_NAME` | Sentinel master name | — |
+
+## Key Files
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `database-connection.ts` | `server/api/src/app/database/` | DataSource initialization, entity registration |
+| `postgres-connection.ts` | `server/api/src/app/database/` | PostgreSQL-specific config |
+| `sqlite-connection.ts` | `server/api/src/app/database/` | SQLite-specific config |
+| `redis-connections.ts` | `server/api/src/app/database/` | Redis connection factory |
+| `database-common.ts` | `server/api/src/app/database/` | Shared base entity columns |
+| `repo-factory.ts` | `server/api/src/app/core/db/` | TypeORM repository factory |
+| `build-paginator.ts` | `server/api/src/app/helper/pagination/` | Cursor-based pagination |

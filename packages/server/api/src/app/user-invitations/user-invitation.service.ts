@@ -1,19 +1,19 @@
-import { ActivepiecesError, apId, assertEqual, assertNotNullOrUndefined, ErrorCode, InvitationStatus, InvitationType, isNil, Platform, PlatformRole, SeekPage, spreadIfDefined, User, UserIdentity, UserInvitation, UserInvitationWithLink } from '@activepieces/shared'
+import { WorkerSystemProp } from '@activepieces/server-shared'
+import { ActivepiecesError, apId, assertNotNullOrUndefined, ErrorCode, InvitationStatus, InvitationType, isNil, Platform, PlatformRole, SeekPage, spreadIfDefined, User, UserIdentity, UserInvitation, UserInvitationWithLink } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { IsNull } from 'typeorm'
 import { userIdentityService } from '../authentication/user-identity/user-identity-service'
 import { repoFactory } from '../core/db/repo-factory'
-import { domainHelper } from '../ee/custom-domains/domain-helper'
-import { smtpEmailSender } from '../ee/helper/email/email-sender/smtp-email-sender'
-import { emailService } from '../ee/helper/email/email-service'
+import { getSmtpConfig } from '../helper/community-email'
+import { system } from '../helper/system/system'
 import { projectMemberService } from '../project-members/project-member.service'
-import { projectRoleService } from '../ee/projects/project-role/project-role.service'
 import { jwtUtils } from '../helper/jwt-utils'
 import { buildPaginator } from '../helper/pagination/build-paginator'
 import { paginationHelper } from '../helper/pagination/pagination-utils'
 import { platformService } from '../platform/platform.service'
 import { projectService } from '../project/project-service'
 import { userService } from '../user/user-service'
+import { communityInvitationEmailService } from './community-invitation-email'
 import { UserInvitationEntity } from './user-invitation.entity'
 
 const repo = repoFactory(UserInvitationEntity)
@@ -99,25 +99,10 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
                     const { projectId, projectRole, projectRoleId } = invitation
                     assertNotNullOrUndefined(projectId, 'projectId')
                     
-                    // Use simple projectRole string if available, otherwise fall back to Enterprise ProjectRole
                     let roleToUse: 'OWNER' | 'EDITOR' | 'VIEWER' | null = null
-                    
-                    if (projectRole && ['OWNER', 'EDITOR', 'VIEWER'].includes(projectRole.toUpperCase())) {
-                        // Use simple projectRole string
-                        roleToUse = projectRole.toUpperCase() as 'OWNER' | 'EDITOR' | 'VIEWER'
-                    } else if (projectRoleId) {
-                        // Fall back to Enterprise ProjectRole for backward compatibility
-                    const platform = await platformService.getOneWithPlanOrThrow(invitation.platformId)
-                    assertEqual(platform.plan.projectRolesEnabled, true, 'Project roles are not enabled', 'PROJECT_ROLES_NOT_ENABLED')
 
-                        const enterpriseProjectRole = await projectRoleService.getOneOrThrowById({
-                        id: projectRoleId,
-                    })
-                        // Map Enterprise role name to simple role (assuming names match)
-                        const roleName = enterpriseProjectRole.name.toUpperCase()
-                        if (['OWNER', 'EDITOR', 'VIEWER'].includes(roleName)) {
-                            roleToUse = roleName as 'OWNER' | 'EDITOR' | 'VIEWER'
-                        }
+                    if (projectRole && ['OWNER', 'EDITOR', 'VIEWER'].includes(projectRole.toUpperCase())) {
+                        roleToUse = projectRole.toUpperCase() as 'OWNER' | 'EDITOR' | 'VIEWER'
                     }
                     
                     if (!roleToUse) {
@@ -265,17 +250,7 @@ export const userInvitationsService = (log: FastifyBaseLogger) => ({
                 ...spreadIfDefined('type', params.type),
             })
         const { data, cursor } = await paginator.paginate(queryBuilder)
-        const enrichedData = await Promise.all(data.map(async (invitation) => {
-            // Return both simple projectRole string and Enterprise projectRole entity for backward compatibility
-            return {
-                projectRoleEntity: !isNil(invitation.projectRoleId) ? await projectRoleService.getOneOrThrowById({
-                    id: invitation.projectRoleId,
-                }).catch(() => null) : null,
-                // projectRole string is already in invitation object from database
-                ...invitation,
-            }
-        }))
-        return paginationHelper.createPage<UserInvitation>(await Promise.all(enrichedData), cursor)
+        return paginationHelper.createPage<UserInvitation>(data, cursor)
     },
     async delete({ id, platformId }: PlatformAndIdParams): Promise<void> {
         const invitation = await this.getOneOrThrow({ id, platformId })
@@ -487,12 +462,9 @@ async function generateInvitationLink(userInvitation: UserInvitation, expireyInS
     // URL encode the token to handle special characters safely
     const encodedToken = encodeURIComponent(token)
     
-    // Include projectId in the invitation link if it's a project invitation
-    const projectIdParam = userInvitation.projectId ? `&projectId=${userInvitation.projectId}` : '';
-    return domainHelper.getPublicUrl({
-        platformId: userInvitation.platformId,
-        path: `invitation?token=${encodedToken}&email=${encodeURIComponent(userInvitation.email)}${projectIdParam}`,
-    })
+    const projectIdParam = userInvitation.projectId ? `&projectId=${userInvitation.projectId}` : ''
+    const frontendUrl = system.getOrThrow(WorkerSystemProp.FRONTEND_URL).replace(/\/+$/, '')
+    return `${frontendUrl}/invitation?token=${encodedToken}&email=${encodeURIComponent(userInvitation.email)}${projectIdParam}`
 }
 const enrichWithInvitationLink = async (platform: Platform, userInvitation: UserInvitation, expireyInSeconds: number, log: FastifyBaseLogger) => {
     const invitationLink = await generateInvitationLink(userInvitation, expireyInSeconds)
@@ -503,15 +475,14 @@ const enrichWithInvitationLink = async (platform: Platform, userInvitation: User
             link: invitationLink,
         }
     
-    // Try to send email if SMTP is configured
-    if (smtpEmailSender(log).isSmtpConfigured(platform)) {
+    if (getSmtpConfig(platform)) {
         try {
-    await emailService(log).sendInvitation({
-        userInvitation,
-        invitationLink,
-    })
-        } catch (error) {
-            // If email sending fails, log the error but still return the link
+            await communityInvitationEmailService(log).sendInvitation({
+                userInvitation,
+                invitationLink,
+            })
+        }
+        catch (error) {
             log.warn({ error }, 'Failed to send invitation email, but link is still available')
         }
     }

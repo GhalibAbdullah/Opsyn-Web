@@ -42,18 +42,18 @@ export const passwordResetService = (log: FastifyBaseLogger) => ({
             }
         }
 
-        // Generate new OTP
+        // Generate new OTP, reusing the existing record's id if present so
+        // TypeORM performs an UPDATE instead of violating the UNIQUE constraint.
         const otpValue = passwordResetOtpGenerator.generate()
         const newOtp = {
-            id: apId(),
-            created: dayjs().toISOString(),
+            id: existingOtp?.id ?? apId(),
+            created: existingOtp?.created ?? dayjs().toISOString(),
             updated: dayjs().toISOString(),
             identityId: userIdentity.id,
             value: otpValue,
             state: PasswordResetOtpState.PENDING,
         }
 
-        // Upsert OTP (replace if exists)
         await passwordResetOtpRepo().save(newOtp)
 
         // Generate reset link - use FRONTEND_URL from system
@@ -138,18 +138,16 @@ export const passwordResetService = (log: FastifyBaseLogger) => ({
             }
         }
 
-        // Generate new OTP
         const otpValue = passwordResetOtpGenerator.generate()
         const newOtp = {
-            id: apId(),
-            created: dayjs().toISOString(),
+            id: existingOtp?.id ?? apId(),
+            created: existingOtp?.created ?? dayjs().toISOString(),
             updated: dayjs().toISOString(),
             identityId: userIdentity.id,
             value: otpValue,
             state: PasswordResetOtpState.PENDING,
         }
 
-        // Upsert OTP (replace if exists)
         await passwordResetOtpRepo().save(newOtp)
 
         // Generate verification link

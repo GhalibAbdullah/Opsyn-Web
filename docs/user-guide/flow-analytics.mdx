@@ -1,0 +1,72 @@
+---
+title: "Flow Analytics"
+icon: "chart-line"
+description: "Monitor flow performance with detailed metrics and charts"
+---
+
+Every flow in your project has a built-in **analytics dashboard** that shows how it's performing over time — run counts, success rates, execution times, and more.
+
+## Accessing Flow Analytics
+
+1. Go to **Flows** in the project sidebar
+2. Click on the flow you want to analyze
+3. Navigate to the **Analytics** tab (or visit `/flows/:flowId/analytics`)
+
+## Summary Cards
+
+At the top of the analytics dashboard, four summary cards give you an instant overview:
+
+| Metric | Description |
+|--------|-------------|
+| **Total Runs** | Total number of executions in the selected period |
+| **Success Rate** | Percentage of runs that completed successfully |
+| **Failure Rate** | Percentage of runs that failed (shown in red) |
+| **Avg Execution Time** | Average time per run across all executions |
+
+## Charts
+
+### Runs Over Time
+
+A **line chart** showing daily run counts broken down by status:
+
+- **Total Runs** — All executions (blue line)
+- **Successful Runs** — Runs that completed without error (green line)
+- **Failed Runs** — Runs that failed or errored (red line)
+
+This chart makes it easy to spot trends — for example, a sudden spike in failures after a flow change.
+
+### Average Execution Time
+
+A **bar chart** showing how long runs take on average each day. This helps you identify:
+- Performance degradation over time
+- Specific days where runs were slower than usual
+- The impact of flow changes on execution speed
+
+## Date Range Selection
+
+Use the **date range picker** in the top-right corner to control the time window:
+
+- Default range is the **last 30 days**
+- Pick any custom start/end date
+- Use preset ranges for quick selection (Last 7 days, Last 30 days, etc.)
+- The maximum end date is today — no future dates
+
+All summary cards and charts update automatically when you change the date range.
+
+## Use Cases
+
+| Scenario | What to Look For |
+|----------|-----------------|
+| **Flow health check** | High success rate (> 95%), stable execution time |
+| **Debugging failures** | Spike in failure rate on a specific day |
+| **Performance monitoring** | Average execution time trending upward |
+| **Usage tracking** | Total runs per day to understand volume |
+| **After a change** | Compare before/after metrics to validate a flow update |
+
+<Tip>
+  Check flow analytics regularly for critical flows. A gradual increase in execution time or failure rate is often an early warning sign that something needs attention.
+</Tip>
+
+## Permissions
+
+Flow analytics are visible to anyone who can view the flow. No additional permissions are required.

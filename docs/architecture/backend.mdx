@@ -1,0 +1,223 @@
+---
+title: "Backend Architecture"
+icon: "server"
+description: "Deep dive into the Fastify backend, API structure, and key services"
+---
+
+The backend is a Fastify server written in TypeScript. It handles REST API requests, WebSocket connections, authentication, and job queue processing.
+
+## Entry Point
+
+The server is bootstrapped in `packages/server/api/src/app/app.ts`, which:
+1. Sets up Fastify with Swagger documentation
+2. Registers all route modules
+3. Configures Socket.IO for WebSockets
+4. Sets up security middleware chain
+5. Initializes database connections and migrations
+6. Starts job queue workers
+
+## API Structure
+
+### Route Modules
+
+Each feature is a Fastify plugin registered at a specific prefix:
+
+```typescript
+// Example module registration
+app.register(flowModule, { prefix: '/v1' })
+app.register(tablesModule, { prefix: '/v1' })
+app.register(todoModule, { prefix: '/v1' })
+```
+
+### Controller Pattern
+
+Controllers define endpoints with TypeBox schema validation:
+
+```typescript
+export const flowController: FastifyPluginAsyncTypebox = async (app) => {
+  app.post('/', {
+    config: {
+      allowedPrincipals: [PrincipalType.USER],
+      permission: Permission.WRITE_FLOW,
+    },
+    schema: {
+      tags: ['flows'],
+      body: CreateFlowRequest,
+      response: { 201: PopulatedFlow },
+    },
+  }, async (request, reply) => {
+    const flow = await flowService(request.log).create({...});
+    return reply.status(201).send(flow);
+  });
+};
+```
+
+### Service Pattern
+
+Services contain business logic and are injected with a logger:
+
+```typescript
+export const flowService = (log: FastifyBaseLogger) => ({
+  async create(params: CreateFlowParams): Promise<PopulatedFlow> {
+    // Business logic here
+  },
+  async getById(id: string): Promise<PopulatedFlow> {
+    // ...
+  },
+});
+```
+
+## Security Chain
+
+Every request passes through the security handler chain:
+
+```
+Request → Rate Limiter → JWT Extraction → Token Verification
+    → Principal Building → Permission Check → Entity Ownership → Handler
+```
+
+### Key Security Files
+
+| File | Purpose |
+|------|---------|
+| `core/security/security-handler-chain.ts` | Main middleware pipeline |
+| `authentication/authentication.controller.ts` | Auth endpoints |
+| `authentication/authorization.ts` | Entity ownership checks |
+| `authentication/permission-helpers.ts` | Permission utilities |
+| `ee/authentication/project-role/rbac-middleware.ts` | RBAC enforcement |
+
+## Key Backend Modules
+
+### Flows (`flows/`)
+
+The most complex module, handling:
+
+| Sub-module | Files | Purpose |
+|------------|-------|---------|
+| `flow/` | controller, service, entity | Core flow CRUD |
+| `flow-comment/` | controller, service, entity, side-effects | Comment system |
+| `flow-activity/` | controller, service, entity | Audit trail |
+| `flow-run/` | controller, service, entity | Execution tracking |
+| `flow/human-input/` | module | Human-in-the-loop forms |
+| `folder/` | controller, service, entity | Folder organization |
+| `templates/` | module | Flow templates |
+
+### Flow Operations
+
+Flows use an **operation-based** update model. Instead of directly mutating fields, changes are applied as typed operations:
+
+```typescript
+// Apply an operation to a flow
+POST /v1/flows/:id
+Body: {
+  type: "ADD_ACTION",
+  request: { parentStep: "trigger", action: {...} }
+}
+```
+
+This enables real-time collaboration (operations are broadcast to other editors).
+
+### Tables (`tables/`)
+
+| Sub-module | Purpose |
+|------------|---------|
+| `table/` | Table CRUD (name, automation settings) |
+| `field/` | Column definitions (type, name) |
+| `record/` | Row data (cell values) |
+
+### Todos (`todos/`)
+
+| Sub-module | Purpose |
+|------------|---------|
+| `todo.controller.ts` | Todo CRUD endpoints |
+| `todo.service.ts` | Todo logic + flow resume |
+| `activity/` | Todo activity/comments |
+
+### MCP (`mcp/`)
+
+| File | Purpose |
+|------|---------|
+| `mcp-service.ts` | MCP server & tool management |
+| `mcp-module.ts` | Module registration |
+
+### OPSYN (`opsyn/`)
+
+| File | Purpose |
+|------|---------|
+| `opsyn.controller.ts` | AI generation REST endpoints |
+| `opsyn.service.ts` | Business logic and prompt management |
+| `model-inference.service.ts` | HTTP client for the Python model server on Modal |
+| `opsyn.module.ts` | Module registration (`/v1/opsyn` prefix) |
+
+## Enterprise Edition (`ee/`)
+
+Enterprise features are conditionally loaded:
+
+| Module | Purpose |
+|--------|---------|
+| `ee/projects/` | Platform-level project management with limits |
+| `ee/projects/project-members/` | Enhanced member management |
+| `ee/projects/project-role/` | Custom role definitions |
+| `ee/projects/project-release/` | Release & environment management |
+| `ee/projects/project-release/git-sync/` | Git synchronization |
+| `ee/authentication/` | Federated auth, SAML SSO, OTP |
+| `ee/audit-logs/` | Audit event tracking |
+| `ee/api-keys/` | API key management |
+| `ee/global-connections/` | Platform-wide connections |
+| `ee/platform/platform-plan/` | Billing & plan limits |
+| `ee/custom-domains/` | Custom domain management |
+| `ee/analytics/` | Platform analytics |
+| `ee/alerts/` | Alert management |
+
+## Database Access
+
+### TypeORM Entities
+
+Each entity maps to a database table:
+
+```typescript
+@Entity({ name: 'project' })
+export class ProjectEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  displayName: string;
+
+  @Column()
+  platformId: string;
+
+  @Column()
+  ownerId: string;
+}
+```
+
+### Migrations
+
+Database schema changes use TypeORM migrations:
+- Located at `packages/server/api/src/app/database/migration/`
+- 416+ migration files
+- Run automatically on server start
+
+## WebSocket Service
+
+The WebSocket service (`core/websockets.service.ts`) handles:
+
+1. **Authentication** — JWT verification on connection
+2. **Room Management** — Join/leave project and flow rooms
+3. **Active Editor Tracking** — In-memory maps for presence
+4. **Event Broadcasting** — Emit events to rooms
+
+See [WebSocket Events](/architecture/websockets) for the complete event reference.
+
+## Workers & Job Queues
+
+Background processing uses BullMQ with Redis:
+
+| Queue | Purpose |
+|-------|---------|
+| **Flow Engine** | Execute flow steps |
+| **Webhook** | Process incoming webhooks |
+| **System Jobs** | Scheduled maintenance tasks |
+
+Workers run in a separate process (`packages/server/worker/`) for scalability.

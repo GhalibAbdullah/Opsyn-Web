@@ -1,0 +1,94 @@
+---
+title: "AI Workflow Generation"
+icon: "wand-magic-sparkles"
+description: "Generate complete workflows from natural language using AI"
+---
+
+OpSyn includes a powerful AI workflow generation feature — describe what you want to automate in plain English, and the system generates a complete, ready-to-use workflow for you.
+
+## How It Works
+
+1. **Describe your workflow** — Write a natural language prompt
+2. **AI generates the flow** — A fine-tuned AI model creates the complete workflow definition
+3. **Review and import** — Preview the generated flow and import it into your project
+4. **Customize** — Fine-tune the steps in the visual builder
+
+## Generating a Workflow
+
+1. Click **Generate Workflow** (or the AI icon) in the flows page
+2. Describe the automation you want in the text input:
+
+   > *"When a new message arrives in Slack #general channel, save the message content to a Google Sheet and send an email notification via Gmail"*
+
+3. Click **Generate** — the AI model processes your prompt (takes a few seconds)
+4. Review the generated workflow preview
+5. Click **Import** to add it to your project
+6. The flow opens in the builder for customization
+
+## What Can It Generate?
+
+The AI model has been trained on hundreds of workflow patterns and supports 200+ integrations:
+
+### Example Prompts
+
+| Prompt | What It Generates |
+|--------|------------------|
+| "When I get a new GitHub issue, post it to Slack" | GitHub trigger → Slack message action |
+| "Every day at 9am, check Gmail for new emails and log them to Google Sheets" | Schedule trigger → Gmail read → Google Sheets append |
+| "When a new Typeform response comes in, create a HubSpot contact" | Typeform trigger → HubSpot create contact |
+| "Monitor a webhook for new orders, send Discord notification" | Webhook trigger → Discord message |
+
+### Supported Features
+
+- **Triggers** — Schedule, Webhook, and 200+ piece triggers
+- **Actions** — Send messages, update records, call APIs
+- **Multi-step flows** — Chain multiple actions together
+- **Step connections** — Proper data flow between steps
+
+## The AI Model
+
+The workflow generation is powered by a **fine-tuned Qwen2.5-Coder-7B model**:
+
+- Trained specifically on OpSyn workflow definitions
+- Deployed on cloud GPUs for fast inference
+- Includes a smart matching engine that automatically fixes integration names
+- Post-processing pipeline ensures valid, import-ready output
+
+### Smart Matching
+
+The AI sometimes generates names that are close but not exact. The smart matching engine automatically fixes these:
+
+- `send_email` → `send-email` ✅
+- `newMessage` → `new_message` ✅
+- `gmail_send` → `send-email` ✅
+
+This happens transparently — you always get a valid workflow.
+
+## Model Status
+
+You can check if the AI model is available:
+
+1. Look for the model status indicator in the generation dialog
+2. If the model is warming up (cold start), generation may take slightly longer the first time
+
+<Note>
+  The AI model runs on cloud GPU infrastructure. First requests after idle periods may take a few extra seconds as the server warms up.
+</Note>
+
+## Tips for Best Results
+
+1. **Be specific** — Mention exact service names (Slack, Gmail, Google Sheets)
+2. **Describe the trigger** — Start with "When..." to specify what starts the flow
+3. **List the steps** — Describe each action in order
+4. **Keep it focused** — One flow per prompt works best
+5. **Review and customize** — Use the generated flow as a starting point and refine in the builder
+
+## After Importing
+
+Once imported, the flow appears in your project's flow list:
+
+- **Review the trigger** — Make sure it's configured with the right settings
+- **Set up connections** — Connect your accounts (Slack, Gmail, etc.)
+- **Configure inputs** — Fill in any specific values (channel names, email addresses)
+- **Test** — Run a test to verify everything works
+- **Publish** — Enable the flow when you're satisfied

@@ -1,16 +1,264 @@
 ---
 title: "Building Flows"
-icon: 'hammer'
-description: "Flow consists of two parts, trigger and actions"
+icon: "hammer"
+description: "Use the visual flow builder to create automation workflows with triggers, actions, and branching logic"
 ---
+
+The flow builder is OpSyn's visual editor for creating automation workflows. It provides a drag-and-drop canvas, step configuration panels, real-time collaboration, and built-in testing — all in one interface.
+
+## Opening the Builder
+
+To open the flow builder:
+
+1. Navigate to **Flows** in the project sidebar
+2. Click on an existing flow, or create a new one
+3. The builder opens with the visual canvas
+
+## Builder Layout
+
+The builder has three main areas:
+
+| Area | Position | Purpose |
+|------|----------|---------|
+| **Header** | Top bar | Flow name, navigation, sidebar toggles, publish button |
+| **Canvas** | Center | Visual graph of your flow's steps |
+| **Sidebars** | Left & Right panels | Runs, versions, comments, activity (left); step settings (right) |
+
+## Header Bar
+
+The builder header contains:
+
+- **Folder / Flow Name** — Shows which folder the flow belongs to, and the flow name (click to rename)
+- **Active Editors Badge** — Shows who else is editing this flow in real-time (see [Collaboration](/user-guide/collaboration))
+- **Flow Menu** (▼) — Rename, move to folder, duplicate, import/export, delete
+- **Runs** — Open the runs list sidebar to see execution history
+- **Versions** — Open the versions sidebar to see published versions
+- **Activity** — Open the activity sidebar to see the change audit trail
+- **Comments** — Open the comments sidebar for team discussion
+- **Publish / Status** — Publish your draft or see the current flow status
+
+## Flow Canvas
+
+The canvas is the visual representation of your workflow. Each step is a node on the graph, connected by arrows showing the execution order.
+
+### Flow Structure
+
+Every flow has exactly one **trigger** at the top, followed by one or more **actions**:
+
+```
+[Trigger] → [Action 1] → [Action 2] → ...
+```
+
+### Adding Steps
+
+1. Click the **+** button between existing steps (or below the trigger)
+2. A dialog opens showing available pieces (integrations)
+3. Search or browse for the piece you need
+4. Select a trigger or action from that piece
+5. The step is added to the canvas and the settings panel opens on the right
+
+### Selecting and Editing Steps
+
+- **Click** a step on the canvas to select it and open its settings on the right
+- **Click elsewhere** on the canvas to deselect
+- When a step is selected, it's highlighted on the canvas
+
+### Canvas Controls
+
+The bottom-left corner of the canvas provides navigation controls:
+
+| Control | Action |
+|---------|--------|
+| **Zoom In** (+) | Zoom into the canvas |
+| **Zoom Out** (−) | Zoom out of the canvas |
+| **Fit to View** | Automatically zoom and pan to show the entire flow |
+| **Select Mode** (cursor) | Click to select steps |
+| **Pan Mode** (hand) | Click and drag to move around the canvas |
+| **Re-center** | Return the view to the flow's starting position |
+
+<Tip>
+  Use **Fit to View** after making changes to see the whole flow at a glance. You can also use the scroll wheel to zoom and click-drag on empty canvas space to pan.
+</Tip>
+
 ## Trigger
 
-The flow's starting point determines its frequency of execution. There are various types of triggers available, such as Schedule Trigger, Webhook Trigger, or Event Trigger based on specific service.
+The trigger is the starting point of every flow. It determines **when** and **how** the flow runs.
 
-## Action
+### Trigger Types
 
-Actions come after the flow and control what occurs when the flow is activated, like running code or communicating with other services.
+| Type | Description | Example |
+|------|-------------|---------|
+| **Schedule** | Runs on a cron schedule | Every day at 9 AM |
+| **Webhook** | Runs when an HTTP request is received | Stripe payment webhook |
+| **App Event** | Runs when something happens in a connected service | New Slack message, new Google Sheet row |
 
-In real-life scenario:
+### Configuring a Trigger
 
-![Flow Parts](/resources/flow-parts.png)
+1. Click the trigger step at the top of the canvas
+2. The settings panel opens on the right
+3. Select a piece and trigger type
+4. Configure the trigger-specific settings (connection, filters, schedule)
+5. Test the trigger to get sample data
+
+## Actions
+
+Actions define **what happens** when the flow runs. They execute in order from top to bottom.
+
+### Action Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| **Piece Action** | Calls an integration's API | Send Slack message, create Google Sheet row |
+| **Code** | Run custom JavaScript/TypeScript code | Transform data, custom logic |
+| **Branch (Router)** | Conditional branching — run different paths based on conditions | If status = "approved" → path A, else → path B |
+| **Loop** | Repeat actions for each item in a list | Process each row in a spreadsheet |
+| **HTTP Request** | Make a raw HTTP request to any URL | Call a custom API |
+
+### Configuring an Action
+
+1. Click the action step on the canvas
+2. The settings panel opens on the right
+3. Fill in the required fields (connection, parameters)
+4. Use the **Data Selector** to reference data from previous steps
+5. Test the step to verify it works
+
+## Step Settings Panel (Right Sidebar)
+
+When you select a step, the right sidebar shows its configuration:
+
+### Step Header
+- **Step icon and name** — Click the name to rename the step
+- **Change piece** — Click the step card to swap to a different piece/action
+- **Close** (×) — Close the settings panel
+
+### Configuration Fields
+Each piece defines its own input fields:
+- **Connection** — Select which API credentials to use
+- **Text fields** — Enter values or use dynamic data from previous steps
+- **Dropdowns** — Select from predefined options
+- **Toggle switches** — Enable/disable options
+- **JSON editors** — For complex structured data
+
+### Error Handling
+For action steps, you can configure error handling behavior:
+- **Continue on failure** — The flow continues even if this step fails
+- **Retry on failure** — Automatically retry the step before failing
+
+## Data Selector
+
+The data selector lets you reference output from previous steps in your current step's configuration.
+
+### How It Works
+
+1. Click on a text field in the step settings
+2. The data selector panel appears (below the settings)
+3. Browse the tree of previous steps and their outputs
+4. Click a value to insert a reference like `{{step_1.body.email}}`
+5. At runtime, the reference is replaced with the actual value
+
+### Features
+
+- **Search** — Filter through step outputs by name
+- **Expand/Collapse** — Navigate nested data structures
+- **Resize** — Drag the panel to make it larger or smaller
+- **Sample data** — Shows real data from test runs to help you pick the right field
+
+<Tip>
+  Always test your trigger and previous steps first. The data selector uses sample data from test runs to show you what's available.
+</Tip>
+
+## Testing
+
+### Test a Single Step
+
+1. Select a step on the canvas
+2. In the settings panel, click **Test Step**
+3. The step executes with the current configuration
+4. Results appear in the test output panel
+5. Use the output to verify your configuration
+
+### Test the Trigger
+
+1. Click the trigger step
+2. Click **Test Trigger** or **Load Data**
+3. The trigger fetches sample data (or waits for a webhook)
+4. Sample data populates the data selector for subsequent steps
+
+### Test the Entire Flow
+
+1. Click the **Test Flow** button in the builder
+2. The flow executes all steps in sequence
+3. A chat-like drawer shows the execution progress
+4. Each step's output is visible as the flow runs
+
+## Builder Sidebars (Left Panel)
+
+The header buttons toggle left sidebar panels:
+
+### Runs
+Shows the execution history of this flow:
+- List of recent runs with status (success/failed/running)
+- Click a run to see its detailed step-by-step output
+- Filter runs by status
+
+### Versions
+Shows all published versions of the flow:
+- Version list with timestamps and who published
+- Compare draft vs. published changes
+- Restore a previous version
+
+### Activity
+Audit trail of every change made to this flow:
+- Step added, updated, removed
+- Flow renamed, published, unpublished
+- Filter by category (All, Steps, Flow)
+- See who made each change and when
+
+### Comments
+Real-time team discussion:
+- **Workflow comments** — General comments about the flow
+- **Step comments** — Comments attached to a specific step
+- Threaded replies and @mentions
+- See [Collaboration](/user-guide/collaboration) for full details
+
+## Publishing
+
+Changes you make in the builder are saved as a **draft**. The flow only starts running automatically when you **publish** it.
+
+1. Make your changes in the builder
+2. Test to verify everything works
+3. Click the **Publish** button in the header
+4. The draft becomes the active published version
+5. The flow starts executing on its trigger
+
+<Warning>
+  Unpublished changes are saved but not active. If you close the builder without publishing, your changes are preserved as a draft but won't affect the running flow.
+</Warning>
+
+## Flow Status
+
+The builder header shows the current flow status:
+
+| Status | Meaning |
+|--------|---------|
+| **Draft** | Changes are saved but not published |
+| **Published** | The flow is live and running on its trigger |
+| **Disabled** | The flow is published but paused (won't run) |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| **Scroll wheel** | Zoom in/out on the canvas |
+| **Click + drag** (empty space) | Pan the canvas |
+| **Delete / Backspace** | Delete selected step |
+| **Escape** | Deselect step / close sidebar |
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View flows** | Users with `READ_FLOW` permission |
+| **Edit flows** | Users with `WRITE_FLOW` permission |
+| **Publish flows** | Users with `WRITE_FLOW` permission |
+| **Leave comments** | Users with `WRITE_FLOW` permission |

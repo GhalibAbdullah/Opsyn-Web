@@ -1,0 +1,357 @@
+---
+title: "Model Training Pipeline"
+icon: "graduation-cap"
+description: "How we built the training dataset, validated AI-generated data, and fine-tuned the workflow generation model"
+---
+
+The OpSyn workflow generation model was trained on **381 curated workflow examples**. Building this dataset was a multi-stage process involving data sourcing, format conversion, GPT-powered instruction generation, and extensive validation pipelines to ensure data quality.
+
+## Pipeline Overview
+
+```
+Source Workflows (n8n / Activepieces templates)
+        ↓
+Format Conversion (convert_their_format_to_ours.py)
+        ↓
+Merge & Deduplicate (60 unique workflows)
+        ↓
+Instruction Generation via ChatGPT (natural language prompts)
+        ↓
+Batch Generation (7+ batches across multiple parts)
+        ↓
+Validation & Fixing (13+ validation scripts, 17+ fix scripts)
+        ↓
+Dataset Augmentation (70 router workflow instructions)
+        ↓
+Final Training Dataset (381 instruction-output pairs)
+        ↓
+LoRA Fine-Tuning (Qwen2.5-Coder-7B-Instruct)
+        ↓
+Deployed Model (qwen25_coder_7b_opsyn_lora_quality)
+```
+
+## Step 1: Data Sourcing
+
+Workflows were collected from existing automation templates and organized into two directories:
+
+| Source | Files | Description |
+|--------|-------|-------------|
+| `abd_flows/` | 23 workflows | Activepieces template collection format |
+| `workflows/` | 50 workflows | Additional workflow templates |
+
+These source workflows used a template collection format with a `flows` array wrapper, metadata fields (`type`, `author`, `categories`), and `schemaVersion: "10"`.
+
+### Merge & Deduplication
+
+The two sources were merged using content-hash-based deduplication:
+
+- **73 total input files** across both folders
+- **13 duplicates detected** via SHA256 hashing of normalized workflow content
+- **60 unique workflows** preserved
+- Deduplication was verified with `verify_merge.py` — zero duplicate groups in output
+
+## Step 2: Format Conversion
+
+Source workflows used a different schema than what OpSyn expects. A conversion script (`convert_their_format_to_ours.py`) transformed each workflow:
+
+### What Changed
+
+| Aspect | Source Format | OpSyn Format |
+|--------|-------------|--------------|
+| Root structure | `flows: [{ ... }]` array | Single template object |
+| Schema version | `"10"` | `"1"` |
+| Valid flag | `false` | `true` |
+| Metadata | `type`, `author`, `categories`, etc. | Removed |
+| UI fields | `propertySettings`, `sampleData`, `errorHandlingOptions` | Removed |
+| UI info | Not present | `inputUiInfo: {}` added |
+
+### Example
+
+**Before** (source format):
+```json
+{
+  "name": "Airtable",
+  "type": "SHARED",
+  "author": "",
+  "flows": [{
+    "displayName": "Airtable",
+    "trigger": {
+      "name": "trigger",
+      "type": "PIECE_TRIGGER",
+      "settings": {
+        "pieceName": "@activepieces/piece-airtable",
+        "pieceVersion": "~0.5.2",
+        "propertySettings": { ... },
+        "sampleData": {},
+        "triggerName": "new_record",
+        "input": { ... }
+      },
+      "nextAction": { ... }
+    },
+    "valid": false,
+    "schemaVersion": "10"
+  }]
+}
+```
+
+**After** (OpSyn format):
+```json
+{
+  "displayName": "Airtable",
+  "trigger": {
+    "name": "trigger",
+    "type": "PIECE_TRIGGER",
+    "valid": true,
+    "displayName": "New Record",
+    "settings": {
+      "pieceName": "@activepieces/piece-airtable",
+      "pieceVersion": "~0.5.2",
+      "triggerName": "new_record",
+      "input": { ... },
+      "inputUiInfo": {}
+    },
+    "nextAction": { ... }
+  },
+  "valid": true,
+  "schemaVersion": "1"
+}
+```
+
+## Step 3: Instruction Generation via ChatGPT
+
+Each workflow needed a natural language instruction describing what it does. These instructions were generated using **ChatGPT** with carefully crafted prompts.
+
+### Prompt Strategy
+
+Instructions were generated in multiple rounds:
+
+| Round | Source | Output |
+|-------|--------|--------|
+| **Part 1** | `instructions_part1.json` | 7 output batches (`batch1` – `batch7`) |
+| **Part 2** | `instructions_part2.json` | 6 output batches (some needed `_fixed` versions) |
+| **50 New Instructions** | `new_instructions_50.json` | 5 output batches |
+| **70 Router Instructions** | `70_workflow_instructions.txt` | Conditional branching workflows |
+
+### Router Augmentation Prompt
+
+To improve conditional logic generation, 70 additional instructions were generated with a specific ChatGPT prompt targeting diverse condition types:
+
+| Condition Type | Target Count | Examples |
+|----------------|-------------|----------|
+| Number comparisons | 30 | `>`, `>=`, `<`, `<=`, `==` with specific values |
+| Text operations | 25 | `CONTAINS`, `STARTS_WITH`, `EQUALS`, `IS_EMPTY` |
+| Boolean checks | 10 | `IS_TRUE`, `IS_FALSE`, `EXISTS` |
+| List operations | 5 | Array `CONTAINS`, `IS_EMPTY`, length checks |
+
+### Example Generated Instruction
+
+> *"When a new row is added to a Google Sheets 'Expenses' sheet, check if the Amount is greater than 1000; if yes, send a high-priority Slack message to #finance and create an Airtable record in 'Large Expenses'; otherwise, post a normal Slack update and just append a note back to the same Sheets row."*
+
+### Training Format
+
+Each example follows the **Alpaca format** (instruction-output pairs):
+
+```json
+{
+  "instruction": "When a new GitHub issue is created, create a Notion database item, label the issue as triaged in GitHub, then post a message in Slack.",
+  "input": "",
+  "output": "{\"displayName\":\"GitHub Issue Triage\",\"trigger\":{...},\"schemaVersion\":\"1\"}",
+  "system": "You are an AI Workflow Builder for OPSYN (Activepieces-based). Return ONLY a valid JSON object with keys: displayName, trigger, schemaVersion. No extra text."
+}
+```
+
+## Step 4: Validation & Fixing
+
+Since both the workflows and instructions were AI-generated, extensive validation was required. This was the most time-consuming phase — an iterative cycle of running validation, discovering issues, writing fix scripts, and re-validating.
+
+### The Validation Arsenal
+
+Over **13 validation scripts** were written to catch different issues:
+
+| Script | Purpose |
+|--------|---------|
+| `validate_training_data.py` | General training data validation |
+| `comprehensive_validation.py` | Full schema + logic validation |
+| `accurate_validation.py` | Strict accuracy checks |
+| `validate_schema_strict.py` | Strict schema compliance |
+| `validate_new_workflows.py` | Validate newly generated workflows |
+| `validate_and_fix_dataset.py` | Combined validate-and-fix |
+| `verify_dynamic.py` | Dynamic validation against codebase |
+| `verify_final_train.py` | Final training data verification |
+| `verify_instructions.py` | Instruction quality verification |
+| `verify_all_workflows.py` | Complete workflow verification |
+| `analyze_schema_compliance.py` | Schema compliance analysis |
+| `analyze_placeholders.py` | Placeholder condition detection |
+| `analyze_generated_flows.py` | Generated flow quality analysis |
+
+### The Fixing Arsenal
+
+Over **17 fix scripts** addressed the discovered issues:
+
+| Script | Purpose |
+|--------|---------|
+| `fix_all_final.py` | Final comprehensive fixes |
+| `fix_schema_issues.py` | Schema field corrections |
+| `fix_nonexistent_pieces.py` | Replace invalid piece names |
+| `fix_placeholders_smart.py` | Smart placeholder replacement |
+| `fix_placeholders_targeted.py` | Targeted placeholder fixes |
+| `fix_missing_fields.py` | Add missing required fields |
+| `fix_training_data.py` | General training data fixes |
+| `fix_instructions.py` | Instruction text corrections |
+| `fix_workflow_errors.py` | Workflow structure errors |
+| `fix_all_placeholders.py` | Bulk placeholder removal |
+| `fix_dataset_with_mappings.py` | Fix using piece name mappings |
+| `comprehensive_fix_workflows.py` | All-in-one fix pipeline |
+| `apply_fixes_v2.py` | Second iteration of fixes |
+
+### Issues Found
+
+#### Issue 1: Placeholder Router Conditions 🔴
+
+**41 instances** (~25% of routers) used placeholder conditions instead of real logic:
+
+```json
+// ❌ Placeholder (model learned this bad pattern)
+"conditions": [[{
+  "firstValue": "{{true}}",
+  "operator": "EXISTS"
+}]]
+
+// ✅ Real condition (what we needed)
+"conditions": [[{
+  "firstValue": "{{trigger.answers.amount}}",
+  "operator": "NUMBER_GREATER_THAN",
+  "secondValue": "500"
+}]]
+```
+
+**Impact**: The model learned to generate placeholder conditions instead of real logic checks. Fixed by augmenting with 70+ new router examples with explicit conditions.
+
+#### Issue 2: Schema Field Inconsistency 🟡
+
+**239 instances** used `inputUiInfo` instead of the correct `propertySettings`:
+
+```json
+// ❌ Wrong (in training data)
+"inputUiInfo": {}
+
+// ✅ Correct
+"propertySettings": {}
+```
+
+**Fix**: Bulk find-and-replace across all training data.
+
+#### Issue 3: Missing packageJson in CODE Actions 🟡
+
+**97 out of 116** CODE actions (84%) were missing the `packageJson` field:
+
+```json
+// ❌ Missing packageJson
+"sourceCode": {
+  "code": "export const code = async (inputs) => {...};"
+}
+
+// ✅ Complete
+"sourceCode": {
+  "packageJson": "{}",
+  "code": "export const code = async (inputs) => {...};"
+}
+```
+
+#### Issue 4: Instruction Quality Issues 🔴
+
+Many AI-generated instructions were vague or incomplete:
+
+| Problem | Example |
+|---------|---------|
+| Vague conditions | *"if the condition matches"* instead of describing the actual condition |
+| Vague loop actions | *"for each item, run the loop steps"* without explaining what happens |
+| Missing key steps | AI classification steps omitted from description |
+| Incomplete text | Instructions ending with *"otherwise, ."* |
+
+These required **manual review and regeneration** of affected instructions.
+
+#### Issue 5: Invalid Piece/Action Names 🟡
+
+Some workflows referenced non-existent trigger or action names:
+
+| Piece | Wrong Name | Correct Name |
+|-------|-----------|--------------|
+| Dropbox | `get_file_link` | `get_dropbox_file_link` |
+| SFTP | `list_directory` | `listFolderContents` |
+| SFTP | `read_file` | `read_file_content` |
+| HubSpot | `upsert-contact` | `create-or-update-contact` |
+| Outlook | `new_email` | `newEmail` |
+| Mailchimp | `send_campaign` | `create_campaign` |
+
+All names were verified against the actual Activepieces codebase.
+
+### Dataset Evolution
+
+The training data file went through **many iterations** as issues were found and fixed:
+
+```
+training_data.json
+  → training_data_fixed.json
+    → training_data_fixed_v2.json
+      → training_data_corrected.json
+        → training_data_final.json
+          → training_data_final_train.json
+            → training_data_final_train_fixed.json
+              → training_data_final_train_fixed_v2.json
+                → training_data_final_with_augmentation.json
+                  → combined_training_dataset_fixed.json
+                    → complete_training_dataset.json
+```
+
+Each version addressed a new batch of discovered issues — a testament to the iterative nature of cleaning AI-generated training data.
+
+## Step 5: Final Dataset
+
+The final training dataset contains **381 workflow examples**:
+
+| Metric | Value |
+|--------|-------|
+| **Total workflows** | 381 |
+| **Router workflows** | ~160 (~42%) |
+| **Real router conditions** | 68+ |
+| **Pieces covered** | 50+ integrations |
+| **Action types** | Triggers, actions, routers, loops, code |
+| **Format** | Alpaca (instruction-output pairs) |
+
+### Workflow Complexity Distribution
+
+- **Simple flows** (trigger → 1-2 actions): ~40%
+- **Router flows** (conditional branching): ~42%
+- **Loop flows** (batch processing): ~10%
+- **Complex flows** (routers + loops + code): ~8%
+
+## Step 6: Fine-Tuning
+
+### Model Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| **Base Model** | Qwen/Qwen2.5-Coder-7B-Instruct |
+| **Method** | LoRA (Low-Rank Adaptation) |
+| **LoRA Rank** | 32 |
+| **LoRA Alpha** | 64 |
+| **Framework** | LlamaFactory |
+| **Dataset Size** | 381 examples |
+| **Output Adapter** | `qwen25_coder_7b_opsyn_lora_quality/` |
+
+### Why LoRA?
+
+Full fine-tuning a 7B parameter model requires **56GB+ VRAM**. LoRA fine-tuning only trains small adapter matrices, reducing memory to **4-8GB** while achieving comparable quality. The adapter weights are stored separately and merged at inference time.
+
+### Training Data Format
+
+The model was trained on the Alpaca instruction format with a system prompt:
+
+```
+System: You are an AI Workflow Builder for OPSYN (Activepieces-based).
+        Return ONLY a valid JSON object with keys: displayName, trigger,
+        schemaVersion. No extra text.
+
+User:   When a new GitHub issue is created, create a Notion database item,
+        then post a notification in Slack.

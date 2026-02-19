@@ -1,0 +1,158 @@
+---
+title: "WebSocket Events"
+icon: "plug"
+description: "Complete reference for all real-time WebSocket events and their payloads"
+---
+
+OpSyn uses Socket.IO for real-time bidirectional communication. This page documents all events, payloads, and room membership rules.
+
+## Connection
+
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000', {
+  transports: ['websocket'],
+  auth: { token: 'Bearer <jwt-token>' }
+});
+```
+
+On connection, the server:
+1. Verifies the JWT token
+2. Extracts the user's principal (userId, projectId)
+3. Joins the socket to the project room: `project:{projectId}`
+
+## Rooms
+
+| Room | Format | Auto-Joined | Purpose |
+|------|--------|-------------|---------|
+| **Project** | `project:{projectId}` | ✅ On connect | Project-wide events |
+| **Flow** | `flow:{flowId}` | Manual (editor join) | Flow collaboration events |
+
+## Server Events (Client → Server)
+
+Events the client sends to the server:
+
+| Event | Payload | Purpose |
+|-------|---------|---------|
+| `FLOW_EDITOR_JOINED` | `{ flowId: string }` | User opened flow in builder |
+| `FLOW_EDITOR_LEFT` | `{ flowId: string }` | User closed flow builder |
+
+## Client Events (Server → Client)
+
+Events the server broadcasts to clients:
+
+### Flow Collaboration
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `FLOW_OPERATION_BROADCAST` | Flow | `{ flowId, operation, flowVersionId, userId, timestamp }` |
+| `FLOW_EDITORS_CHANGED` | Flow | `{ flowId, editors: FlowEditorInfo[] }` |
+
+**FlowEditorInfo:**
+```typescript
+{
+  userId: string;
+  userName: string;
+  userEmail: string;
+}
+```
+
+### Flow Comments
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `FLOW_COMMENT_CREATED` | Flow | Full `FlowComment` object |
+| `FLOW_COMMENT_CHANGED` | Flow | Updated `FlowComment` object |
+| `FLOW_COMMENT_DELETED` | Flow | `{ commentId, flowId }` |
+| `FLOW_COMMENT_MENTION` | Flow | `{ userId, flowId, commentId, mentionedBy }` |
+
+### Flow Runs
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `FLOW_RUN_PROGRESS` | Project | `{ flowRunId, stepName, status }` |
+| `FLOW_RUN_FINISHED_NOTIFICATION` | Project | `{ flowRunId, flowId, flowDisplayName, status, failedStepName?, errorMessage?, finishTime }` |
+| `TEST_FLOW_RUN_STARTED` | Project | Full `FlowRun` object |
+| `TEST_STEP_FINISHED` | Project | `{ flowRunId, stepOutput }` |
+| `TEST_STEP_PROGRESS` | Project | `{ flowRunId, stepName, status }` |
+
+### Todos
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `TODO_CHANGED` | Project | `{ todoId }` |
+| `TODO_ACTIVITY_CHANGED` | Project | `{ activityId, todoId, content }` |
+| `TODO_ACTIVITY_CREATED` | Project | `{ todoId }` |
+
+### Project
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `PROJECT_MEMBERS_CHANGED` | Project | `{ projectId }` |
+
+### Pieces
+
+| Event | Room | Payload |
+|-------|------|---------|
+| `REFRESH_PIECE` | Project | Piece metadata refresh signal |
+
+## Active Editor Tracking
+
+The server tracks active editors using three in-memory maps:
+
+| Map | Key → Value | Purpose |
+|-----|-------------|---------|
+| `activeEditors` | `flowId → userId → Set<socketId>` | Who is editing what |
+| `socketFlowMembership` | `socketId → Set<flowId>` | Which flows a socket is in |
+| `editorInfoCache` | `userId → FlowEditorInfo` | Cached user display info |
+
+### Join/Leave Lifecycle
+
+```
+Open builder → emit FLOW_EDITOR_JOINED { flowId }
+  → Server adds to activeEditors map
+  → Server joins socket to flow:{flowId} room
+  → Server broadcasts FLOW_EDITORS_CHANGED
+
+Close builder → emit FLOW_EDITOR_LEFT { flowId }
+  → Server removes from activeEditors
+  → Server leaves flow room
+  → Server broadcasts FLOW_EDITORS_CHANGED
+
+Disconnect (close tab/network) →
+  → Server cleans up all maps
+  → Broadcasts FLOW_EDITORS_CHANGED for all affected flows
+```
+
+### Multi-Tab Support
+
+Same user can have multiple tabs open:
+- Each tab gets its own `socketId`
+- Server tracks all sockets per user per flow
+- User is only removed from "active editors" when ALL their sockets leave
+- Prevents flicker when switching between tabs
+
+## Scalability
+
+### Single Server
+- In-memory maps for editor tracking
+- Socket.IO rooms for broadcasting
+
+### Multi-Server (Redis Adapter)
+```typescript
+import { createAdapter } from '@socket.io/redis-adapter';
+// Configured automatically when Redis is available
+```
+
+The Redis adapter allows Socket.IO rooms to span multiple server instances, enabling horizontal scaling.
+
+## Key Files
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `websockets.service.ts` | `server/api/src/app/core/` | Server WebSocket setup |
+| `flow-websocket-handlers.ts` | `server/api/src/app/flows/flow/` | Flow collaboration handlers |
+| `socket-provider.tsx` | `react-ui/src/components/` | Client socket context |
+| `use-flow-collaboration.ts` | `react-ui/src/app/builder/` | Collaboration hook |
+| `websocket/index.ts` | `shared/src/lib/` | Event type definitions |

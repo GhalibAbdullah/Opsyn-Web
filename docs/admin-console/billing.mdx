@@ -1,0 +1,136 @@
+---
+title: "Billing"
+description: "Manage subscriptions, AI credits, active flow limits, and licensing"
+icon: "credit-card"
+---
+
+The Billing page lets you manage your platform subscription, monitor usage, and configure spending limits.
+
+## Accessing Billing
+
+Navigate to **Platform Admin → Setup → Billing** (or `/platform/setup/billing`).
+
+<Note>
+  Billing is available on Cloud and Enterprise editions. Community edition does not have billing management.
+</Note>
+
+## Subscription Information
+
+If you have an active Stripe subscription, you'll see:
+
+| Field | Description |
+|-------|-------------|
+| **Plan** | Your current plan (Standard, Enterprise, AppSumo tier) |
+| **Next Billing Date** | When your next payment is due |
+| **Next Billing Amount** | The amount you'll be charged |
+| **Cancel Date** | If scheduled for cancellation, when it ends |
+
+### Billing Portal
+
+Click **Access Billing Portal** to open the Stripe customer portal where you can:
+- Update payment method
+- View invoices and receipts
+- Cancel or modify your subscription
+
+## Active Flows
+
+Your plan includes a base limit of active (enabled) flows. If you need more:
+
+### Purchasing Additional Active Flows
+
+1. Click **Add Active Flows** on the billing page
+2. Choose the number of additional active flows
+3. Complete the checkout process
+4. Your limit is increased immediately
+
+### Updating Active Flow Addon
+
+If you already have extra active flows:
+1. Click **Update** on the active flows section
+2. Increase or decrease the addon quantity
+3. Changes take effect immediately
+4. Upgrades are prorated; downgrades apply at next billing cycle
+
+## AI Credits
+
+AI credits are consumed when universal AI pieces run in your flows. Each step that uses the AI piece costs 1 credit.
+
+### Included AI Credits
+
+Your plan includes a base amount of AI credits per billing period.
+
+### AI Credit Overage
+
+If you run out of included credits, you have three options:
+
+| State | Behavior |
+|-------|----------|
+| **Not Allowed** | AI steps fail when credits are exhausted (plan restriction) |
+| **Allowed but Off** | Overage is available but you've chosen to disable it |
+| **Allowed and On** | AI steps continue working, billed per-credit for overage |
+
+### Configuring AI Overage
+
+1. Toggle **Enable Usage-Based AI Credits** on the billing page
+2. Set a **spending limit** (e.g., max 500 overage credits)
+3. Usage beyond your plan's included credits is billed at the overage rate
+
+<Warning>
+  You cannot disable overage if you've already consumed overage credits in the current billing period. Wait for the next billing cycle or contact support.
+</Warning>
+
+### AI Credits Usage Table
+
+For Enterprise plans, a detailed usage table shows:
+- Per-project AI credit consumption
+- Historical usage over time
+- Credits remaining vs. limit
+
+## License Keys (Enterprise)
+
+Enterprise customers manage their license via the billing page:
+
+1. Enter your license key
+2. The system verifies the key and applies plan limits
+3. License expiry date is shown
+
+### Applying License Key by Email
+
+Platform administrators can apply license keys programmatically via the admin API:
+
+```bash
+POST /v1/admin/platforms/apply-license-key
+{
+  "email": "admin@example.com",
+  "licenseKey": "your-license-key"
+}
+```
+
+## Feature Status
+
+The billing page shows which features are enabled in your current plan:
+
+| Feature | Description |
+|---------|-------------|
+| Tables | Built-in database tables |
+| Todos | Task management |
+| MCP Servers | AI tool configuration |
+| Agents | AI agent capabilities |
+| Environments | Release management |
+| Analytics | Platform analytics |
+| Custom Appearance | Branding customization |
+| Embedding | Iframe embedding |
+| Audit Logs | Activity tracking |
+| SSO | Single Sign-On |
+| Custom Domains | Custom domain support |
+| Global Connections | Platform-wide connections |
+| Project Roles | Custom role definitions |
+| API Keys | Programmatic access |
+
+## Plans
+
+| Plan | Description |
+|------|-------------|
+| **Standard** | Default cloud plan with base limits |
+| **Enterprise** | Full feature set with custom limits via license key |
+| **AppSumo Tiers** | Lifetime deal tiers with fixed limits |

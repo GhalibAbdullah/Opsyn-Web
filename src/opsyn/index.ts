@@ -12,6 +12,7 @@ export {
   buildImportPayload,
   importFlowToProject,
   runSanityTests,
+  generateFlowTemplateFile,
   
   // Types
   ImportFlowRequest,
@@ -20,4 +21,10 @@ export {
   ImportPayload,
   ImportResult,
 } from './flowPostProcessor';
+
+// Unified pipeline (for backend integration)
+export {
+  processModelOutputToFlowTemplate,
+  processModelOutputToFlowTemplateObject,
+} from './unifiedPipeline';
 

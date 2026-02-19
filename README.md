@@ -141,6 +141,24 @@ This architecture enables:
 - Secure data isolation
 - Flexible access management
 
+## 📖 Documentation
+
+Comprehensive documentation is available in the [`docs/`](./docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| [**Architecture Overview**](./docs/ARCHITECTURE.md) | Full system architecture, tech stack, package structure, data flow |
+| [**Projects & Platform**](./docs/PROJECTS_AND_PLATFORM.md) | Multi-tenancy, projects, platform admin, team members, roles |
+| [**Authentication & Authorization**](./docs/AUTHENTICATION_AND_AUTHORIZATION.md) | JWT auth, RBAC, SSO, permissions, security chain |
+| [**Workflows & Flow Builder**](./docs/WORKFLOWS_AND_FLOW_BUILDER.md) | Flows, triggers, actions, operations, versioning, comments, activity |
+| [**Real-Time Collaboration**](./docs/REAL_TIME_COLLABORATION.md) | WebSocket architecture, active editors, operation broadcasting |
+| [**Tables & Todos**](./docs/TABLES_AND_TODOS.md) | Database tables, fields, records, task management, human-in-the-loop |
+| [**MCP & Agents**](./docs/MCP_AND_AGENTS.md) | Model Context Protocol, AI agents, AI provider management |
+| [**Connections & Integrations**](./docs/CONNECTIONS_AND_INTEGRATIONS.md) | App connections, OAuth, pieces, integration management |
+| [**AI/ML Model Server**](./docs/AI_ML_MODEL_SERVER.md) | Fine-tuned Qwen2.5 model, smart matching, post-processing, Modal deployment |
+| [**API Reference**](./docs/API_REFERENCE.md) | Complete REST API endpoint reference |
+| [**WebSocket Events**](./docs/WEBSOCKET_EVENTS.md) | All WebSocket events, payloads, room architecture |
+
 ## 🔌 Create Your Own Piece
 
 OpSyn supports integrations with Google Sheets, OpenAI, Discord, RSS, and over 200 other services. As an **open ecosystem**, all integration source code is accessible in our repository. These integrations are versioned and published directly to npmjs.com.

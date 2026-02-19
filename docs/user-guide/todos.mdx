@@ -1,0 +1,135 @@
+---
+title: "Todos"
+icon: "list-check"
+description: "Task management and human-in-the-loop approvals for your workflows"
+---
+
+Todos are OpSyn's built-in task management system. They can be created manually or automatically by workflows — enabling powerful human-in-the-loop approval and review processes.
+
+## What are Todos?
+
+A todo is a task that requires human attention. Todos are especially powerful when combined with workflows:
+
+- A workflow detects an anomaly → creates a todo for a human to review
+- A customer submits an order → creates an approval todo for a manager
+- An AI agent needs human verification → pauses and creates a todo
+
+## Creating Todos
+
+### From a Workflow (Recommended)
+
+Add a **Create Todo** step in your flow:
+
+1. Open the flow builder
+2. Add a "Create Todo" action step
+3. Configure the title, description, and available statuses
+4. When the flow runs, it will create a todo and **pause** until a human resolves it
+
+### Manually
+
+1. Navigate to **Todos** in the sidebar
+2. Click **Create Todo**
+3. Fill in the title and description
+4. Assign it to a team member (optional)
+
+## Todo Statuses
+
+Each todo has a customizable status system with color-coded variants:
+
+| Variant | Color | Use Case |
+|---------|-------|----------|
+| **Positive** (Green) | ✅ | Approved, Resolved, Done |
+| **Negative** (Red) | ❌ | Rejected, Failed, Denied |
+| **Neutral** (Amber) | ⏳ | Unresolved, Pending, In Review |
+
+### Default Statuses
+
+Every todo starts with these statuses:
+- **Unresolved** (Neutral) — Initial state
+- **Resolved** (Positive) — Completed/approved
+
+### Custom Statuses
+
+When creating todos from workflows, you can define custom statuses:
+
+```
+Status: "Approved" → Green (continues flow)
+Status: "Rejected" → Red (continues flow with rejection)
+Status: "Needs More Info" → Amber (continues flow)
+```
+
+Each status can be configured to either **continue** or **not continue** the paused flow.
+
+## Human-in-the-Loop Workflows
+
+This is the most powerful use of todos — pausing a workflow for human review:
+
+```
+Flow starts → Processes data → Creates Todo → ⏸️ Flow Pauses
+                                                    ↓
+                                            Human reviews todo
+                                                    ↓
+                                            Selects a status
+                                                    ↓
+                                            ▶️ Flow Resumes
+                                                    ↓
+                                            Flow reads the status
+                                            and acts accordingly
+```
+
+### Example: Invoice Approval
+
+1. **Trigger**: New invoice received via email
+2. **AI Step**: Extract invoice details (amount, vendor, date)
+3. **Branch**: If amount > $5,000, go to approval
+4. **Create Todo**: "Approve invoice from {vendor} for ${amount}"
+   - Status options: Approved ✅, Rejected ❌, Need More Info ⏳
+5. **Flow Pauses** — Waits for human decision
+6. **Human resolves** the todo with a status
+7. **Flow Resumes** — Reads the status
+8. **Branch**: If approved → process payment, If rejected → notify vendor
+
+## Todo Activities
+
+Each todo has an activity feed where team members can:
+- Add comments and notes
+- Track status changes
+- View the full history of actions taken
+
+Activities update in **real-time** — you'll see new comments appear instantly without refreshing.
+
+## Assigning Todos
+
+Assign todos to specific team members:
+
+1. Open the todo
+2. Click the **Assignee** field
+3. Select a team member
+4. They'll be notified of the assignment
+
+## Environments
+
+Todos exist in two environments:
+
+| Environment | Description |
+|-------------|-------------|
+| **Production** | Created by live, published flows |
+| **Test** | Created during flow testing |
+
+This separation ensures test todos don't clutter your production task list.
+
+## Real-Time Updates
+
+Todos update in real-time via WebSocket:
+- New todos appear instantly in the list
+- Status changes are reflected immediately
+- Activity comments appear in real-time
+- No page refresh needed
+
+## Permissions
+
+| Permission | Roles |
+|------------|-------|
+| **View Todos** | Admin, Editor, Viewer |
+| **Create/Manage Todos** | Admin, Editor |
+| **Resolve Todos** | Admin, Editor |

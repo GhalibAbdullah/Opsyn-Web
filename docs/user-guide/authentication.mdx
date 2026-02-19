@@ -1,0 +1,110 @@
+---
+title: "Authentication"
+icon: "key"
+description: "Sign up, sign in, and manage your account access"
+---
+
+OpSyn supports multiple authentication methods depending on your deployment edition. Users can sign up on their own or be invited by a platform admin, depending on how the platform is configured.
+
+## Sign Up
+
+### Community Edition (Self-Hosted)
+
+In Community Edition, **anyone can sign up directly**:
+
+1. Go to the sign-up page
+2. Enter your name, email, and password
+3. Your account is created automatically
+4. A new **platform** and **default project** are created for you
+5. You become the **platform admin** of your own instance
+
+<Note>
+  In Community Edition, every new user gets their own isolated platform. This is ideal for personal use or small teams where each person manages their own automation instance.
+</Note>
+
+### Cloud & Enterprise Edition
+
+In Cloud and Enterprise editions, access is **invitation-based**:
+
+1. A **platform admin** invites you via email (to the platform or a specific project)
+2. You receive an invitation link
+3. Click the link to sign up with your email and password
+4. Your account is created as a **platform member**
+5. You're automatically added to the projects you were invited to
+
+<Note>
+  In Cloud/Enterprise, the platform admin controls who can join. Self-registration is not available unless you've been invited first.
+</Note>
+
+## Sign In
+
+### Email & Password
+
+1. Go to the sign-in page
+2. Enter your email and password
+3. You're redirected to your default project
+
+### Federated Authentication (SSO)
+
+If your platform admin has configured SSO, you can sign in with:
+
+| Provider | How |
+|----------|-----|
+| **Google** | Click "Sign in with Google" |
+| **GitHub** | Click "Sign in with GitHub" |
+| **SAML** | Redirected to your identity provider (Okta, Azure AD, etc.) |
+
+SSO is configured in **Platform Admin → Security → [Single Sign On](/security/sso)**.
+
+### Domain Restrictions
+
+Platform admins can enforce allowed email domains:
+- Only emails from `@yourcompany.com` can sign up or sign in
+- Configured in Platform Admin settings
+
+## Switching Between Platforms
+
+If your identity is associated with multiple platforms (e.g., you belong to multiple organizations), you can switch:
+
+1. Click your avatar/name in the sidebar
+2. Select **Switch Platform**
+3. Choose the platform you want to access
+4. Your session switches to the selected platform
+
+## Switching Between Projects
+
+Within a platform, you may belong to multiple projects:
+
+1. Click the project name in the sidebar header
+2. Select a different project from the dropdown
+3. Your session switches to the selected project
+4. All data (flows, tables, connections) updates to the new project context
+
+## Platform Roles
+
+When you sign up or are invited, you're assigned a platform role:
+
+| Role | How Assigned | Access |
+|------|-------------|--------|
+| **Admin** | First user (auto) or promoted by another admin | Full platform control + all projects |
+| **Member** | Invited users (default) | Only projects they're explicitly invited to |
+| **Operator** | Assigned by admin | Auto-access to all projects, no platform admin |
+
+## Project Roles
+
+Within each project, you have a project-level role:
+
+| Role | What They Can Do |
+|------|-----------------|
+| **Admin** | Full project control — manage members, settings, everything |
+| **Editor** | Create and edit flows, tables, connections |
+| **Operator** | Run flows, view data, create connections |
+| **Viewer** | Read-only access to flows and data |
+| **Custom** | Platform admins can create [custom roles](/admin-console/project-roles) |
+
+## Account Security
+
+- **Passwords** are hashed before storage
+- **Rate limiting** is applied to sign-in and sign-up endpoints to prevent brute force
+- **Email verification** is required on Cloud edition (OTP sent via email)
+- **Session tokens** use JWT with platform and project scoping

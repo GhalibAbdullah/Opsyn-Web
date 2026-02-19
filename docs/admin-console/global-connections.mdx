@@ -1,0 +1,65 @@
+---
+title: "Global Connections"
+description: "Share API connections across all projects from the platform level"
+icon: "globe"
+---
+
+Global connections are platform-wide API credentials that can be shared with specific projects or all projects. This eliminates the need for each project to set up their own connections for common services.
+
+## Accessing Global Connections
+
+Navigate to **Platform Admin → Setup → Connections** (or `/platform/setup/connections`).
+
+## Use Cases
+
+- **Shared API keys** — One OpenAI key used across all projects
+- **Company-wide OAuth apps** — Centrally managed Google, Slack, or GitHub credentials
+- **Reduced duplication** — Configure once, use everywhere
+- **Centralized rotation** — Update a credential in one place when it changes
+
+## Creating a Global Connection
+
+1. Click **+ New Connection** on the global connections page
+2. Select the piece (service) you want to connect
+3. Complete the authentication flow (OAuth, API key, etc.)
+4. Name the connection
+5. Choose which projects can use it:
+   - **All projects** — Available in every project
+   - **Specific projects** — Select individual projects
+
+## Managing Global Connections
+
+### Viewing
+
+The global connections table shows:
+- Connection name
+- Connected service (piece)
+- Status
+- Assigned projects
+
+### Updating
+
+Click on a connection to:
+- Rename it
+- Change project assignments
+- Re-authenticate if credentials expired
+
+### Deleting
+
+1. Click the delete action on a connection
+2. Confirm deletion
+
+<Warning>
+  Deleting a global connection will break any flows in any project that use it. Check usage before deleting.
+</Warning>
+
+## How Projects See Global Connections
+
+When a project member builds a flow and needs to select a connection:
+- They see both **project connections** and **global connections** in the dropdown
+- Global connections are marked so users know they're shared
+- Users don't need to know the actual credentials — they just use the connection
+
+## Plan Requirement
+
+Global connections require the `globalConnectionsEnabled` feature flag in your platform plan.

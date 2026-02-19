@@ -1,7 +1,7 @@
 {
   "@activepieces/piece-google-sheets": {
     "name": "@activepieces/piece-google-sheets",
-    "version": "0.12.20",
+    "version": "~0.12.20",
     "triggers": [
       {
         "name": "new-worksheet",
@@ -108,11 +108,48 @@
     ],
     "props": [
       "values"
-    ]
+    ],
+    "triggerAliases": {
+      "new_row": "googlesheets_new_row_added",
+      "newRow": "googlesheets_new_row_added",
+      "new-row": "googlesheets_new_row_added",
+      "new_row_added": "googlesheets_new_row_added",
+      "newRowAdded": "googlesheets_new_row_added",
+      "row_added": "googlesheets_new_row_added",
+      "new_or_updated_row": "google-sheets-new-or-updated-row",
+      "newOrUpdatedRow": "google-sheets-new-or-updated-row"
+    },
+    "actionAliases": {
+      "insertRow": "insert_row",
+      "insert-row": "insert_row",
+      "add_row": "insert_row",
+      "addRow": "insert_row",
+      "create_row": "insert_row",
+      "updateRow": "update_row",
+      "update-row": "update_row",
+      "edit_row": "update_row",
+      "deleteRow": "delete_row",
+      "delete-row": "delete_row",
+      "remove_row": "delete_row",
+      "findRows": "find_rows",
+      "find-rows": "find_rows",
+      "search_rows": "find_rows",
+      "getRow": "find_row_by_num",
+      "get_row": "find_row_by_num"
+    },
+    "fieldConversions": {
+      "spreadsheet_id": "spreadsheetId",
+      "sheet_id": "sheetId",
+      "row_id": "rowId",
+      "first_row_headers": "firstRowHeaders",
+      "is_first_row_headers": "firstRowHeaders",
+      "include_team_drives": "includeTeamDrives",
+      "as_string": "asString"
+    }
   },
   "@activepieces/piece-text-ai": {
     "name": "@activepieces/piece-text-ai",
-    "version": "0.4.8",
+    "version": "~0.4.8",
     "triggers": [],
     "actions": [
       {
@@ -126,11 +163,18 @@
         "file": "ask-ai.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "summarize": "summarizeText",
+      "summarize_text": "summarizeText",
+      "ask": "askAi",
+      "ask_ai": "askAi",
+      "generate": "askAi"
+    }
   },
   "@activepieces/piece-gmail": {
     "name": "@activepieces/piece-gmail",
-    "version": "0.9.6",
+    "version": "~0.9.6",
     "triggers": [
       {
         "name": "gmail_new_email_received",
@@ -171,11 +215,38 @@
       "to",
       "subject",
       "category"
-    ]
+    ],
+    "triggerAliases": {
+      "new_email": "gmail_new_email_received",
+      "newEmail": "gmail_new_email_received",
+      "new-email": "gmail_new_email_received",
+      "email_received": "gmail_new_email_received",
+      "new_mail": "gmail_new_email_received",
+      "incoming_email": "gmail_new_email_received"
+    },
+    "actionAliases": {
+      "sendEmail": "send_email",
+      "send-email": "send_email",
+      "compose_email": "send_email",
+      "create_email": "send_email",
+      "new_email": "send_email",
+      "getEmail": "gmail_get_mail",
+      "get_email": "gmail_get_mail",
+      "find_email": "gmail_search_mail",
+      "search_email": "gmail_search_mail"
+    },
+    "fieldConversions": {
+      "body_type": "bodyType",
+      "bodyType": "body_type",
+      "reply_to": "replyTo",
+      "replyTo": "reply_to",
+      "sender_name": "senderName",
+      "in_reply_to": "inReplyTo"
+    }
   },
   "@activepieces/piece-slack": {
     "name": "@activepieces/piece-slack",
-    "version": "0.10.16",
+    "version": "~0.10.16",
     "triggers": [
       {
         "name": "new_command",
@@ -364,11 +435,35 @@
       "style",
       "useUserToken",
       "label"
-    ]
+    ],
+    "triggerAliases": {
+      "new_message": "new-message-in-channel",
+      "newMessage": "new-message-in-channel",
+      "new_message_in_channel": "new-message-in-channel",
+      "message_received": "new-message-in-channel",
+      "channel_message": "new-message-in-channel"
+    },
+    "actionAliases": {
+      "sendMessage": "send_channel_message",
+      "send_message": "send_channel_message",
+      "post_message": "send_channel_message",
+      "channel_message": "send_channel_message",
+      "notify_channel": "send_channel_message",
+      "send_dm": "send_direct_message",
+      "sendDm": "send_direct_message",
+      "direct_message": "send_direct_message",
+      "dm": "send_direct_message"
+    },
+    "fieldConversions": {
+      "unfurl_links": "unfurlLinks",
+      "unfurlLinks": "unfurl_links",
+      "reply_broadcast": "replyBroadcast",
+      "replyBroadcast": "reply_broadcast"
+    }
   },
   "@activepieces/piece-schedule": {
     "name": "@activepieces/piece-schedule",
-    "version": "0.1.13",
+    "version": "~0.1.13",
     "triggers": [
       {
         "name": "every_hour",
@@ -402,11 +497,26 @@
       }
     ],
     "actions": [],
-    "props": []
+    "props": [],
+    "triggerAliases": {
+      "daily": "every_day",
+      "hourly": "every_hour",
+      "weekly": "every_week",
+      "monthly": "every_month",
+      "cron": "cron_expression"
+    },
+    "fieldConversions": {
+      "hour_of_the_day": "hourOfTheDay",
+      "hourOfTheDay": "hour_of_the_day",
+      "day_of_the_week": "dayOfTheWeek",
+      "dayOfTheWeek": "day_of_the_week",
+      "run_on_weekends": "runOnWeekends",
+      "runOnWeekends": "run_on_weekends"
+    }
   },
   "@activepieces/piece-utility-ai": {
     "name": "@activepieces/piece-utility-ai",
-    "version": "0.5.9",
+    "version": "~0.5.9",
     "triggers": [],
     "actions": [
       {
@@ -425,11 +535,18 @@
         "file": "extract-structured-data.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "classify": "classifyText",
+      "classify_text": "classifyText",
+      "extract": "extractStructuredData",
+      "extract_data": "extractStructuredData",
+      "extract_structured_data": "extractStructuredData"
+    }
   },
   "@activepieces/piece-google-drive": {
     "name": "@activepieces/piece-google-drive",
-    "version": "0.5.52",
+    "version": "~0.5.52",
     "triggers": [
       {
         "name": "new_file",
@@ -522,11 +639,24 @@
     "props": [
       "include_team_drives",
       "parentFolder"
-    ]
+    ],
+    "actionAliases": {
+      "upload_file": "upload_gdrive_file",
+      "uploadFile": "upload_gdrive_file",
+      "create_file": "create_new_gdrive_file",
+      "createFile": "create_new_gdrive_file",
+      "new_file": "create_new_gdrive_file",
+      "delete_file": "delete_gdrive_file",
+      "deleteFile": "delete_gdrive_file",
+      "remove_file": "delete_gdrive_file",
+      "create_folder": "create_new_gdrive_folder",
+      "createFolder": "create_new_gdrive_folder",
+      "new_folder": "create_new_gdrive_folder"
+    }
   },
   "@activepieces/piece-google-calendar": {
     "name": "@activepieces/piece-google-calendar",
-    "version": "0.7.4",
+    "version": "~0.7.4",
     "triggers": [
       {
         "name": "new_event",
@@ -613,11 +743,36 @@
     ],
     "props": [
       "colorId"
-    ]
+    ],
+    "triggerAliases": {
+      "newEvent": "new_event",
+      "new-event": "new_event",
+      "event_created": "new_event"
+    },
+    "actionAliases": {
+      "createEvent": "create_google_calendar_event",
+      "create_event": "create_google_calendar_event",
+      "add_event": "create_google_calendar_event",
+      "new_event": "create_google_calendar_event",
+      "updateEvent": "update_event",
+      "edit_event": "update_event",
+      "deleteEvent": "delete_event",
+      "remove_event": "delete_event"
+    },
+    "fieldConversions": {
+      "calendar_id": "calendarId",
+      "calendarId": "calendar_id",
+      "start_date": "startDate",
+      "end_date": "endDate",
+      "start_date_time": "startDateTime",
+      "end_date_time": "endDateTime",
+      "event_id": "eventId",
+      "eventId": "event_id"
+    }
   },
   "@activepieces/piece-google-forms": {
     "name": "@activepieces/piece-google-forms",
-    "version": "0.3.13",
+    "version": "~0.3.13",
     "triggers": [
       {
         "name": "new_response",
@@ -633,7 +788,7 @@
   },
   "@activepieces/piece-hubspot": {
     "name": "@activepieces/piece-hubspot",
-    "version": "0.7.19",
+    "version": "~0.7.19",
     "triggers": [
       {
         "name": "new-blog-article",
@@ -981,11 +1136,33 @@
     "props": [
       "Dropdown",
       "StaticDropdown"
-    ]
+    ],
+    "triggerAliases": {
+      "new_contact": "new-contact",
+      "newContact": "new-contact",
+      "contact_created": "new-contact",
+      "new_deal": "new-deal",
+      "newDeal": "new-deal",
+      "deal_created": "new-deal"
+    },
+    "actionAliases": {
+      "createContact": "create-contact",
+      "add_contact": "create-contact",
+      "new_contact": "create-contact",
+      "createDeal": "create-deal",
+      "add_deal": "create-deal",
+      "new_deal": "create-deal",
+      "updateContact": "update-contact",
+      "edit_contact": "update-contact",
+      "findContact": "find-contact",
+      "search_contact": "find-contact",
+      "get_contact": "get-contact",
+      "getContact": "get-contact"
+    }
   },
   "@activepieces/piece-date-helper": {
     "name": "@activepieces/piece-date-helper",
-    "version": "0.1.19",
+    "version": "~0.1.19",
     "triggers": [],
     "actions": [
       {
@@ -1028,7 +1205,7 @@
   },
   "@activepieces/piece-forms": {
     "name": "@activepieces/piece-forms",
-    "version": "0.4.10",
+    "version": "~0.4.10",
     "triggers": [
       {
         "name": "form_submission",
@@ -1052,7 +1229,7 @@
   },
   "@activepieces/piece-webhook": {
     "name": "@activepieces/piece-webhook",
-    "version": "0.1.25",
+    "version": "~0.1.25",
     "triggers": [
       {
         "name": "catch_webhook",
@@ -1072,11 +1249,16 @@
         "file": "return-response-and-wait-for-next-webhook.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "triggerAliases": {
+      "webhook": "catch_webhook",
+      "incoming_webhook": "catch_webhook",
+      "http_webhook": "catch_webhook"
+    }
   },
   "@activepieces/piece-telegram-bot": {
     "name": "@activepieces/piece-telegram-bot",
-    "version": "0.3.21",
+    "version": "~0.3.21",
     "triggers": [
       {
         "name": "new_telegram_message",
@@ -1106,11 +1288,17 @@
         "file": "get-chat-member.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "send_message": "send_text_message",
+      "sendMessage": "send_text_message",
+      "message": "send_text_message",
+      "telegram_message": "send_text_message"
+    }
   },
   "@activepieces/piece-store": {
     "name": "@activepieces/piece-store",
-    "version": "0.6.10",
+    "version": "~0.6.10",
     "triggers": [],
     "actions": [
       {
@@ -1144,11 +1332,20 @@
         "file": "store-put-action.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "get_value": "get",
+      "getValue": "get",
+      "read": "get",
+      "set_value": "put",
+      "setValue": "put",
+      "save": "put",
+      "write": "put"
+    }
   },
   "@activepieces/piece-http": {
     "name": "@activepieces/piece-http",
-    "version": "0.9.5",
+    "version": "~0.9.5",
     "triggers": [],
     "actions": [
       {
@@ -1157,11 +1354,18 @@
         "file": "send-http-request-action.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "http_request": "send_request",
+      "httpRequest": "send_request",
+      "api_call": "send_request",
+      "fetch": "send_request",
+      "request": "send_request"
+    }
   },
   "@activepieces/piece-notion": {
     "name": "@activepieces/piece-notion",
-    "version": "0.4.13",
+    "version": "~0.4.13",
     "triggers": [
       {
         "name": "new_comment",
@@ -1254,11 +1458,35 @@
       "page",
       "database_item_id",
       "database_id"
-    ]
+    ],
+    "triggerAliases": {
+      "new_item": "new_database_item",
+      "newItem": "new_database_item",
+      "new_record": "new_database_item",
+      "database_item": "new_database_item"
+    },
+    "actionAliases": {
+      "createItem": "create_database_item",
+      "create_item": "create_database_item",
+      "add_item": "create_database_item",
+      "new_item": "create_database_item",
+      "updateItem": "update_database_item",
+      "update_item": "update_database_item",
+      "edit_item": "update_database_item",
+      "createPage": "createPage",
+      "create_page": "createPage",
+      "new_page": "createPage"
+    },
+    "fieldConversions": {
+      "database_id": "databaseId",
+      "databaseId": "database_id",
+      "page_id": "pageId",
+      "pageId": "page_id"
+    }
   },
   "@activepieces/piece-tables": {
     "name": "@activepieces/piece-tables",
-    "version": "0.2.8",
+    "version": "~0.2.8",
     "triggers": [
       {
         "name": "deletedRecord",
@@ -1310,7 +1538,7 @@
   },
   "@activepieces/piece-openai": {
     "name": "@activepieces/piece-openai",
-    "version": "0.6.7",
+    "version": "~0.6.7",
     "triggers": [],
     "actions": [
       {
@@ -1354,11 +1582,21 @@
         "file": "extract-structure-data.action.ts"
       }
     ],
-    "props": []
+    "props": [],
+    "actionAliases": {
+      "chat": "ask_chatgpt",
+      "prompt": "ask_chatgpt",
+      "gpt": "ask_chatgpt",
+      "askGpt": "ask_chatgpt",
+      "ask_gpt": "ask_chatgpt",
+      "generate_text": "ask_chatgpt",
+      "createImage": "generate_image",
+      "create_image": "generate_image"
+    }
   },
   "@activepieces/piece-salesforce": {
     "name": "@activepieces/piece-salesforce",
-    "version": "0.2.1",
+    "version": "~0.2.1",
     "triggers": [
       {
         "name": "new_or_updated_record",
@@ -1560,7 +1798,7 @@
   },
   "@activepieces/piece-pipedrive": {
     "name": "@activepieces/piece-pipedrive",
-    "version": "0.7.7",
+    "version": "~0.7.7",
     "triggers": [
       {
         "name": "updated_deal",
@@ -1797,7 +2035,7 @@
   },
   "@activepieces/piece-data-mapper": {
     "name": "@activepieces/piece-data-mapper",
-    "version": "0.3.11",
+    "version": "~0.3.11",
     "triggers": [],
     "actions": [
       {
@@ -1810,7 +2048,7 @@
   },
   "@activepieces/piece-github": {
     "name": "@activepieces/piece-github",
-    "version": "0.5.10",
+    "version": "~0.5.10",
     "triggers": [
       {
         "name": "new_milestone",
@@ -1931,7 +2169,7 @@
   },
   "@activepieces/piece-airtable": {
     "name": "@activepieces/piece-airtable",
-    "version": "0.5.2",
+    "version": "~0.5.2",
     "triggers": [
       {
         "name": "updated_record",
@@ -2055,7 +2293,7 @@
   },
   "@activepieces/piece-discord": {
     "name": "@activepieces/piece-discord",
-    "version": "0.3.24",
+    "version": "~0.3.24",
     "triggers": [
       {
         "name": "new_member",
@@ -2153,7 +2391,7 @@
   },
   "@activepieces/piece-trello": {
     "name": "@activepieces/piece-trello",
-    "version": "0.3.19",
+    "version": "~0.3.19",
     "triggers": [
       {
         "name": "deadline",
@@ -2182,7 +2420,7 @@
   },
   "@activepieces/piece-asana": {
     "name": "@activepieces/piece-asana",
-    "version": "0.3.11",
+    "version": "~0.3.11",
     "triggers": [],
     "actions": [
       {
@@ -2200,7 +2438,7 @@
   },
   "@activepieces/piece-jira-cloud": {
     "name": "@activepieces/piece-jira-cloud",
-    "version": "0.1.19",
+    "version": "~0.1.19",
     "triggers": [
       {
         "name": "updated_issue",
@@ -2294,7 +2532,7 @@
   },
   "@activepieces/piece-stripe": {
     "name": "@activepieces/piece-stripe",
-    "version": "0.5.16",
+    "version": "~0.5.16",
     "triggers": [
       {
         "name": "updated_subscription",
@@ -2467,7 +2705,7 @@
   },
   "@activepieces/piece-twilio": {
     "name": "@activepieces/piece-twilio",
-    "version": "0.3.13",
+    "version": "~0.3.13",
     "triggers": [
       {
         "name": "new_recording",
@@ -2524,6 +2762,96 @@
     ],
     "props": [
       "phone_number"
+    ]
+  },
+  "@activepieces/piece-google-docs": {
+    "name": "@activepieces/piece-google-docs",
+    "version": "~0.4.3",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "create_document",
+        "displayName": "Create Document"
+      },
+      {
+        "name": "read_document",
+        "displayName": "Read Document"
+      },
+      {
+        "name": "append_text",
+        "displayName": "Append Text to Document"
+      }
+    ],
+    "actionAliases": {
+      "createDoc": "create_document",
+      "create_doc": "create_document",
+      "new_document": "create_document",
+      "readDoc": "read_document",
+      "read_doc": "read_document",
+      "get_document": "read_document"
+    },
+    "props": [
+      "title",
+      "body",
+      "values"
+    ]
+  },
+  "@activepieces/piece-ai": {
+    "name": "@activepieces/piece-ai",
+    "version": "~0.1.0",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "generate_text",
+        "displayName": "Generate Text"
+      }
+    ],
+    "actionAliases": {
+      "ask": "generate_text",
+      "prompt": "generate_text",
+      "chat": "generate_text"
+    },
+    "props": [
+      "provider",
+      "model",
+      "prompt"
+    ]
+  },
+  "@activepieces/piece-image-ai": {
+    "name": "@activepieces/piece-image-ai",
+    "version": "~0.1.0",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "generate_image",
+        "displayName": "Generate Image"
+      },
+      {
+        "name": "describe_image",
+        "displayName": "Describe Image"
+      }
+    ],
+    "props": [
+      "provider",
+      "model",
+      "prompt",
+      "image"
+    ]
+  },
+  "@activepieces/piece-perplexity-ai": {
+    "name": "@activepieces/piece-perplexity-ai",
+    "version": "~0.1.4",
+    "triggers": [],
+    "actions": [
+      {
+        "name": "ask",
+        "displayName": "Ask Perplexity"
+      }
+    ],
+    "props": [
+      "model",
+      "prompt",
+      "temperature"
     ]
   }
 }

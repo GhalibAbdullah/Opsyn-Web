@@ -1,0 +1,73 @@
+---
+title: "Pieces"
+icon: "puzzle-piece"
+description: "Manage which integrations and actions are available in your project"
+---
+
+The Pieces settings page lets project owners control which integrations (pieces) are enabled or disabled in their project. This is useful for keeping the piece catalog focused and relevant to your team's needs.
+
+## Accessing Pieces Settings
+
+Navigate to **More → Pieces** in the project sidebar (or visit `/projects/:id/settings/pieces`).
+
+## What Are Pieces?
+
+Pieces are the building blocks of OpSyn flows. Each piece represents an integration with an external service (like Slack, Google Sheets, or OpenAI) or a built-in utility (like HTTP requests, scheduling, or data transformation). Every trigger and action in a flow comes from a piece.
+
+## Managing Pieces
+
+The pieces settings page shows a table of all available pieces with:
+
+| Column | Description |
+|--------|-------------|
+| **Piece** | Logo, name, and package identifier |
+| **Version** | Currently installed version |
+| **Enabled** | Toggle to enable/disable the piece |
+| **Actions** | Delete custom pieces, sync versions |
+
+### Enabling/Disabling Pieces
+
+Use the **toggle switch** on each piece to control visibility:
+
+- **Enabled** — The piece appears in the flow builder when adding steps
+- **Disabled** — The piece is hidden from the builder; existing flows using it still work, but new steps can't be added
+
+<Note>
+  Disabling a piece doesn't break existing flows that use it. It only hides the piece from the builder so new steps can't use it.
+</Note>
+
+### Searching Pieces
+
+Use the **search bar** at the top to filter pieces by name. This is helpful when you have hundreds of available pieces and need to find a specific one.
+
+### Installing Custom Pieces
+
+If your platform supports custom pieces:
+
+1. Click **Install Piece**
+2. Enter the npm package name and version
+3. The piece is downloaded and added to your project
+
+### Syncing Piece Versions
+
+Click the **sync** icon on a piece to update it to the latest available version from the platform.
+
+### Deleting Custom Pieces
+
+For custom (non-official) pieces, click the **trash** icon to remove them from your project.
+
+## Piece Types
+
+| Type | Description |
+|------|-------------|
+| **Official** | Maintained by OpSyn, automatically available |
+| **Community** | Built by the community, available in the marketplace |
+| **Custom** | Built by your team, installed manually |
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View Pieces** | All project members |
+| **Enable/Disable** | Project owner or users with platform `managePiecesEnabled` |
+| **Install/Delete** | Project owner or platform admins |

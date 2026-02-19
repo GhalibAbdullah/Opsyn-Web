@@ -1,9 +1,8 @@
 import { AlertChannel, OtpType } from '@activepieces/ee-shared'
-import { ApEdition, assertNotNullOrUndefined, InvitationType, isNil, UserIdentity, UserInvitation } from '@activepieces/shared'
+import { assertNotNullOrUndefined, InvitationType, isNil, UserIdentity, UserInvitation } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
 import { redisConnections } from '../../../database/redis-connections'
-import { system } from '../../../helper/system/system'
 import { platformService } from '../../../platform/platform.service'
 import { projectService } from '../../../project/project-service'
 import { alertsService } from '../../alerts/alerts-service'
@@ -11,8 +10,6 @@ import { domainHelper } from '../../custom-domains/domain-helper'
 import { projectRoleService } from '../../projects/project-role/project-role.service'
 import { emailSender, EmailTemplateData } from './email-sender/email-sender'
 
-const EDITION = system.getEdition()
-const EDITION_IS_NOT_PAID = ![ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(EDITION)
 const MAX_ISSUES_EMAIL_LIMT = 50
 
 export const emailService = (log: FastifyBaseLogger) => ({
@@ -50,10 +47,6 @@ export const emailService = (log: FastifyBaseLogger) => ({
         isIssue,
         createdAt,
     }: IssueCreatedArgs): Promise<void> {
-        if (EDITION_IS_NOT_PAID) {
-            return
-        }
-
         log.info({
             name: '[emailService#sendIssueCreatedNotification]',
             projectId,
@@ -84,20 +77,9 @@ export const emailService = (log: FastifyBaseLogger) => ({
     },
 
     async sendOtp({ platformId, userIdentity, otp, type }: SendOtpArgs): Promise<void> {
-        if (EDITION_IS_NOT_PAID) {
-            return
-        }
-
         if (userIdentity.verified && type === OtpType.EMAIL_VERIFICATION) {
             return
         }
-
-        log.info({
-            email: userIdentity.email,
-            otp,
-            identityId: userIdentity.id,
-            type,
-        }, 'Sending OTP email')
 
         const frontendPath = {
             [OtpType.EMAIL_VERIFICATION]: 'verify-email',
@@ -108,6 +90,12 @@ export const emailService = (log: FastifyBaseLogger) => ({
             platformId,
             path: frontendPath[type] + `?otpcode=${otp}&identityId=${userIdentity.id}`,
         })
+
+        log.info({
+            email: userIdentity.email,
+            identityId: userIdentity.id,
+            type,
+        }, 'Sending OTP email')
 
         const otpToTemplate: Record<string, EmailTemplateData> = {
             [OtpType.EMAIL_VERIFICATION]: {

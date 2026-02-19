@@ -16,7 +16,7 @@ import {
 import { FindOptionsWhere, ILike, In, IsNull, Not } from 'typeorm'
 import { repoFactory } from '../core/db/repo-factory'
 import { distributedStore } from '../database/redis-connections'
-import { projectMemberService } from '../ee/projects/project-members/project-member.service'
+
 import { system } from '../helper/system/system'
 import { userService } from '../user/user-service'
 import { ProjectEntity } from './project-entity'
@@ -190,132 +190,46 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     const user = await userService.getOneOrFail({ id: params.userId })
     const isPrivilegedUser = user.platformRole === PlatformRole.ADMIN || user.platformRole === PlatformRole.OPERATOR
     const displayNameFilter = params.displayName ? { displayName: ILike(`%${params.displayName}%`) } : {}
-    
-    system.globalLogger().info({
-        userId: params.userId,
-        platformId: params.platformId,
-        platformRole: user.platformRole,
-        isPrivilegedUser,
-    }, 'Getting user filters for projects')
-    
+
     if (isPrivilegedUser) {
-        // Platform admins and operators can see all projects in their platform
-        system.globalLogger().info('User is privileged, returning all platform projects')
         return [{
             platformId: params.platformId,
             ...displayNameFilter,
         }]
     }
-    
-    // Only fetch project memberships for non-privileged users
-    const logger = system.globalLogger()
-    logger.info({
-        userId: params.userId,
-        platformId: params.platformId,
-    }, 'Checking user project access: querying for owned projects and member projects')
-    
-    // Query directly for owned projects (where user is the owner)
-    // This bypasses any potential issues with that function
-    const { IsNull } = await import('typeorm')
+
+    // Regular members: only projects they own or are members of
     const ownedProjects = await projectRepo().find({
         where: {
             ownerId: params.userId,
             platformId: params.platformId,
             deleted: IsNull(),
         },
-        select: {
-            id: true,
-        },
+        select: { id: true },
     })
-    
     const ownedProjectIds = ownedProjects.map(p => p.id)
-    
-    logger.info({
-        userId: params.userId,
-        ownedProjectIds,
-        ownedCount: ownedProjects.length,
-    }, 'Found projects where user is owner')
-    
-    // Also get project member records
-    const projectMemberServiceInstance = projectMemberService(logger)
-    const memberProjectIds = await (async () => {
-        try {
-            // Get project members
-            const { repoFactory } = await import('../core/db/repo-factory')
-            const { ProjectMemberEntity } = await import('../project-members/project-member.entity')
-            const memberRepo = repoFactory(ProjectMemberEntity)
-            
-            // Query for members with a retry to handle transaction isolation issues
-            // If a member was just created, it might not be immediately visible
-            // Use exponential backoff with up to ~3 seconds total wait time
-            const maxRetries = 10
-            const baseDelayMs = 100
-            let members: Array<{ projectId: string }> = []
-            
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
-                if (attempt > 0) {
-                    const delayMs = baseDelayMs * Math.pow(2, attempt - 1)
-                    await new Promise(resolve => setTimeout(resolve, delayMs))
-                }
-                
-                members = await memberRepo().find({
-                    where: {
-                        userId: params.userId,
-                        platformId: params.platformId,
-                    },
-                })
-                
-                if (members.length > 0) {
-                    if (attempt > 0) {
-                        logger.info({ 
-                            userId: params.userId, 
-                            platformId: params.platformId,
-                            attempts: attempt + 1,
-                            memberCount: members.length,
-                            projectIds: members.map(m => m.projectId)
-                        }, 'Found project members after retry')
-                    }
-                    break
-                }
-            }
-            
-            if (members.length === 0) {
-                logger.warn({
-                    userId: params.userId,
-                    platformId: params.platformId,
-                    attempts: maxRetries
-                }, 'No project members found after all retries - member may not exist or transaction isolation issue')
-            }
-            
-            return members.map(m => m.projectId)
-        } catch (error) {
-            logger.error({ error, userId: params.userId, platformId: params.platformId }, 'Error fetching project members')
-            return []
-        }
-    })()
-    
-    // Combine owned and member project IDs
+
+    const { ProjectMemberEntity } = await import('../ee/projects/project-members/project-member.entity')
+    const memberRepo = repoFactory(ProjectMemberEntity)
+    const memberRecords = await memberRepo().find({
+        where: {
+            userId: params.userId,
+            platformId: params.platformId,
+        },
+        select: { projectId: true } as any,
+    })
+    const memberProjectIds = memberRecords.map(m => m.projectId)
+
     const allProjectIds = [...new Set([...ownedProjectIds, ...memberProjectIds])]
-    
-    logger.info({
-        userId: params.userId,
-        allProjectIds,
-        totalCount: allProjectIds.length,
-        ownedCount: ownedProjectIds.length,
-        memberCount: memberProjectIds.length,
-    }, 'Combined project IDs for user (owned + member projects)')
-    
-    // Regular members can only see projects they're members of or own
+
     if (allProjectIds.length === 0) {
-        // Return a filter that will match nothing
-        logger.info('No project IDs found, returning empty filter')
         return [{
             platformId: params.platformId,
-            id: In(['__NONEXISTENT_ID__']), // This will never match
+            id: In(['__NONEXISTENT_ID__']),
             ...displayNameFilter,
         }]
     }
-    
+
     return [{
         platformId: params.platformId,
         id: In(allProjectIds),

@@ -32,11 +32,34 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         }
         
         if (shouldCreateNewPlatform) {
+            // Single platform model: Get or create main platform instead of creating new one
+            let mainPlatform = await platformService.getOldestPlatform()
+            if (isNil(mainPlatform)) {
+                // Create main platform if it doesn't exist
+                const userIdentity = await userIdentityService(log).create({
+                    ...params,
+                    verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
+                })
+                return createUserAndPlatform(userIdentity, log)
+            }
+            // Use existing main platform
             const userIdentity = await userIdentityService(log).create({
                 ...params,
                 verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
             })
-            return createUserAndPlatform(userIdentity, log)
+            const user = await userService.create({
+                identityId: userIdentity.id,
+                platformRole: PlatformRole.MEMBER,
+                platformId: mainPlatform.id,
+            })
+            await userInvitationsService(log).provisionUserInvitation({
+                email: params.email,
+            })
+            return authenticationUtils.getProjectAndToken({
+                userId: user.id,
+                platformId: mainPlatform.id,
+                projectId: null,
+            })
         }
 
         // At this point, we know platformId is not null because shouldCreateNewPlatform is false
@@ -68,15 +91,18 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
     },
     async signInWithPassword(params: SignInWithPasswordParams): Promise<AuthenticationResponse> {
         const identity = await userIdentityService(log).verifyIdentityPassword(params)
-        const platformId = isNil(params.predefinedPlatformId) ? await getPersonalPlatformIdForIdentity(identity.id) : params.predefinedPlatformId
-        if (isNil(platformId)) {
+        // Single platform model: Always use main platform
+        const mainPlatform = await platformService.getOldestPlatform()
+        if (isNil(mainPlatform)) {
             throw new ActivepiecesError({
                 code: ErrorCode.AUTHENTICATION,
                 params: {
-                    message: 'No platform found for identity',
+                    message: 'Main platform not found',
                 },
             })
         }
+        const platformId = mainPlatform.id
+        
         await authenticationUtils.assertEmailAuthIsEnabled({
             platformId,
             provider: UserIdentityProvider.EMAIL,
@@ -85,11 +111,22 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             email: params.email,
             platformId,
         })
-        const user = await userService.getOneByIdentityAndPlatform({
+        
+        // Get or create user in main platform
+        let user = await userService.getOneByIdentityAndPlatform({
             identityId: identity.id,
             platformId,
         })
-        assertNotNullOrUndefined(user, 'User not found')
+        
+        // If user doesn't exist in main platform, create them
+        if (isNil(user)) {
+            user = await userService.create({
+                identityId: identity.id,
+                platformRole: PlatformRole.MEMBER,
+                platformId,
+            })
+        }
+        
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
             platformId,
@@ -101,20 +138,57 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         const userIdentity = await userIdentityService(log).getIdentityByEmail(params.email)
 
         if (isNil(platformId)) {
-            if (!isNil(userIdentity)) {
-                // User already exists, create a new personal platform and return token
-                return createUserAndPlatform(userIdentity, log)
+            // Single platform model: Use main platform
+            const mainPlatform = await platformService.getOldestPlatform()
+            if (isNil(mainPlatform)) {
+                // Create main platform if it doesn't exist
+                if (!isNil(userIdentity)) {
+                    return createUserAndPlatform(userIdentity, log)
+                }
+                return authenticationService(log).signUp({
+                    email: params.email,
+                    firstName: params.firstName,
+                    lastName: params.lastName,
+                    newsLetter: params.newsLetter,
+                    trackEvents: params.trackEvents,
+                    provider: params.provider,
+                    platformId: null,
+                    password: await cryptoUtils.generateRandomPassword(),
+                })
             }
-            // Create New Identity and Platform
-            return authenticationService(log).signUp({
+            // Use existing main platform
+            if (isNil(userIdentity)) {
+                return authenticationService(log).signUp({
+                    email: params.email,
+                    firstName: params.firstName,
+                    lastName: params.lastName,
+                    newsLetter: params.newsLetter,
+                    trackEvents: params.trackEvents,
+                    provider: params.provider,
+                    platformId: mainPlatform.id,
+                    password: await cryptoUtils.generateRandomPassword(),
+                })
+            }
+            // User exists, ensure they're in main platform
+            let user = await userService.getOneByIdentityAndPlatform({
+                identityId: userIdentity.id,
+                platformId: mainPlatform.id,
+            })
+            if (isNil(user)) {
+                // Create user in main platform
+                user = await userService.create({
+                    identityId: userIdentity.id,
+                    platformRole: PlatformRole.MEMBER,
+                    platformId: mainPlatform.id,
+                })
+            }
+            await userInvitationsService(log).provisionUserInvitation({
                 email: params.email,
-                firstName: params.firstName,
-                lastName: params.lastName,
-                newsLetter: params.newsLetter,
-                trackEvents: params.trackEvents,
-                provider: params.provider,
-                platformId: null,
-                password: await cryptoUtils.generateRandomPassword(),
+            })
+            return authenticationUtils.getProjectAndToken({
+                userId: user.id,
+                platformId: mainPlatform.id,
+                projectId: null,
             })
         }
         if (isNil(userIdentity)) {
@@ -144,15 +218,18 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         })
     },
     async switchPlatform(params: SwitchPlatformParams): Promise<AuthenticationResponse> {
-        const platforms = await platformService.listPlatformsForIdentityWithAtleastProject({ identityId: params.identityId })
-        const platform = platforms.find((platform) => platform.id === params.platformId)
-        await assertUserCanSwitchToPlatform(null, platform)
-
-        assertNotNullOrUndefined(platform, 'Platform not found')
-        const user = await getUserForPlatform(params.identityId, platform)
+        // Single platform model: No platform switching allowed
+        // Always use main platform
+        const mainPlatform = await platformService.getOldestPlatform()
+        assertNotNullOrUndefined(mainPlatform, 'Main platform not found')
+        const user = await userService.getOneByIdentityAndPlatform({
+            identityId: params.identityId,
+            platformId: mainPlatform.id,
+        })
+        assertNotNullOrUndefined(user, 'User not found on main platform')
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
-            platformId: platform.id,
+            platformId: mainPlatform.id,
             projectId: null,
         })
     },
@@ -231,7 +308,7 @@ async function createUserAndPlatform(userIdentity: UserIdentity, log: FastifyBas
     })
     const platform = await platformService.create({
         ownerId: user.id,
-        name: userIdentity.firstName + '\'s Platform',
+        name: 'OpSyn',
     })
     await userService.addOwnerToPlatform({
         platformId: platform.id,
@@ -287,15 +364,10 @@ async function getPersonalPlatformIdForFederatedAuthn(email: string, log: Fastif
 }
 
 async function getPersonalPlatformIdForIdentity(identityId: string): Promise<string | null> {
-    const edition = system.getEdition()
-    if (edition === ApEdition.CLOUD) {
-        const platforms = await platformService.listPlatformsForIdentityWithAtleastProject({ identityId })
-        const platform = platforms.find((platform) => !platformUtils.isCustomerOnDedicatedDomain(platform))
-        return platform?.id ?? null
-    }
-    // For COMMUNITY edition, find the user's platform(s) and return the first one
-    const platforms = await platformService.listPlatformsForIdentityWithAtleastProject({ identityId })
-    return platforms?.[0]?.id ?? null
+    // Single platform model: Get the main platform (oldest platform)
+    // All users belong to the same platform
+    const mainPlatform = await platformService.getOldestPlatform()
+    return mainPlatform?.id ?? null
 }
 
 

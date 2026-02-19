@@ -1,52 +1,106 @@
 ---
 title: "Project Permissions"
-description: "Documentation on project permissions in Activepieces"
+description: "Role-based access control for managing project access"
 icon: 'user'
 ---
 
-Activepieces utilizes Role-Based Access Control (RBAC) for managing permissions within projects. Each project consists of multiple flows and users, with each user assigned specific roles that define their actions within the project.
+OpSyn uses Role-Based Access Control (RBAC) for managing permissions within projects. Each project member is assigned a role that determines what they can do.
 
-The supported roles in Activepieces are:
+## Built-in Roles
 
-- **Admin:**
-  - View Flows
-  - Edit Flows
-  - Publish/Turn On and Off Flows
-  - View Runs
-  - Retry Runs
-  - View Issues
-  - Resolve Issues
-  - View Connections
-  - Edit Connections
-  - View Project Members
-  - Add/Remove Project Members
-  - Configure Git Repo to Sync Flows With
-  - Push/Pull Flows to/from Git Repo
+### Admin
+Full access to all project features:
+- View, create, edit, and delete flows
+- Publish and toggle flow status
+- View and retry flow runs
+- View, create, edit, and delete tables and table data
+- View, create, and resolve todos
+- View, create, and manage connections
+- View and manage MCP servers
+- View and manage project members
+- Configure git sync and releases
+- Push/pull flows to/from git repo
 
-- **Editor:**
-  - View Flows
-  - Edit Flows
-  - Publish/Turn On and Off Flows
-  - View Runs
-  - Retry Runs
-  - View Connections
-  - Edit Connections
-  - View Issues
-  - Resolve Issues
-  - View Project Members
+### Editor
+Create and manage content:
+- View, create, and edit flows
+- Publish and toggle flow status
+- View and retry flow runs
+- View, create, edit, and delete tables and table data
+- View, create, and resolve todos
+- View, create, and manage connections
+- View and manage MCP servers
+- View project members
 
-- **Operator:**
-  - Publish/Turn On and Off Flows
-  - View Runs
-  - Retry Runs
-  - View Issues
-  - View Connections
-  - Edit Connections
-  - View Project Members
+### Operator
+Manage deployments and operations:
+- Publish and toggle flow status
+- View and retry flow runs
+- View connections and manage credentials
+- View and resolve todos
+- View project members
 
-- **Viewer:**
-  - View Flows
-  - View Runs
-  - View Connections
-  - View Project Members
-  - View Issues
+### Viewer
+Read-only access:
+- View flows
+- View flow runs
+- View tables (read-only)
+- View connections
+- View todos
+- View project members
+
+## Permission Reference
+
+| Permission | Admin | Editor | Operator | Viewer |
+|------------|:-----:|:------:|:--------:|:------:|
+| **Flows** | | | | |
+| View Flows | ✅ | ✅ | ❌ | ✅ |
+| Create/Edit Flows | ✅ | ✅ | ❌ | ❌ |
+| Publish/Toggle Flows | ✅ | ✅ | ✅ | ❌ |
+| Delete Flows | ✅ | ✅ | ❌ | ❌ |
+| **Runs** | | | | |
+| View Runs | ✅ | ✅ | ✅ | ✅ |
+| Retry Runs | ✅ | ✅ | ✅ | ❌ |
+| **Tables** | | | | |
+| View Tables | ✅ | ✅ | ❌ | ✅ |
+| Create/Edit Tables | ✅ | ✅ | ❌ | ❌ |
+| Delete Tables | ✅ | ✅ | ❌ | ❌ |
+| **Todos** | | | | |
+| View Todos | ✅ | ✅ | ✅ | ✅ |
+| Create/Resolve Todos | ✅ | ✅ | ✅ | ❌ |
+| **Connections** | | | | |
+| View Connections | ✅ | ✅ | ✅ | ✅ |
+| Create/Edit Connections | ✅ | ✅ | ✅ | ❌ |
+| Delete Connections | ✅ | ✅ | ❌ | ❌ |
+| **MCP** | | | | |
+| View MCP Servers | ✅ | ✅ | ❌ | ❌ |
+| Manage MCP Servers | ✅ | ✅ | ❌ | ❌ |
+| **Team** | | | | |
+| View Members | ✅ | ✅ | ✅ | ✅ |
+| Add/Remove Members | ✅ | ❌ | ❌ | ❌ |
+| **Releases** | | | | |
+| View Releases | ✅ | ❌ | ❌ | ❌ |
+| Create Releases | ✅ | ❌ | ❌ | ❌ |
+| Configure Git Sync | ✅ | ❌ | ❌ | ❌ |
+
+## Custom Roles
+
+Platform administrators can create custom roles with specific permissions:
+
+1. Go to **Platform → Security → Project Roles**
+2. Click **Create Role**
+3. Name the role and select permissions
+4. Assign the role to project members
+
+Custom roles allow fine-grained control — for example, you could create a "Data Manager" role that can only access tables and todos but not flows.
+
+## Connection Visibility
+
+All project members with the `READ_APP_CONNECTION` permission can view project connections. This enables better collaboration since team members can see what connections are available without needing to create their own.
+
+## Automatic Cleanup
+
+When a user is removed from a project:
+- Their access is revoked immediately
+- Their connections are automatically cleaned up based on the project's cleanup policy
+- Flows they created remain in the project

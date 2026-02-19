@@ -1,0 +1,73 @@
+---
+title: "AI Providers"
+icon: "robot"
+description: "Configure AI provider credentials for universal AI pieces in your project"
+---
+
+AI Providers let you connect your own API keys for AI services like OpenAI, Anthropic, Google Gemini, and Replicate. Once configured, these credentials are used by universal AI pieces (e.g., Text AI, Image AI) across all flows in your project.
+
+## Accessing AI Providers
+
+Navigate to **More → AI Providers** in the project sidebar (or visit `/projects/:id/settings/ai`).
+
+## What Are AI Providers?
+
+AI Providers are project-level configurations that store your API keys for supported AI services. When you use universal AI pieces in your flows (like "Ask AI", "Generate Text", "Generate Image"), they automatically use the credentials you've configured here.
+
+<Note>
+  **Project-level vs Platform-level**: Each project can have its own AI provider keys. Platform admins can also configure AI providers at the platform level via **Platform → Setup → AI Providers**, which apply globally.
+</Note>
+
+## Supported Providers
+
+| Provider | Capabilities | Models |
+|----------|-------------|--------|
+| **OpenAI** | Text, Images, Function Calling | GPT-5, GPT-4o, GPT-4.1, O3, O4 Mini, DALL-E 3, GPT-Image-1 |
+| **Anthropic** | Text, Function Calling | Claude 4.5 Sonnet, Claude 4 Sonnet, Claude 4.1 Opus, Claude 3.7 Sonnet, Claude 3.5 Haiku |
+| **Google Gemini** | Text, Images, Video, Function Calling | Gemini 2.5 Pro, Gemini 2.5 Flash, VEO 3, VEO 2 |
+| **Replicate** | Images | Stable Diffusion, FLUX Schnell, SDXL Lightning |
+
+<Tip>
+  Azure OpenAI is also supported for **Enterprise** edition users — it appears alongside the OpenAI provider card.
+</Tip>
+
+## Configuring a Provider
+
+1. Go to **More → AI Providers**
+2. Find the provider card (e.g., OpenAI)
+3. Click **Enable**
+4. Enter your API key following the instructions shown
+5. Click **Save**
+
+Once enabled, the provider card shows a green "configured" indicator. Your flows can now use models from that provider.
+
+### Updating Credentials
+
+1. Click the **pencil icon** on a configured provider card
+2. Enter the new API key
+3. Click **Save**
+
+### Removing a Provider
+
+1. Click the **trash icon** on a configured provider card
+2. The provider will be removed
+
+<Warning>
+  Removing an AI provider will break any flows that use AI pieces relying on that provider's models. Make sure no active flows depend on it before removing.
+</Warning>
+
+## How Flows Use AI Providers
+
+When you add a universal AI piece (like "Ask AI" or "Generate Image") to a flow:
+
+1. The piece checks which AI providers are configured in the project
+2. It shows available models from configured providers
+3. You select a model and configure the step
+4. At runtime, the piece uses your stored API key to call the provider
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View AI Providers** | Anyone who can view project settings |
+| **Configure/Remove** | Users with `WRITE_PROJECT` permission (Admins, Editors) |

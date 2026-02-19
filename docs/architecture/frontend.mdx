@@ -1,0 +1,258 @@
+---
+title: "Frontend Architecture"
+icon: "browser"
+description: "Deep dive into the React frontend, routing, state management, and feature modules"
+---
+
+The frontend is a React 18 application built with Vite, using React Router for navigation, TanStack Query for server state, and Zustand for local state in the flow builder.
+
+## Tech Stack
+
+| Library | Purpose |
+|---------|---------|
+| **React 18** | UI framework |
+| **Vite** | Bundler and dev server |
+| **React Router v6** | Client-side routing |
+| **TanStack Query** | Server state management (data fetching, caching) |
+| **Zustand** | Local state (flow builder) |
+| **shadcn/ui** | UI component library (Radix UI + Tailwind) |
+| **Tailwind CSS** | Utility-first styling |
+| **React Flow** | Canvas-based flow editor |
+| **Socket.IO Client** | Real-time WebSocket communication |
+
+## Directory Structure
+
+```
+packages/react-ui/src/
+├── app/
+│   ├── builder/              # Flow builder (canvas, steps, comments)
+│   │   ├── builder-header/   # Header (name, publish, editors)
+│   │   ├── flow-canvas/      # React Flow canvas
+│   │   ├── flow-comments/    # Comment sidebar
+│   │   ├── flow-activity/    # Activity sidebar
+│   │   ├── pieces-selector/  # Piece browser
+│   │   ├── step-settings/    # Step configuration panel
+│   │   ├── piece-properties/ # Dynamic property forms
+│   │   ├── data-selector/    # Step data reference picker
+│   │   ├── test-step/        # Test individual steps
+│   │   └── run-details/      # Run result viewer
+│   │
+│   ├── components/           # Layout components
+│   │   ├── platform-layout.tsx       # Platform admin layout
+│   │   ├── project-dashboard-layout.tsx  # Project layout
+│   │   ├── project-settings-layout.tsx   # Settings layout
+│   │   └── sidebar/                      # Navigation sidebar
+│   │
+│   ├── router/               # Route definitions
+│   │   ├── index.tsx          # All route declarations
+│   │   ├── project-route-wrapper.tsx  # Project context wrapper
+│   │   ├── permission-guard.tsx       # Permission-based routing
+│   │   └── default-route.tsx          # Default redirect logic
+│   │
+│   └── routes/               # Page components
+│       ├── flows/             # Flows list, builder, analytics
+│       ├── tables/            # Table list, editor
+│       ├── todos/             # Todo list, details
+│       ├── connections/       # Connection management
+│       ├── integrations/      # Integration browser
+│       ├── mcp-servers/       # MCP server pages
+│       ├── platform/          # Platform admin pages
+│       ├── settings/          # Project settings
+│       ├── sign-in.tsx        # Sign in page
+│       ├── sign-up.tsx        # Sign up page
+│       └── dashboard/         # Dashboard page
+│
+├── components/               # Shared UI components
+│   ├── ui/                   # shadcn/ui base components
+│   ├── embed-provider.tsx    # Embedding context
+│   └── socket-provider.tsx   # WebSocket context
+│
+├── features/                 # Feature modules
+│   ├── agents/               # Agent timeline & tools
+│   ├── authentication/       # Auth forms
+│   ├── billing/              # Billing UI
+│   ├── chat/                 # Chat interface
+│   ├── connections/          # Connection hooks & API
+│   ├── flows/                # Flow API, hooks, components
+│   ├── folders/              # Folder management
+│   ├── mcp/                  # MCP components & dialogs
+│   ├── opsyn/                # AI workflow generation
+│   ├── pieces/               # Piece browser
+│   ├── platform-admin/       # Platform admin hooks
+│   ├── projects/             # Project management
+│   ├── tables/               # Table components
+│   ├── team/                 # Team member management
+│   ├── templates/            # Flow templates
+│   └── todos/                # Todo hooks & API
+│
+├── hooks/                    # Global hooks
+│   ├── authorization-hooks.ts   # Permission checking
+│   └── ...
+│
+└── lib/                      # Utilities
+    ├── api.ts                # HTTP client
+    ├── authentication-session.ts  # JWT session management
+    └── utils.ts              # Helper functions
+```
+
+## Routing
+
+Routes are defined in `packages/react-ui/src/app/router/index.tsx`.
+
+### Route Types
+
+**Project Routes** — Wrapped in `ProjectRouterWrapper` for project context:
+```tsx
+...ProjectRouterWrapper({
+  path: '/flows',
+  element: (
+    <RoutePermissionGuard permission={Permission.READ_FLOW}>
+      <FlowsPage />
+    </RoutePermissionGuard>
+  ),
+})
+```
+
+**Platform Routes** — Wrapped in `PlatformLayout`:
+```tsx
+{
+  path: '/platform/projects',
+  element: (
+    <PlatformLayout>
+      <ProjectsPage />
+    </PlatformLayout>
+  ),
+}
+```
+
+**Public Routes** — No auth required:
+```tsx
+{ path: '/sign-in', element: <SignInPage /> }
+{ path: '/forms/:flowId', element: <FormPage /> }
+```
+
+### Permission Guards
+
+Routes use `RoutePermissionGuard` to check user permissions:
+
+```tsx
+<RoutePermissionGuard permission={Permission.READ_TABLE}>
+  <ApTablesPage />
+</RoutePermissionGuard>
+```
+
+If the user doesn't have the required permission, they're redirected.
+
+## Feature Modules
+
+Each feature has a consistent structure:
+
+```
+features/todos/
+├── components/           # React components
+├── lib/
+│   ├── todos-api.ts     # REST API client
+│   ├── todo-hook.ts     # TanStack Query hooks
+│   └── todo-utils.ts    # Utilities
+└── index.ts             # Public exports
+```
+
+### API Client Pattern
+
+```typescript
+// features/todos/lib/todos-api.ts
+export const todosApi = {
+  list: (params) => api.get('/v1/todos', { params }),
+  get: (id) => api.get(`/v1/todos/${id}`),
+  create: (data) => api.post('/v1/todos', data),
+  update: (id, data) => api.patch(`/v1/todos/${id}`, data),
+  delete: (id) => api.delete(`/v1/todos/${id}`),
+};
+```
+
+### Hook Pattern (TanStack Query)
+
+```typescript
+// features/todos/lib/todo-hook.ts
+export const useTodos = (params) => {
+  return useQuery({
+    queryKey: ['todos', params],
+    queryFn: () => todosApi.list(params),
+  });
+};
+
+export const useUpdateTodo = () => {
+  return useMutation({
+    mutationFn: ({ id, data }) => todosApi.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries(['todos']),
+  });
+};
+```
+
+## Flow Builder
+
+The flow builder is the most complex frontend module. Key concepts:
+
+### Zustand Store (`builder-hooks.ts`)
+
+```typescript
+// Core state
+flow: PopulatedFlow
+flowVersion: FlowVersion
+selectedStep: string | null
+readonly: boolean
+leftSidebar: 'NONE' | 'COMMENTS' | 'ACTIVITY' | 'VERSIONS' | 'RUN_LIST'
+rightSidebar: 'NONE' | 'PIECE_SETTINGS'
+
+// Actions
+applyOperation(operation)    // Apply + broadcast to collaborators
+selectStepByName(name)       // Select a step in the canvas
+setLeftSidebar(type)         // Toggle sidebar panels
+```
+
+### Canvas (React Flow)
+
+The flow canvas renders steps as nodes and connections as edges:
+- **Nodes**: `flow-canvas/nodes/` — step rendering
+- **Edges**: `flow-canvas/edges/` — connection lines
+- **Context Menu**: Right-click actions (copy, paste, delete)
+- **Drag Layer**: Step reordering overlay
+- **Widgets**: Toolbar, minimap
+
+### Collaboration Hook (`use-flow-collaboration.ts`)
+
+Handles WebSocket events for real-time co-editing:
+- Listens for `FLOW_OPERATION_BROADCAST` events
+- Skips own operations (prevents double-apply)
+- Applies remote operations to local state
+- Refreshes on version mismatch
+
+## WebSocket Integration
+
+The Socket.IO client is provided via React context:
+
+```tsx
+// components/socket-provider.tsx
+const socket = io(BASE_URL, {
+  transports: ['websocket'],
+  auth: { token: `Bearer ${getToken()}` },
+});
+
+// Usage in components
+const socket = useSocket();
+socket.on('FLOW_COMMENT_CREATED', handleNewComment);
+```
+
+## Authentication Session
+
+JWT tokens are stored in browser storage:
+
+```typescript
+// lib/authentication-session.ts
+getToken(): string
+getProjectId(): string
+getPlatformId(): string
+switchProject(projectId): void
+```
+
+All API requests include the token via the HTTP client interceptor.

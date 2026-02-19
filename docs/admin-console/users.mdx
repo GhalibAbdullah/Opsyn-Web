@@ -1,0 +1,75 @@
+---
+title: "Users"
+description: "Manage platform users, their status, and account settings"
+icon: "users"
+---
+
+The Users page lets you manage all users across your platform — view their details, update their roles, activate/deactivate accounts, and remove users.
+
+## Accessing Users
+
+Navigate to **Platform Admin → Users** (or `/platform/users`).
+
+## Users Table
+
+The users table shows all registered users on your platform:
+
+| Column | Description |
+|--------|-------------|
+| **Name** | User's first and last name |
+| **Email** | User's email address |
+| **Role** | Platform role (Admin or Member) |
+| **Status** | Active or Inactive |
+| **Created** | Account creation date |
+
+## User Status
+
+| Status | Meaning |
+|--------|---------|
+| **Active** ✅ | User can log in and access projects |
+| **Inactive** ❌ | User is deactivated and cannot log in |
+
+### Activating / Deactivating Users
+
+1. Click the status icon on the user row
+2. Confirm the action
+3. The change takes effect immediately
+
+When a user is **deactivated**:
+- They are immediately logged out
+- They cannot sign in
+- Their flows and data remain intact
+- They don't count toward active user limits
+
+When a user is **reactivated**:
+- They can sign in again
+- Their previous project memberships are restored
+
+## Editing Users
+
+Click the **pencil icon** on a user row to open the update dialog:
+
+- **Platform Role** — Change between Admin and Member
+  - **Admin**: Can access platform admin panel
+  - **Member**: Can only access projects they're assigned to
+
+## Deleting Users
+
+1. Click the **trash icon** on the user row
+2. Confirm the deletion
+
+<Warning>
+  Deleting a user permanently removes their account. Their flows and connections remain in their projects, but their project memberships are removed.
+</Warning>
+
+## Platform Roles
+
+| Role | Access |
+|------|--------|
+| **Admin** | Full control over platform settings, users, and all projects. Can access the platform admin panel. |
+| **Member** | Access only to projects they are explicitly invited to. Cannot access platform admin. |
+| **Operator** | Automatic access to all projects in the platform, but no platform administration capabilities. |
+
+<Note>
+  Platform roles (Admin/Member/Operator) are separate from project roles (Admin/Editor/Operator/Viewer). A platform Admin manages the entire organization, while a project Admin manages a specific project. A platform Operator can see all projects but cannot change platform settings.
+</Note>

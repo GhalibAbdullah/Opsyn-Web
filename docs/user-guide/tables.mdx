@@ -1,0 +1,105 @@
+---
+title: "Tables"
+icon: "table"
+description: "Built-in database tables to store, manage, and automate structured data"
+---
+
+Tables give you a built-in spreadsheet-like database right inside OpSyn. You can store structured data, trigger automations when data changes, and manage records through an intuitive editor.
+
+## What are Tables?
+
+Tables work like a lightweight database or spreadsheet. Each table has:
+- **Fields** (columns) — Define the structure of your data with typed columns
+- **Records** (rows) — Individual data entries
+- **Automations** — Trigger flows when records are added or updated
+
+## Creating a Table
+
+1. Navigate to **Tables** in the sidebar
+2. Click **New Table**
+3. Enter a table name
+4. Add your fields (columns)
+
+## Field Types
+
+Each field has a type that determines what data it can hold:
+
+| Field Type | Description | Example |
+|------------|-------------|---------|
+| **Text** | Free-form text | Names, descriptions, notes |
+| **Number** | Numeric values | Quantities, prices, scores |
+| **Date** | Date and time values | Due dates, timestamps |
+| **Dropdown** | Select from predefined options | Status, category, priority |
+
+### Adding Fields
+
+1. Click the **+** button in the table header
+2. Choose a field type
+3. Enter a field name
+4. Configure any type-specific options (e.g., dropdown choices)
+5. Click **Save**
+
+## Working with Records
+
+### Adding Records
+- Click the **+ New Record** button at the bottom of the table
+- Fill in the fields
+- The record is saved automatically
+
+### Editing Records
+- Click on any cell to edit it inline
+- Changes are saved automatically
+- Each field type has its own editor (text input, number input, date picker, dropdown)
+
+### Deleting Records
+- Select the record(s) you want to delete
+- Click the delete action
+
+## Importing Data
+
+You can import data from CSV files:
+
+1. Click the **Import CSV** button in the table header
+2. Select your CSV file
+3. Map CSV columns to table fields
+4. Review the mapping
+5. Click **Import**
+
+## Table Automations
+
+Tables can trigger automations when data changes:
+
+### Available Triggers
+
+| Trigger | When It Fires |
+|---------|---------------|
+| **On New Record** | When a new row is added to the table |
+| **On Update Record** | When an existing row is modified |
+
+### Setting Up Automation
+
+1. Open the table you want to automate
+2. Click on the automation settings
+3. Choose a trigger type
+4. Enable the automation
+5. A flow will be created with the table trigger
+
+<Tip>
+  Table automations are a powerful way to build data-driven workflows. For example, you can send a notification whenever a new support ticket is added to a table, or update a CRM when a record status changes.
+</Tip>
+
+## Tables in Flows
+
+You can interact with tables from your flows using built-in table actions:
+- **Create Record** — Add a new row to a table
+- **Update Record** — Modify an existing row
+- **Read Records** — Query data from a table
+- **Delete Record** — Remove a row
+
+## Permissions
+
+| Permission | Roles |
+|------------|-------|
+| **View Tables** | Admin, Editor, Viewer |
+| **Create/Edit Tables** | Admin, Editor |
+| **Manage Table Data** | Admin, Editor |

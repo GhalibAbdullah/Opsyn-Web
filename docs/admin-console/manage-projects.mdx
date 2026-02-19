@@ -1,14 +1,81 @@
 ---
 title: "Managed Projects"
-description: ""
+description: "Create, configure, and manage projects from the platform admin"
 icon: "building"
 ---
 
-<Snippet file="enterprise-feature.mdx" />
+The Projects page lets you manage all projects within your platform. Create new projects, configure per-project limits, monitor usage, and organize teams.
 
-This feature helps you unlock these use cases:
-1. Set up projects for different teams inside the company.
-2. Set up projects automatically using the embedding feature for your SaaS customers.
+## Accessing Projects
 
+Navigate to **Platform Admin → Projects** (or `/platform/projects`).
 
-You can **create** new projects and sets **limits** on the number of tasks for each project.
+## Projects Table
+
+The projects table shows:
+
+| Column | Description |
+|--------|-------------|
+| **Name** | Project display name |
+| **Used AI Credits** | AI credits consumed vs. limit (e.g., "1,234 / 5,000") |
+| **Active Users** | Active users / total users in the project |
+| **Active Flows** | Enabled flows / total flows |
+| **Created** | When the project was created |
+| **External ID** | Optional external identifier for integrations |
+
+## Creating a Project
+
+1. Click **New Project** in the top-right corner
+2. Enter a project name
+3. The project is created and appears in the list
+
+## Editing a Project
+
+Click the **pencil icon** on any project row to edit:
+
+- **Project Name** — Rename the project
+- **AI Credits Limit** — Set the maximum AI credits this project can use
+
+## Navigating to a Project
+
+Click any project row to switch to that project:
+1. Your session token is updated to the target project
+2. All cached data is cleared
+3. You're redirected to the project's flows page (`/projects/{id}/flows`)
+
+<Note>
+  If the switch fails (e.g., you don't have access), you'll stay on the platform admin page with an error toast.
+</Note>
+
+## Bulk Operations
+
+### Bulk Delete
+
+1. Select projects using the checkboxes in the first column
+2. Click the **Delete** button that appears in the bulk action bar
+3. Confirm the deletion
+
+<Warning>
+  You cannot delete the project you're currently active in. Switch to another project first.
+</Warning>
+
+### Filtering
+
+Use the **Name** filter at the top of the table to search for projects by display name.
+
+## Project Analytics
+
+Each project row shows live analytics:
+- **Active Users / Total Users** — How many users are actively using the project
+- **Active Flows / Total Flows** — How many flows are enabled vs. total
+- **AI Credits Usage** — Credits consumed vs. the per-project limit
+
+## Per-Project Limits
+
+Platform admins can set limits on individual projects:
+
+| Limit | Description |
+|-------|-------------|
+| **AI Credits** | Maximum AI credits the project can consume |
+
+These limits are enforced at runtime — when a project exceeds its AI credit limit, AI-powered steps will fail with a quota error.

@@ -1,0 +1,63 @@
+---
+title: "Alerts"
+icon: "bell"
+description: "Get email notifications when your flows fail"
+---
+
+Alerts notify you by email when a flow in your project fails. Instead of manually checking the runs page, you can add email addresses that automatically receive failure notifications.
+
+## Accessing Alerts
+
+1. Click the **gear icon** on your project (Project Settings)
+2. Switch to the **Alerts** tab
+
+## How Alerts Work
+
+When a flow run fails, OpSyn sends an email to all configured alert recipients. To avoid email overload, alerts follow a smart frequency system:
+
+<Note>
+  **Alert Frequency**: You receive an email for the **first failure** of each flow per day. Subsequent failures from the same flow are batched and included in a **daily summary email** instead of sending individual notifications.
+</Note>
+
+## Adding Alert Emails
+
+1. Open **Project Settings → Alerts**
+2. Click **+ Add Email**
+3. Enter the email address
+4. Click **Add**
+
+The email appears in the alert recipients list immediately. That address will start receiving failure notifications for all flows in the project.
+
+### Who Can Receive Alerts?
+
+Any valid email address can be added — it doesn't have to be a project member. This is useful for:
+- Alerting on-call engineers
+- Sending to a shared team inbox
+- Notifying stakeholders outside the platform
+
+## Removing Alert Emails
+
+1. Open **Project Settings → Alerts**
+2. Find the email in the recipients list
+3. Click the **trash icon** next to it
+
+The email is removed immediately and will no longer receive notifications.
+
+## Alert Content
+
+Each alert email includes:
+- **Flow name** — Which flow failed
+- **Failure time** — When the failure occurred
+- **Failed step** — Which step in the flow caused the error
+- **Link to the run** — Direct link to inspect the failed run
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View Alerts** | Anyone who can view project settings |
+| **Add/Remove Alerts** | Users with `WRITE_ALERT` and `WRITE_PROJECT` permissions (typically Admins) |
+
+<Tip>
+  Set up alerts early for critical flows. Even if your flows are running fine now, having alerts configured means you'll be notified immediately if something breaks.
+</Tip>

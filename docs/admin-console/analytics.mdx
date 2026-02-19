@@ -1,0 +1,58 @@
+---
+title: "Analytics"
+description: "Monitor platform usage with metrics, charts, and reports"
+icon: "chart-line"
+---
+
+The Analytics page gives you a bird's-eye view of your platform's activity and usage.
+
+## Accessing Analytics
+
+Navigate to **Platform Admin → Overview** (or `/platform/analytics`). This is the default landing page when you enter the platform admin.
+
+## Dashboard Components
+
+### Metrics Cards
+
+At the top, you'll see key platform metrics:
+- **Total Projects** — Number of active projects
+- **Total Users** — Number of registered users
+- **Active Flows** — Flows that are currently enabled
+- **Total Runs** — Flow executions across all projects
+
+### Run Analytics
+
+A time-series chart showing flow run activity:
+- **Successful runs** — Flows that completed without errors
+- **Failed runs** — Flows that encountered errors
+- Filter by date range to analyze trends
+
+### Reports
+
+Detailed breakdowns of platform activity:
+- **Top Projects by Runs** — Which projects are most active
+- **Top Flows by Runs** — Which specific flows run most often
+- **Run Status Distribution** — Success vs. failure rates
+
+## Data Refresh
+
+Analytics data is cached and refreshes automatically every 24 hours. You can manually refresh by clicking the **Refresh** button in the page header.
+
+<Note>
+  The refresh timestamp is shown in the page header: "Last updated: Jan 15, 02:30 PM"
+</Note>
+
+## Platform Notifications
+
+At the top of the Analytics page, you may see notification banners:
+
+| Type | Color | Example |
+|------|-------|---------|
+| **Destructive** | Red | Subscription expired, payment failed |
+| **Informational** | Purple | New features available, upgrade suggestions |
+
+Each notification may include an action button that links to the relevant settings page.
+
+## Plan Requirement
+
+Analytics requires the `analyticsEnabled` feature flag in your platform plan. If not enabled, you'll see a locked feature prompt with an option to upgrade.

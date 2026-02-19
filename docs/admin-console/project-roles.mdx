@@ -1,0 +1,114 @@
+---
+title: "Project Roles"
+description: "Create custom roles with granular permissions for project members"
+icon: "shield"
+---
+
+Project Roles let you define custom permission sets beyond the built-in roles (Admin, Editor, Operator, Viewer). Create roles tailored to your team's needs.
+
+## Accessing Project Roles
+
+Navigate to **Platform Admin → Security → Project Roles** (or `/platform/security/project-roles`).
+
+## Built-in vs. Custom Roles
+
+| Type | Examples | Editable |
+|------|----------|----------|
+| **Built-in** | Admin, Editor, Operator, Viewer | ❌ Cannot be modified |
+| **Custom** | Data Manager, Flow Reviewer, Read-Only Analyst | ✅ Fully configurable |
+
+## Creating a Custom Role
+
+1. Click **Create Role** on the project roles page
+2. Enter a role name (e.g., "Data Manager")
+3. Select the permissions for this role
+4. Click **Save**
+
+## Available Permissions
+
+Custom roles can include any combination of these permissions:
+
+### Flow Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_FLOW` | View flows and their configuration |
+| `WRITE_FLOW` | Create, edit, and delete flows |
+| `UPDATE_FLOW_STATUS` | Publish, enable, and disable flows |
+
+### Run Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_RUN` | View flow execution history |
+| `WRITE_RUN` | Retry failed runs |
+
+### Table Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_TABLE` | View tables and their data |
+| `WRITE_TABLE` | Create, edit, and delete tables and records |
+
+### Todo Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_TODO` | View todos |
+| `WRITE_TODO` | Create, resolve, and manage todos |
+
+### Connection Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_APP_CONNECTION` | View connections |
+| `WRITE_APP_CONNECTION` | Create, edit, and delete connections |
+
+### MCP Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_MCP` | View MCP server configuration |
+| `WRITE_MCP` | Manage MCP servers and tools |
+
+### Member Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_PROJECT_MEMBER` | View project team members |
+| `WRITE_PROJECT_MEMBER` | Invite and remove project members |
+
+### Release Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_PROJECT_RELEASE` | View releases |
+| `WRITE_PROJECT_RELEASE` | Create releases and configure git sync |
+
+### Activity Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_ACTIVITY` | View flow activity/audit trail |
+
+### Issue Permissions
+| Permission | Description |
+|------------|-------------|
+| `READ_ISSUES` | View flow issues |
+| `WRITE_ISSUES` | Resolve flow issues |
+
+## Viewing Role Assignments
+
+Click on any role to see which users are currently assigned to it across all projects.
+
+The **Project Role Users** table shows:
+- User name and email
+- Project they're assigned in
+- When they were assigned
+
+## Editing a Custom Role
+
+1. Click on the role in the list
+2. Modify the name or permissions
+3. Changes take effect immediately for all users with this role
+
+## Deleting a Custom Role
+
+<Warning>
+  Before deleting a role, make sure no users are currently assigned to it. Reassign users to a different role first.
+</Warning>
+
+## Plan Requirement
+
+Custom project roles require the `projectRolesEnabled` feature flag in your platform plan.

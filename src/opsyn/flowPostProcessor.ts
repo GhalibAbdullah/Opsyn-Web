@@ -410,6 +410,10 @@ function buildTriggerFromObject(obj: Record<string, unknown>): FlowTrigger {
   // Build a minimal trigger - ensure all required fields are set
   const triggerDisplayName = extractDisplayName(obj) || 'Trigger';
   
+  // Normalize propertySettings to ensure all entries have the required 'type' field
+  const existingPropertySettings = settings.propertySettings as Record<string, unknown> | undefined;
+  const normalizedPropertySettings = normalizePropertySettings(existingPropertySettings);
+  
   const trigger: FlowTrigger = {
     name: 'trigger',
     type: pieceName ? 'PIECE_TRIGGER' : 'EMPTY',
@@ -421,7 +425,7 @@ function buildTriggerFromObject(obj: Record<string, unknown>): FlowTrigger {
           pieceVersion: '~1.0.0', // REQUIRED: Always set pieceVersion
           triggerName: inferTriggerName(obj),
           input: combinedInput,
-          propertySettings: {}, // REQUIRED: Always set propertySettings (even if empty)
+          propertySettings: normalizedPropertySettings, // Normalized propertySettings with required 'type' field
         }
       : {},
   };
@@ -613,6 +617,33 @@ function buildActionChain(obj: Record<string, unknown>): FlowAction | undefined 
 }
 
 /**
+ * Normalize propertySettings to ensure all entries have the required 'type' field
+ */
+function normalizePropertySettings(
+  existingPropertySettings: Record<string, unknown> | undefined | null
+): Record<string, { type: 'MANUAL' | 'DYNAMIC'; schema?: unknown }> {
+  const normalized: Record<string, { type: 'MANUAL' | 'DYNAMIC'; schema?: unknown }> = {};
+  
+  if (existingPropertySettings && typeof existingPropertySettings === 'object') {
+    for (const [key, value] of Object.entries(existingPropertySettings)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const propSetting = value as Record<string, unknown>;
+        // Ensure type field exists, defaulting to 'MANUAL' if missing
+        normalized[key] = {
+          type: (propSetting.type === 'DYNAMIC' ? 'DYNAMIC' : 'MANUAL'),
+          ...(propSetting.schema !== undefined ? { schema: propSetting.schema } : {}),
+        };
+      } else {
+        // If value is not an object, create a valid PropertySettings entry
+        normalized[key] = { type: 'MANUAL' };
+      }
+    }
+  }
+  
+  return normalized;
+}
+
+/**
  * Normalize a trigger object
  */
 function normalizeTrigger(obj: Record<string, unknown>): FlowTrigger {
@@ -645,6 +676,10 @@ function normalizeTrigger(obj: Record<string, unknown>): FlowTrigger {
   const triggerDisplayName = extractDisplayName(obj) || 'Trigger';
   const triggerValid = typeof obj.valid === 'boolean' ? obj.valid : false;
   
+  // Normalize propertySettings to ensure all entries have the required 'type' field
+  const existingPropertySettings = settings.propertySettings as Record<string, unknown> | undefined;
+  const normalizedPropertySettings = normalizePropertySettings(existingPropertySettings);
+  
   const trigger: FlowTrigger = {
     name: typeof obj.name === 'string' ? obj.name : 'trigger',
     type: triggerType,
@@ -656,7 +691,7 @@ function normalizeTrigger(obj: Record<string, unknown>): FlowTrigger {
           pieceVersion: settings.pieceVersion || '~1.0.0',
           triggerName: settings.triggerName || inferTriggerName(obj),
           input: Object.keys(combinedInput).length > 0 ? combinedInput : {},
-          propertySettings: {}, // REQUIRED: Always set propertySettings (even if empty)
+          propertySettings: normalizedPropertySettings, // Normalized propertySettings with required 'type' field
         }
       : {},
   };
@@ -687,6 +722,10 @@ function normalizeAction(obj: Record<string, unknown>, defaultName: string): Flo
   const pieceName = settings.pieceName || inferPieceName(obj, settings) || '@activepieces/piece-http';
   const actionName = settings.actionName || inferActionName(obj);
 
+  // Normalize propertySettings to ensure all entries have the required 'type' field
+  const existingPropertySettings = settings.propertySettings as Record<string, unknown> | undefined;
+  const normalizedPropertySettings = normalizePropertySettings(existingPropertySettings);
+
   const action: FlowAction = {
     name: typeof obj.name === 'string' ? obj.name : defaultName,
     type: actionType,
@@ -698,7 +737,7 @@ function normalizeAction(obj: Record<string, unknown>, defaultName: string): Flo
           pieceVersion: settings.pieceVersion || '~1.0.0',
           actionName,
           input: settings.input || obj.input || {},
-          propertySettings: {},
+          propertySettings: normalizedPropertySettings, // Normalized propertySettings with required 'type' field
         }
       : settings,
   };

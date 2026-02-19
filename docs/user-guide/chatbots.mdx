@@ -1,0 +1,93 @@
+---
+title: "Chatbots"
+icon: "message-bot"
+description: "Build conversational interfaces powered by your flows"
+---
+
+Flows with a **Chat trigger** become interactive chatbots. Users can send messages and receive responses powered by your flow logic — including AI models, database lookups, API calls, and more.
+
+## How Chatbots Work
+
+1. Create a flow with a **Chat** trigger
+2. Add processing steps (AI, data lookups, custom logic)
+3. The flow returns a response for each user message
+4. Users interact via a dedicated chat page or an embedded chat drawer
+
+## Chat Page
+
+Every flow with a Chat trigger gets a **standalone chat page** at:
+
+```
+/projects/:projectId/chat/:flowId
+```
+
+The chat page provides a full-screen conversational interface:
+- **Message list** — Shows the conversation history
+- **Chat input** — Text area to type messages with file/image attachment support
+- **Welcome message** — Configurable intro message when the chat starts
+- **Session management** — Each conversation gets a unique session ID
+
+### Draft vs. Published
+
+| Mode | URL Parameter | Behavior |
+|------|--------------|----------|
+| **Published** | (default) | Uses the published version of the flow |
+| **Draft** | `?useDraft=true` | Uses the draft version — useful for testing |
+
+<Tip>
+  Test your chatbot in draft mode before publishing. This lets you iterate on the flow logic without affecting the live version.
+</Tip>
+
+## Chat Drawer (In-Builder)
+
+When editing a flow with a Chat trigger in the builder, you can open a **chat drawer** to test the conversation inline:
+
+1. Open the flow in the builder
+2. Click the chat icon in the toolbar
+3. A drawer slides out from the side
+4. Send test messages and see responses in real-time
+5. Useful for quick iteration without leaving the builder
+
+## Chat UI Configuration
+
+The Chat trigger supports several UI customizations:
+
+| Setting | Description |
+|---------|-------------|
+| **Welcome message** | Introductory text shown when the chat opens |
+| **Placeholder text** | Hint text in the input field |
+| **Human input fields** | Structured form fields for collecting user data |
+
+## Forms
+
+Flows with a **Form** trigger create a fillable form page instead of a chat interface:
+
+```
+/forms/:flowId
+```
+
+### How Forms Work
+
+1. Create a flow with a **Form** trigger
+2. Define input fields (text, email, number, dropdown, etc.)
+3. Users fill out the form and submit
+4. The flow processes the submission
+5. An optional response page can show the result
+
+### Draft vs. Published
+
+Just like chatbots, forms support draft mode for testing:
+- **Published form** — `/forms/:flowId`
+- **Draft form** — `/forms/:flowId?useDraft=true`
+
+<Note>
+  Forms are a simple way to collect data from users and kick off automations — no coding or frontend work required.
+</Note>
+
+## Permissions
+
+| Action | Who Can |
+|--------|---------|
+| **Use a published chatbot/form** | Anyone with the link (public) |
+| **Test draft chatbot/form** | Users with flow edit permissions |
+| **Create chatbot/form flows** | Users with flow creation permissions |

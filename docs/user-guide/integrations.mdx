@@ -1,0 +1,81 @@
+---
+title: "Integrations"
+icon: "grid"
+description: "Browse, search, and connect to 200+ apps and services"
+---
+
+The Integrations page is your catalog of all available services you can connect to. It shows every piece (integration) available in your platform, along with whether you've already connected to it.
+
+## Accessing Integrations
+
+Navigate to **Integrations** in the project sidebar (or `/projects/:id/integrations`).
+
+<Note>
+  **Integrations vs. Connections**: The **Integrations** page is a browsable catalog of available services. The [Connections](/user-guide/connections) page manages your actual saved credentials.
+</Note>
+
+## Overview
+
+At the top of the page, you'll see a summary: **X of Y connected** — showing how many of the available integrations you've set up connections for.
+
+## Searching and Filtering
+
+### Search
+
+Type in the search bar to find integrations by name or description. For example, searching "google" shows Google Sheets, Google Drive, Gmail, Google Calendar, etc.
+
+### Status Filter
+
+| Filter | Shows |
+|--------|-------|
+| **All Status** | Every available integration |
+| **Connected** | Only integrations you have active connections for |
+| **Not Connected** | Integrations you haven't connected yet |
+
+### Category Filter
+
+Filter by category to narrow down results:
+- Communication (Slack, Discord, Teams)
+- Productivity (Google Sheets, Notion, Airtable)
+- Marketing (Mailchimp, HubSpot, ActiveCampaign)
+- Developer Tools (GitHub, GitLab, Jira)
+- AI (OpenAI, Anthropic, Google AI)
+- And many more...
+
+## View Modes
+
+Toggle between two view modes:
+
+| Mode | Description |
+|------|-------------|
+| **Grid** | Card layout showing logo, name, description, and connection status |
+| **List** | Compact row layout for scanning many integrations quickly |
+
+## Integration Cards
+
+Each integration card shows:
+- **Service logo** — Visual identification
+- **Service name** — e.g., "Slack", "Google Sheets"
+- **Description** — What the service does
+- **Connection status** — Green badge if connected, otherwise "Not Connected"
+- **Connect button** — Quick connect action
+
+## Connecting from the Integrations Page
+
+1. Find the service you want to connect
+2. Click the **Connect** button on the card
+3. Follow the authentication flow (OAuth redirect, API key entry, etc.)
+4. Once connected, the card updates to show the active status
+
+After connecting, the credential appears in your [Connections](/user-guide/connections) page where you can manage it.
+
+## Permissions
+
+| Permission | Who Can |
+|------------|---------|
+| **View Integrations** | Anyone with `READ_APP_CONNECTION` permission |
+| **Create Connections** | Users with `WRITE_APP_CONNECTION` permission |
+
+<Note>
+  Viewers can browse integrations but cannot create connections. A message will indicate that they need to contact their project admin for write access.
+</Note>

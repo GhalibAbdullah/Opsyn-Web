@@ -1,0 +1,178 @@
+---
+title: "Real-Time Collaboration"
+icon: "users"
+description: "Work on workflows together with your team in real-time"
+---
+
+OpSyn supports real-time collaboration — multiple team members can view and edit workflows simultaneously, leave comments, and track changes through an activity log.
+
+## Live Co-Editing
+
+When multiple people open the same flow in the builder, they can see each other's changes in real-time:
+
+### Active Editors Badge
+
+When other people are editing the same flow, a **badge** appears in the builder header:
+
+- **Avatar stack** — Shows profile pictures of up to 3 active editors, overlapping slightly
+- **Editor count** — Text like "1 person editing" or "3 people editing"
+- **Hover tooltip** — Hover over the badge to see the full list of active editors with their names
+
+The badge updates in real-time:
+- When someone opens the flow, they appear in the badge
+- When someone closes the flow or navigates away, they disappear
+- The badge is hidden when you're the only editor
+
+### How It Works
+
+1. When you open a flow, the system broadcasts a `FLOW_EDITOR_JOINED` event
+2. All other editors receive a `FLOW_EDITORS_CHANGED` event with the updated list
+3. When someone makes a change, it appears on your screen instantly via WebSocket
+4. When you close or navigate away, a `FLOW_EDITOR_LEFT` event removes you from the list
+5. Changes are synced via WebSocket — no page refresh needed
+6. If there's a conflict, the system automatically resolves it
+
+<Tip>
+  Only **draft** flows can be co-edited. Published (locked) versions are read-only for everyone.
+</Tip>
+
+### Conflict Resolution
+
+In rare cases where two people edit the same thing simultaneously:
+- The system detects a version mismatch
+- Your view automatically refreshes with the latest version
+- A toast notification lets you know the flow was updated
+
+## Flow Comments
+
+Leave comments on your workflows to discuss changes, ask questions, or provide context.
+
+### Comment Types
+
+| Type | Where | Use Case |
+|------|-------|----------|
+| **Workflow Comments** | General (not on a specific step) | "This flow needs review before publishing" |
+| **Step Comments** | Attached to a specific step | "Should we add error handling here?" |
+
+### Posting Comments
+
+1. Click the **Comments** icon in the builder sidebar
+2. Switch between **Workflow** and **Step** tabs
+3. Type your comment and press Enter
+4. Your comment appears instantly for all editors
+
+### Reply Threads
+
+Comments support threaded replies:
+- Click **Reply** on any comment
+- Replies are nested under the parent comment
+- Keeps discussions organized
+
+### Mentions
+
+Tag team members with `@` to get their attention:
+- Type `@` followed by their name
+- They'll receive a notification
+- The mention is highlighted in the comment
+
+### Real-Time Updates
+
+Comments sync in real-time:
+- New comments appear instantly without refresh
+- Edits are reflected immediately
+- Deletions are synced across all editors
+
+## Flow Activity (Audit Trail)
+
+The activity sidebar tracks every change made to a flow — who did what and when.
+
+### Activity Types
+
+| Activity | Description |
+|----------|-------------|
+| **Flow Created** | Flow was first created |
+| **Flow Published** | Draft was published |
+| **Flow Unpublished** | Flow was unpublished |
+| **Name Changed** | Flow was renamed |
+| **Step Added** | New step was added |
+| **Step Updated** | Step configuration was changed |
+| **Step Removed** | Step was deleted |
+| **Status Changed** | Flow was enabled/disabled |
+
+### Viewing Activity
+
+1. Click the **Activity** icon in the builder sidebar
+2. Browse the timeline of changes
+3. Filter by category: **All**, **Steps**, or **Flow**
+4. Each entry shows:
+   - What changed
+   - Who made the change
+   - When it happened
+
+<Tip>
+  The activity trail is invaluable for debugging — if a flow breaks after an update, you can see exactly what changed and who changed it.
+</Tip>
+
+## Version History
+
+The versions sidebar shows all published versions of a flow:
+
+1. Click the **Versions** icon in the builder sidebar
+2. See all published versions with timestamps
+3. Compare draft vs. published to see differences
+4. Restore a previous version if needed
+
+## Run Notifications
+
+When a flow run completes, you and your team receive **real-time toast notifications** in the browser — no need to watch the Runs page.
+
+### How It Works
+
+Run notifications are delivered via WebSocket so they appear instantly:
+
+1. A flow run finishes (success or failure)
+2. The server emits a `FLOW_RUN_FINISHED_NOTIFICATION` event
+3. Everyone who belongs to the project sees a toast notification
+
+### Notification Types
+
+| Outcome | Toast Style | Example |
+|---------|------------|---------|
+| **Success** | Default (green check) | "✓ Daily Sync completed" |
+| **Failed** | Destructive (red) | "✗ Order Processor failed" |
+| **Timeout** | Destructive (red) | "✗ Report Generator failed" |
+| **Quota Exceeded** | Destructive (red) | "✗ Backup Flow failed" |
+| **Memory Limit** | Destructive (red) | "✗ Data Import failed" |
+
+### What's Included
+
+Each notification shows:
+- **Flow name** — Which flow finished
+- **Status** — Success or error message
+- **View Run link** — Click to jump directly to the run details
+
+<Tip>
+  Notifications auto-dismiss after 5 seconds. Click **View Run** before it disappears to go straight to the run output and debug any failures.
+</Tip>
+
+### Email Alerts
+
+In addition to in-app toast notifications, you can configure **email alerts** for flow failures:
+
+1. Open **Project Settings** (gear icon on the project)
+2. Go to the **Alerts** tab
+3. Click **Add email** to add recipient addresses
+4. When a flow fails, the first failure per flow each day sends an immediate email
+5. Subsequent failures are batched into a **daily summary email**
+
+<Note>
+  Email alerts require the `WRITE_ALERT` permission. Only project admins can add or remove alert emails.
+</Note>
+
+## Best Practices
+
+1. **Use comments** to explain complex logic before publishing
+2. **Check the activity trail** if something breaks — see what changed
+3. **Coordinate with your team** — the active editors badge shows who else is working
+4. **Publish incrementally** — make small changes and publish frequently rather than large batch changes
+5. **Set up email alerts** for critical flows so failures are never missed, even when you're away

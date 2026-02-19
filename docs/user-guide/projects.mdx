@@ -1,0 +1,140 @@
+---
+title: "Projects"
+icon: "building"
+description: "Organize your workflows, tables, and team members into separate projects"
+---
+
+Projects are the primary way to organize your work in OpSyn. Each project is an isolated workspace that contains its own flows, tables, todos, connections, and team members.
+
+## What is a Project?
+
+A project is a self-contained workspace where you build automations. Think of it as a folder for your team's work — everything inside is shared between team members, and separate from other projects.
+
+Each project has:
+- **Flows** — Your automation workflows
+- **Tables** — Built-in database tables
+- **Todos** — Task management for approvals and reviews
+- **Connections** — API credentials for integrations
+- **MCP Servers** — AI tool configurations
+- **Team Members** — People with access to this project
+
+## Creating a Project
+
+To create a new project:
+
+1. Open the **platform admin panel** at `/platform/projects`
+2. Click **Create Project**
+3. Enter a project name
+4. The project will be created with you as the owner
+
+<Note>
+  Project creation is available to platform administrators. Team members are invited to existing projects.
+</Note>
+
+## Switching Between Projects
+
+If you belong to multiple projects, you can switch between them:
+
+1. Click on the **project name** in the sidebar
+2. Select the project you want to switch to
+3. You'll be redirected to the new project's dashboard
+
+Your session token is automatically updated when you switch projects, so all subsequent actions will be scoped to the selected project.
+
+## Project Settings
+
+Each project has settings you can configure:
+
+### General Settings
+- **Project Name** — Rename your project at any time
+- **Releases** — Enable/disable the releases (environment management) feature
+
+### Pieces
+Navigate to **Settings → Pieces** to manage which integrations are available in your project.
+
+### Environments
+Navigate to **Settings → Environments** to configure environment-based workflow management (dev, staging, production).
+
+### AI Providers
+Navigate to **Settings → AI** to configure AI provider API keys for your project.
+
+## Team Members
+
+Manage your project team from **Project Settings → Team**.
+
+### Inviting Members
+
+1. Open **Project Settings** (gear icon on the project)
+2. Go to the **Team** tab
+3. Click **Invite Member**
+4. Enter their email address
+5. Select a role
+6. They'll receive an invitation email
+
+Pending invitations are shown in a separate section below the members list. You can cancel a pending invitation at any time.
+
+### Roles
+
+| Role | What It Means |
+|------|--------------|
+| **Owner** | The project creator. Shown as "OWNER" in the team list. Cannot be removed or have their role changed. |
+| **Admin** | Full access — manage flows, connections, members, releases, and settings |
+| **Editor** | Create and edit flows, tables, connections, view runs |
+| **Operator** | Publish flows, manage connections, view runs |
+| **Viewer** | Read-only access to flows, runs, and connections |
+| **Custom** | Platform admins can create [custom roles](/admin-console/project-roles) with granular permissions |
+
+### Changing a Member's Role
+
+Admins can change any non-owner member's role:
+1. Go to **Project Settings → Team**
+2. Click the **edit** icon next to the member
+3. Select the new role from the dialog
+4. The change takes effect immediately
+
+### Removing Members
+
+Admins can remove any non-owner member:
+1. Go to **Project Settings → Team**
+2. Click the **trash** icon next to the member
+3. Confirm the removal
+
+When a member is removed:
+- They lose all access immediately
+- Their flows and data remain in the project
+- They can be re-invited later
+
+<Note>
+  The project **Owner** cannot be removed. If you need to transfer ownership, create a new project and migrate the flows.
+</Note>
+
+### Leaving a Project
+
+Non-owner members can leave a project on their own:
+1. Go to **Project Settings → Team**
+2. Find your own name in the members list
+3. Click the **leave** icon (door icon)
+4. Confirm that you want to leave
+
+<Warning>
+  When you leave a project, you lose all access immediately. You'll need to be re-invited by an admin to regain access.
+</Warning>
+
+## Project Dashboard
+
+Each project has a dashboard showing:
+- Recent flow activity
+- Active flow count
+- Quick links to create flows, tables, and more
+
+## Deleting a Project
+
+<Warning>
+  Deleting a project permanently removes all its flows, tables, todos, connections, and member associations. This cannot be undone.
+</Warning>
+
+To delete a project:
+1. Go to **Platform → Projects**
+2. Click the menu on the project
+3. Select **Delete**
+4. Confirm the deletion

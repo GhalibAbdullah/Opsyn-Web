@@ -36,7 +36,14 @@ export const authenticationUtils = {
             platformId: params.platformId,
             userId: params.userId,
         })
+        
+        // Allow users to exist without projects - don't auto-create
+        // Users can be projectless if:
+        // - They deleted their own project
+        // - They were removed from other users' projects
+        // - They haven't created any projects yet
         const project = isNil(params.projectId) ? projects?.[0] : projects.find((project) => project.id === params.projectId)
+        
         const identity = await userIdentityService(system.globalLogger()).getOneOrFail({ id: user.identityId })
         if (!identity.verified) {
             throw new ActivepiecesError({

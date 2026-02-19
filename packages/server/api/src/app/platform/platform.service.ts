@@ -45,6 +45,18 @@ export const platformService = {
         const platforms = await Promise.all(platformsWithProjects.filter((platformId) => !isNil(platformId)).map((platformId) => platformService.getOneWithPlanOrThrow(platformId)))
         return platforms
     },
+    async listPlatformsForIdentity(params: ListPlatformsForIdentityParams): Promise<PlatformWithoutSensitiveData[]> {
+        const users = await userService.getByIdentityId({ identityId: params.identityId })
+
+        const platformIds = users
+            .filter((user) => !isNil(user.platformId) && user.status === UserStatus.ACTIVE)
+            .map((user) => user.platformId)
+            .filter((platformId): platformId is string => !isNil(platformId))
+
+        const uniquePlatformIds = [...new Set(platformIds)]
+        const platforms = await Promise.all(uniquePlatformIds.map((platformId) => platformService.getOneWithPlanOrThrow(platformId)))
+        return platforms
+    },
     async create(params: AddParams): Promise<Platform> {
         const {
             ownerId,

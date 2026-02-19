@@ -1,0 +1,107 @@
+---
+title: "Infrastructure"
+description: "Monitor workers, system health, and trigger status"
+icon: "server"
+---
+
+The Infrastructure section gives you visibility into the health and performance of your OpSyn deployment. It's split into three sub-pages: Workers, Health, and Triggers.
+
+## Workers
+
+Navigate to **Platform Admin → Infrastructure → Workers** (or `/platform/infrastructure/workers`).
+
+### What You'll See
+
+A table of all worker machines in your deployment:
+
+| Column | Description |
+|--------|-------------|
+| **Worker ID** | Unique identifier for the worker machine |
+| **IP Address** | Network address of the worker |
+| **Status** | Online (green) or Offline (red) |
+| **CPU Usage** | Current CPU utilization percentage |
+| **RAM Usage** | Current memory utilization (used / total) |
+| **Disk Usage** | Disk space (used / total / percentage) |
+| **Sandboxes** | Free / total sandboxes (execution environments) |
+| **Concurrency** | Worker concurrency setting |
+| **Last Heartbeat** | When the worker last reported its status |
+
+### Worker Status
+
+| Status | Indicator |
+|--------|-----------|
+| **Online** | Green dot — Worker is healthy and processing jobs |
+| **Offline** | Red dot — Worker has stopped reporting heartbeats |
+
+### Worker Configuration
+
+Click the **Configure** button to view or adjust worker settings:
+- **Worker concurrency** — How many flows can execute simultaneously
+- **Dedicated workers** — Whether the platform uses dedicated worker pools
+
+<Note>
+  Worker machines automatically register when they start and report heartbeats. If a worker goes offline, it will show as "Offline" after missing heartbeats.
+</Note>
+
+## Health
+
+Navigate to **Platform Admin → Infrastructure → Health** (or `/platform/infrastructure/health`).
+
+### Health Checks
+
+The health page runs automatic checks on your system:
+
+| Check | What It Verifies |
+|-------|-----------------|
+| **Version Check** | Whether you're running the latest version of OpSyn |
+| **WebSocket Connection** | Whether the real-time WebSocket connection is working |
+
+### Version Check
+
+| Status | Meaning |
+|--------|---------|
+| ✅ **Up to date** | You're running the latest version |
+| ⚠️ **Update available** | A newer version is available |
+
+Shows your current version and the latest available version. If an update is available, you'll see a link to the [changelog/releases](https://github.com/Z-vren/opsyn-final/releases).
+
+### WebSocket Status
+
+| Status | Meaning |
+|--------|---------|
+| ✅ **Connected** | WebSocket connection is healthy |
+| ❌ **Disconnected** | WebSocket connection is down |
+
+A working WebSocket connection is required for:
+- Real-time flow collaboration
+- Live flow run updates
+- Comment notifications
+- Todo activity updates
+
+## Triggers
+
+Navigate to **Platform Admin → Infrastructure → Triggers** (or `/platform/infrastructure/triggers`).
+
+### Trigger Health
+
+The triggers page monitors the health of all active triggers across your platform:
+
+- **Active triggers count** — Total number of enabled triggers
+- **Trigger status breakdown** — How many triggers are healthy vs. unhealthy
+- **Status progress bar** — Visual indicator of trigger health percentage
+
+### Trigger Types Monitored
+
+| Type | Description |
+|------|-------------|
+| **Webhook** | HTTP webhooks registered with external services |
+| **Polling** | Scheduled polling triggers |
+| **App Event** | Event-driven triggers from integrations |
+
+### Troubleshooting
+
+If triggers show as unhealthy:
+1. Check that the worker machines are online (Workers page)
+2. Verify network connectivity to external services
+3. Check if webhook URLs are accessible
+4. Review the trigger's configuration in the flow builder

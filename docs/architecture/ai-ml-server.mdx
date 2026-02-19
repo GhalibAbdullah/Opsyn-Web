@@ -1,0 +1,318 @@
+---
+title: "AI/ML Model Server"
+icon: "brain"
+description: "The Python-based AI pipeline for workflow generation with fine-tuned models"
+---
+
+The OpSyn Model Server is a Python FastAPI application that generates complete workflow definitions from natural language prompts. It uses a fine-tuned Qwen2.5-Coder-7B model deployed on Modal (serverless GPU).
+
+## Architecture
+
+```
+User Prompt → TypeScript Backend (/v1/opsyn/generate)
+                    ↓
+              Python FastAPI Server (Modal GPU)
+                    ↓
+              Fine-Tuned Qwen2.5-Coder-7B + LoRA
+                    ↓
+              Raw JSON Output
+                    ↓
+              Post-Processor v2 + Smart Matcher
+                    ↓
+              Valid FlowTemplate JSON
+```
+
+## Production Files
+
+| File | Purpose |
+|------|---------|
+| `server_v2.py` | FastAPI server (deployed production server) |
+| `modal_app_v2.py` | Modal cloud GPU deployment |
+| `smart_matcher.py` | Intelligent name matching engine |
+| `postprocessor_v2.py` | Post-processing pipeline |
+| `piece_registry.json` | Piece version registry |
+
+<Warning>
+  Files without `_v2` suffix (`server.py`, `modal_app.py`, `postprocess.py`) are deprecated v1 files. Do not use them for production.
+</Warning>
+
+## Fine-Tuned Model
+
+| Property | Value |
+|----------|-------|
+| **Base Model** | Qwen/Qwen2.5-Coder-7B-Instruct |
+| **Adapter** | LoRA (Low-Rank Adaptation) |
+| **Adapter Name** | `qwen25_coder_7b_opsyn_lora_quality` |
+| **Training Data** | Curated workflow definition examples |
+| **Input** | Natural language automation descriptions |
+| **Output** | OpSyn FlowTemplate JSON |
+
+### Inference Config
+
+| Parameter | Default |
+|-----------|---------|
+| Max tokens | 2048 |
+| Temperature | 0.7 |
+| Top-p | 0.9 |
+| Device | CUDA (auto-detect) |
+
+## Python Server API
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/health` | Health check with model/GPU status |
+| `POST` | `/generate-workflow` | ⭐ **Main** — Generate workflow with full post-processing pipeline |
+| `POST` | `/generate` | Generate raw model output (no post-processing) |
+| `POST` | `/process` | Post-process raw output only (for external generation) |
+
+### `POST /generate-workflow` — Main Endpoint
+
+Handles the full pipeline: model inference → JSON extraction → post-processing → FlowTemplate conversion.
+
+**Request:**
+```json
+{
+  "prompt": "When a new Slack message arrives, save it to Google Sheets",
+  "max_tokens": 2048,
+  "temperature": 0.7
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "template": {
+    "name": "Slack to Google Sheets",
+    "description": "",
+    "pieces": ["@activepieces/piece-slack", "@activepieces/piece-google-sheets"],
+    "template": {
+      "displayName": "Slack to Google Sheets",
+      "trigger": {
+        "name": "trigger",
+        "type": "PIECE_TRIGGER",
+        "valid": true,
+        "settings": {
+          "pieceName": "@activepieces/piece-slack",
+          "pieceVersion": "~0.12.16",
+          "triggerName": "new_message",
+          "input": {}
+        },
+        "nextAction": {
+          "name": "step_1",
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "pieceName": "@activepieces/piece-google-sheets",
+            "pieceVersion": "~0.12.20",
+            "actionName": "insert_row",
+            "input": {}
+          }
+        }
+      },
+      "schemaVersion": "1"
+    },
+    "blogUrl": ""
+  },
+  "template_json": "{ ... }",
+  "generation_time_ms": 3200,
+  "post_processing_time_ms": 50.2,
+  "model": "Qwen/Qwen2.5-Coder-7B-Instruct + LoRA (qwen25_coder_7b_opsyn_lora_quality)"
+}
+```
+
+### `POST /generate` — Raw Output
+
+Returns raw model output without post-processing. Useful for debugging.
+
+**Request:**
+```json
+{
+  "system_prompt": "You are an AI Workflow Builder...",
+  "user_prompt": "Create a workflow that sends Slack messages",
+  "max_tokens": 2048,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "top_k": 50
+}
+```
+
+**Response:**
+```json
+{
+  "output": "{ \"displayName\": \"...\", ... }",
+  "tokens_generated": 512,
+  "generation_time_ms": 2800,
+  "model": "Qwen/Qwen2.5-Coder-7B-Instruct + LoRA (qwen25_coder_7b_opsyn_lora_quality)"
+}
+```
+
+### `POST /process` — Post-Process Only
+
+For external model generation — pass raw text and get a processed FlowTemplate.
+
+**Request:** Raw text body (`Content-Type: text/plain`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "template": { ... },
+  "template_json": "{ ... }",
+  "processing_time_ms": 45.0
+}
+```
+
+### `GET /health` — Health Check
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "device": "cuda",
+  "model_path": "/cache/models/qwen25_coder_7b_opsyn_lora_quality"
+}
+```
+
+## Smart Matcher
+
+The model sometimes generates names that are close but not exact. The Smart Matcher automatically fixes them using a 4-stage pipeline:
+
+### Matching Stages
+
+| Stage | Method | Example |
+|-------|--------|---------|
+| **1. Exact** | Direct comparison | `new_message` → `new_message` ✅ |
+| **2. Normalized** | snake_case + prefix removal | `newMessage` → `new_message` ✅ |
+| **3. Fuzzy** | rapidfuzz string similarity | `send_emial` → `send_email` ✅ |
+| **4. Token** | Jaccard word overlap | `slack_send_message` → `send_message` ✅ |
+
+### Name Normalization
+
+Handles all naming conventions transparently:
+- `sendEmail` → `send_email` (camelCase)
+- `SendEmail` → `send_email` (PascalCase)
+- `send-email` → `send_email` (kebab-case)
+- `gmail_send_email` → `send_email` (piece prefix removal)
+
+## Post-Processor
+
+Takes raw model output and transforms it into valid, import-ready FlowTemplate:
+
+### Processing Pipeline
+
+1. **Extract JSON** — Strip markdown code blocks, text wrapping
+2. **Fix piece names** — `slack` → `@activepieces/piece-slack`
+3. **Fix versions** — Look up from `piece_registry.json`
+4. **Smart-match names** — Fix trigger/action names
+5. **Fix step naming** — Ensure `trigger`, `step_1`, `step_2` convention
+6. **Fix step chaining** — Rebuild `nextAction` linked list
+7. **Add required fields** — `valid`, `inputUiInfo`, etc.
+8. **Set schema version** — `schemaVersion: "1"`
+9. **Validate** — Check against FlowTemplate schema
+
+## Modal Deployment
+
+The model runs on Modal's serverless GPU infrastructure:
+
+| Setting | Value |
+|---------|-------|
+| **GPU** | NVIDIA A10G (24GB VRAM) |
+| **Memory** | 32 GB RAM |
+| **Timeout** | 600 seconds |
+| **Scale-down** | 20 seconds idle |
+| **Concurrency** | 1 request at a time |
+| **Volume** | `opsyn-model-cache` (persistent) |
+
+### Deployment Commands
+
+```bash
+# First-time setup
+modal volume create opsyn-model-cache
+
+# Upload model weights
+modal volume put opsyn-model-cache \
+  ./qwen25_coder_7b_opsyn_lora_quality \
+  /models/qwen25_coder_7b_opsyn_lora_quality
+
+# Upload piece registry
+modal volume put opsyn-model-cache \
+  ./piece_registry.json /models/piece_registry.json
+
+# Deploy to production
+modal deploy modal_app_v2.py
+
+# Test locally
+modal serve modal_app_v2.py
+
+# Verify volume contents
+modal volume ls opsyn-model-cache /models
+```
+
+### Checking Deployment
+
+```bash
+# Run the check function
+python -c "import modal; modal.App.lookup('opsyn-model-server-v2').check_model_files.remote()"
+```
+
+## TypeScript Backend Integration
+
+The TypeScript backend (`packages/server/api/src/app/opsyn/`) acts as a proxy:
+
+| File | Purpose |
+|------|---------|
+| `opsyn.controller.ts` | REST endpoints for the frontend |
+| `opsyn.service.ts` | Business logic and prompt management |
+| `opsyn.module.ts` | Module registration (`/v1/opsyn` prefix) |
+| `model-inference.service.ts` | HTTP client calling the Python model server on Modal |
+
+### Backend Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/v1/opsyn/generate` | Generate workflow from prompt |
+| `POST` | `/v1/opsyn/process` | Post-process raw output (download) |
+| `POST` | `/v1/opsyn/process-json` | Post-process raw output (JSON) |
+| `GET` | `/v1/opsyn/system-prompt` | Get system prompt |
+| `POST` | `/v1/opsyn/generate-prompt` | Generate full prompt |
+| `GET` | `/v1/opsyn/model-status` | Check model availability |
+
+## Frontend Integration
+
+The generate workflow dialog (`packages/react-ui/src/features/opsyn/`):
+
+| File | Purpose |
+|------|---------|
+| `components/generate-workflow-dialog.tsx` | Main dialog UI |
+| `lib/opsyn-api.ts` | API client |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPSYN_MODEL_PATH` | Auto-detect | Path to LoRA adapter |
+| `OPSYN_BASE_MODEL` | `Qwen/Qwen2.5-Coder-7B-Instruct` | Base model |
+| `OPSYN_DEVICE` | Auto (cuda/cpu) | Inference device |
+| `OPSYN_MAX_TOKENS` | `2048` | Max generation tokens |
+| `PORT` | `8000` | Server port |
+| `HF_TOKEN` | — | HuggingFace auth token |
+
+## Local Development
+
+```bash
+cd opsyn-model-server
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the server
+python server_v2.py
+# or
+uvicorn server_v2:app --host 0.0.0.0 --port 8000 --reload
+```
+
+<Note>
+  Running locally requires a CUDA-capable GPU with 16GB+ VRAM for model inference. CPU mode is supported but significantly slower.
+</Note>

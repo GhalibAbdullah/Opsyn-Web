@@ -24,6 +24,7 @@ import { appCredentialModule } from './ee/app-credentials/app-credentials.module
 import { appSumoModule } from './ee/appsumo/appsumo.module'
 import { auditEventModule } from './ee/audit-logs/audit-event-module'
 import { auditLogService } from './ee/audit-logs/audit-event-service'
+import { communityAuthnModule } from './authentication/community-authn-module'
 import { enterpriseLocalAuthnModule } from './ee/authentication/enterprise-local-authn/enterprise-local-authn-module'
 import { federatedAuthModule } from './ee/authentication/federated-authn/federated-authn-module'
 import { otpModule } from './ee/authentication/otp/otp-module'
@@ -331,6 +332,7 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
             await app.register(communityPiecesModule)
             await app.register(communityFlowTemplateModule)
             await app.register(queueMetricsModule)
+            await app.register(communityAuthnModule)
             break
     }
 

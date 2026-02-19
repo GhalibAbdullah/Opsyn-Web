@@ -1,21 +1,96 @@
 ---
 title: "Overview"
-description: ""
+description: "Manage your entire OpSyn platform from the admin panel"
 icon: "cube"
 ---
 
-<Snippet file="enterprise-feature.mdx" />
+The Platform Admin is the central control panel for your OpSyn instance. From here, you manage projects, users, branding, security, billing, and infrastructure.
 
-The platform is the admin panel for managing your instance. It's suitable for SaaS, Embed, or agencies that want to white-label Activepieces and offer it to their customers. With this platform, you can:
+## Accessing Platform Admin
 
-1. **Custom Branding:** Tailor the appearance of the software to align with your brand's identity by selecting your own branding colors and fonts.
+Navigate to `/platform` or click your organization name in the sidebar and select **Platform Admin**. The platform admin is accessible to all platform administrators.
 
-2. **Projects Management:** Manage your projects, including creating, editing, and deleting projects.
+## Platform Admin Sidebar
 
-3. **Piece Management:** Take full control over Activepieces pieces. You can show or hide existing pieces and create your own unique pieces to customize the platform according to your specific needs.
+The admin panel is organized into these sections:
 
-4. **User Authentication Management:** adding and removing users, and assigning roles to users.
+<CardGroup cols={2}>
+  <Card title="Analytics" icon="chart-line" href="/admin-console/analytics">
+    Platform metrics, run analytics, and usage reports
+  </Card>
+  <Card title="Projects" icon="building" href="/admin-console/manage-projects">
+    Create, edit, and manage automation projects
+  </Card>
+  <Card title="Users" icon="users" href="/admin-console/users">
+    Manage platform users, activate/deactivate accounts
+  </Card>
+  <Card title="Billing" icon="credit-card" href="/admin-console/billing">
+    Subscriptions, AI credits, active flow limits
+  </Card>
+</CardGroup>
 
-5. **Template Management:** Control prebuilt templates and add your own unique templates to meet the requirements of your users.
+### Setup
 
-6. **AI Provider Management:** Manage the AI providers that you want to use in your flows.
+| Page | What It Does |
+|------|-------------|
+| [Branding](/admin-console/appearance) | Logo, favicon, primary color, platform name |
+| [Global Connections](/admin-console/global-connections) | Platform-wide API connections shared across all projects |
+| [Pieces](/admin-console/manage-pieces) | Install, show/hide pieces, configure OAuth2 apps |
+| [Templates](/admin-console/manage-templates) | Manage prebuilt flow templates |
+| [Billing](/admin-console/billing) | Subscription, AI credit overage, active flow limits |
+
+### Security
+
+| Page | What It Does |
+|------|-------------|
+| [Audit Logs](/operations/audit-logs/overview) | Track all platform activity |
+| [Single Sign On](/security/sso) | SAML, Google, GitHub authentication |
+| [Signing Keys](/admin-console/signing-keys) | JWT signing keys for embedding |
+| [Project Roles](/admin-console/project-roles) | Define custom roles with granular permissions |
+| [API Keys](/admin-console/api-keys) | Generate API keys for programmatic access |
+
+### Infrastructure
+
+| Page | What It Does |
+|------|-------------|
+| [Workers](/admin-console/infrastructure) | Monitor worker machines (CPU, RAM, disk, sandboxes) |
+| [Health](/admin-console/infrastructure) | System version check, WebSocket connectivity |
+| [Triggers](/admin-console/infrastructure) | Trigger health monitoring and status |
+
+## Platform Plan & Feature Flags
+
+Your platform plan determines which features are available. Each feature can be enabled or disabled:
+
+| Feature Flag | Controls |
+|-------------|----------|
+| `analyticsEnabled` | Platform analytics dashboard |
+| `tablesEnabled` | Built-in database tables |
+| `todosEnabled` | Todo/task management |
+| `mcpsEnabled` | MCP tool servers |
+| `agentsEnabled` | AI agent capabilities |
+| `environmentsEnabled` | Environment-based releases |
+| `auditLogEnabled` | Audit log tracking |
+| `embeddingEnabled` | Iframe embedding |
+| `managePiecesEnabled` | Piece installation & management |
+| `manageTemplatesEnabled` | Template management |
+| `customAppearanceEnabled` | Branding customization |
+| `manageProjectsEnabled` | Project management |
+| `projectRolesEnabled` | Custom project roles |
+| `customDomainsEnabled` | Custom domain configuration |
+| `globalConnectionsEnabled` | Platform-wide connections |
+| `customRolesEnabled` | Advanced role definitions |
+| `apiKeysEnabled` | API key generation |
+| `ssoEnabled` | Single Sign-On |
+
+## Platform Notifications
+
+The platform admin shows notification banners at the top of the Analytics page for important alerts:
+- Subscription status warnings
+- Feature upgrade suggestions
+- System health alerts
+
+These notifications are contextual and appear based on your platform's current state.
+
+## Exiting Platform Admin
+
+Click **Exit platform admin** at the bottom of the sidebar to return to your project dashboard.

@@ -48,16 +48,32 @@ This RAG (Retrieval-Augmented Generation) system generates valid Activepieces wo
 
 ## Setup
 
-### 1. Install dependencies
+### 1. Create virtual environment and install dependencies
 
 ```bash
+cd opsyn-model-server
+
+# Option 1: Use setup script
+chmod +x setup_venv.sh
+./setup_venv.sh
+
+# Option 2: Manual setup
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
 pip install -r rag/requirements.txt
+```
+
+**Important:** Always activate the virtual environment before running RAG commands:
+```bash
+source venv/bin/activate
 ```
 
 ### 2. Build knowledge base (one-time or when pieces change)
 
 ```bash
 cd opsyn-model-server
+source venv/bin/activate  # Activate virtual environment
 python -m rag.build_knowledge_base
 ```
 
@@ -69,15 +85,23 @@ This will:
 
 ### 3. Set API key
 
-For Gemini (free):
+Create a `.env` file in `opsyn-model-server/`:
+
 ```bash
-export GEMINI_API_KEY="your-api-key"
+# Copy template
+cp rag/env_template.txt ../.env
+
+# Edit with your API key
+nano ../.env
 ```
 
-For OpenAI (optional):
-```bash
-export OPENAI_API_KEY="your-api-key"
+Or add to `.env`:
 ```
+GEMINI_API_KEY=your-gemini-api-key-here
+OPENAI_API_KEY=your-openai-api-key-here  # optional
+```
+
+Get Gemini API key (free): https://aistudio.google.com/app/apikey
 
 ## Usage
 
@@ -100,6 +124,7 @@ print(result["template"]["trigger"]["settings"]["triggerName"])
 ### Command Line
 
 ```bash
+source venv/bin/activate  # Activate virtual environment first
 python -m rag.workflow_generator
 ```
 

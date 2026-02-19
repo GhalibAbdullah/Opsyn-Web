@@ -1,0 +1,186 @@
+---
+title: "System Architecture"
+icon: "sitemap"
+description: "Technical overview of OpSyn's architecture, tech stack, and codebase structure"
+---
+
+OpSyn is a full-stack application composed of three main layers: a React frontend, a Fastify backend, and a Python AI/ML model server.
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| **State Management** | Zustand (builder), TanStack Query (server state) |
+| **Flow Canvas** | React Flow (node-based editor) |
+| **Backend** | Fastify, TypeScript, TypeBox validation |
+| **Database** | PostgreSQL (production), SQLite (dev) |
+| **ORM** | TypeORM with migrations |
+| **Cache & Queue** | Redis, BullMQ |
+| **Real-Time** | Socket.IO (WebSockets) |
+| **AI/ML Server** | Python, FastAPI, Modal (serverless GPU) |
+| **AI Model** | Qwen2.5-Coder-7B with LoRA fine-tuning |
+| **Monorepo** | Nx |
+
+## High-Level Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     React Frontend (Vite)                     │
+│  React Router · TanStack Query · Zustand · Socket.IO Client  │
+├──────────────────────────────────────────────────────────────┤
+│                    Fastify Backend (Node.js)                  │
+│  REST API · Socket.IO Server · TypeORM · BullMQ Workers      │
+├──────────────────────────────────────────────────────────────┤
+│  PostgreSQL        │  Redis           │  Python Model Server  │
+│  (data store)      │  (cache/queue)   │  (AI on Modal GPU)    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Package Structure
+
+The codebase is organized as an Nx monorepo:
+
+```
+opsyn/
+├── packages/
+│   ├── react-ui/                # Frontend React app
+│   │   └── src/
+│   │       ├── app/
+│   │       │   ├── builder/     # Flow builder (canvas, steps, test)
+│   │       │   ├── components/  # Layouts (sidebar, header)
+│   │       │   ├── router/      # Route definitions
+│   │       │   └── routes/      # Page components
+│   │       ├── components/      # Shared UI components
+│   │       ├── features/        # Feature modules
+│   │       ├── hooks/           # Global React hooks
+│   │       └── lib/             # Utilities, API clients
+│   │
+│   ├── server/
+│   │   ├── api/                 # Backend API server
+│   │   │   └── src/app/
+│   │   │       ├── ai/          # AI provider management
+│   │   │       ├── app-connection/ # Connection CRUD
+│   │   │       ├── authentication/ # Auth, JWT, roles
+│   │   │       ├── core/        # WebSocket, security
+│   │   │       ├── database/    # Migrations, connections
+│   │   │       ├── ee/          # Enterprise modules
+│   │   │       ├── flows/       # Flow CRUD, comments, activity
+│   │   │       ├── mcp/         # MCP server management
+│   │   │       ├── opsyn/       # AI workflow generation
+│   │   │       ├── platform/    # Platform management
+│   │   │       ├── project/     # Project CRUD
+│   │   │       ├── tables/      # Tables feature
+│   │   │       ├── todos/       # Todo management
+│   │   │       └── workers/     # Job queue workers
+│   │   └── worker/              # Worker process
+│   │
+│   ├── shared/                  # Shared TypeBox types & models
+│   │   └── src/lib/
+│   │       ├── flows/           # Flow, comment, activity types
+│   │       ├── project/         # Project & member types
+│   │       ├── platform/        # Platform model
+│   │       ├── tables/          # Table types
+│   │       ├── todos/           # Todo types
+│   │       ├── mcp/             # MCP types
+│   │       ├── agents/          # Agent types
+│   │       └── websocket/       # WebSocket event types
+│   │
+│   └── pieces/                  # Integration pieces
+│       ├── community/           # 200+ community pieces
+│       └── custom/              # Custom pieces
+│
+├── opsyn-model-server/          # Python AI/ML server
+│   ├── server_v2.py             # FastAPI server
+│   ├── modal_app_v2.py          # Modal deployment
+│   ├── smart_matcher.py         # Name matching engine
+│   └── postprocessor_v2.py      # Post-processing pipeline
+│
+└── docs/                        # Documentation (Mintlify)
+```
+
+## Data Flow
+
+### REST API Request
+```
+Browser → Fastify → Security Chain → Route Handler → Service → TypeORM → PostgreSQL
+                        │
+                   JWT Validation
+                   Permission Check
+                   Rate Limiting
+```
+
+### WebSocket Connection
+```
+Browser ↔ Socket.IO Server ↔ Room-based Broadcasting
+              │
+         JWT Auth on connect
+         Auto-join project room
+```
+
+### AI Workflow Generation
+```
+User Prompt → Backend /v1/opsyn/generate → Python Model Server (Modal GPU)
+                                               │
+                                          Fine-tuned Model → Raw JSON
+                                               │
+                                          Post-Processor → Smart Matcher
+                                               │
+                                          Valid FlowTemplate → Import
+```
+
+## Multi-Tenancy
+
+```
+Platform (organization-level)
+├── Platform Config (branding, auth, SMTP)
+├── Platform Plan (billing, feature flags)
+├── Project A
+│   ├── Flows, Tables, Todos, MCP
+│   ├── Connections
+│   └── Members (with roles)
+└── Project B
+    └── ...
+```
+
+- **Platform**: Top-level tenant. Controls branding, authentication, billing.
+- **Project**: Workspace within a platform. Contains all resources.
+- **User**: Belongs to a platform, can be a member of multiple projects.
+
+## Module Registration
+
+All backend modules are registered in `packages/server/api/src/app/app.ts`:
+
+### Core Modules
+| Module | Purpose |
+|--------|---------|
+| `authenticationModule` | Sign-up, sign-in, JWT |
+| `projectModule` | Project CRUD |
+| `platformModule` | Platform management |
+| `flowModule` | Flow CRUD, operations, versions |
+| `flowRunModule` | Flow execution tracking |
+| `appConnectionModule` | Connection management |
+| `tablesModule` | Tables (database feature) |
+| `todoModule` | Task management |
+| `mcpModule` | MCP tool servers |
+| `aiProviderModule` | AI provider config |
+| `opsynModule` | AI workflow generation |
+| `pieceModule` | Piece registry |
+| `workerModule` | Job queue workers |
+
+### Enterprise Modules (conditionally loaded)
+| Module | Purpose |
+|--------|---------|
+| `platformProjectModule` | Platform-level project management |
+| `projectRoleModule` | Custom role definitions |
+| `auditEventModule` | Audit logging |
+| `apiKeyModule` | API key management |
+| `authnSsoSamlModule` | SAML SSO |
+| `globalConnectionModule` | Platform-wide connections |
+| `signingKeyModule` | JWT signing keys |
+
+## Database
+
+- **Production**: PostgreSQL with 416+ migrations
+- **ORM**: TypeORM with entity classes
+- **Key Entities**: Project, Platform, Flow, FlowVersion, FlowRun, FlowComment, FlowActivity, AppConnection, Table, Field, Record, Todo, Mcp, AIProvider

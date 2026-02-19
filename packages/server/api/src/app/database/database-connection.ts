@@ -12,6 +12,7 @@ import {
 import { AIProviderEntity } from '../ai/ai-provider-entity'
 import { AIUsageEntity } from '../ai/ai-usage-entity'
 import { AppConnectionEntity } from '../app-connection/app-connection.entity'
+import { PasswordResetOtpEntity } from '../authentication/password-reset/password-reset-entity'
 import { UserIdentityEntity } from '../authentication/user-identity/user-identity-entity'
 import { AlertEntity } from '../ee/alerts/alerts-entity'
 import { PlatformAnalyticsReportEntity } from '../ee/analytics/platform-analytics-report.entity'
@@ -139,6 +140,7 @@ function getEntities(): EntitySchema<unknown>[] {
         case ApEdition.COMMUNITY:
             entities.push(
                 CEProjectMemberEntity,
+                PasswordResetOtpEntity,
             )
             // Import CE version of ProjectPlanEntity (not EE version)
             const { ProjectPlanEntity: CEProjectPlanEntity } = require('../project/project-plan.entity')
