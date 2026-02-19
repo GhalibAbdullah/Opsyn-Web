@@ -76,13 +76,14 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
             tags: ['flows'],
             description: 'Apply an operation to a flow',
             security: [SERVICE_KEY_SECURITY_OPENAPI],
-            body: FlowOperationRequest,
+            body: Type.Any(),
             params: Type.Object({
                 id: ApId,
             }),
         },
         preValidation: (request, _, done) => {
-            if (request.body?.type === FlowOperationType.IMPORT_FLOW) {
+            const body = request.body as FlowOperationRequest
+            if (body?.type === FlowOperationType.IMPORT_FLOW) {
                 flowMigrations.apply({
                     agentIds: [],
                     connectionIds: [],
@@ -93,12 +94,12 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                     updated: new Date().toISOString(),
                     updatedBy: '',
                     valid: false,
-                    trigger: request.body.request.trigger,
+                    trigger: body.request.trigger,
                     state: FlowVersionState.DRAFT,
-                    schemaVersion: request.body.request.schemaVersion,
+                    schemaVersion: body.request.schemaVersion,
                 }).then((migratedFlowVersion) => {
-                    request.body.request = {
-                        ...request.body.request,
+                    (request.body as any).request = {
+                        ...body.request,
                         trigger: migratedFlowVersion.trigger,
                         schemaVersion: migratedFlowVersion.schemaVersion,
                     }
@@ -109,17 +110,19 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 })
             }
             else {
+                normalizePropertySettingsInBody(request.body as Record<string, unknown>)
                 done()
             }
         },
     }, async (request) => {
+        const body = request.body as FlowOperationRequest
         const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
         assertProjectId(request.principal)
         await assertCanEditFlow(request.principal.projectId!, userId, request.log)
         const edition = system.getEdition()
         if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
             const { assertUserHasPermissionToFlow } = await import('../../ee/authentication/project-role/rbac-middleware')
-            await assertUserHasPermissionToFlow(request.principal, request.body.type, request.log)
+            await assertUserHasPermissionToFlow(request.principal, body.type, request.log)
         }
 
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
@@ -127,8 +130,8 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
             projectId: request.principal.projectId,
         })
 
-        const turnOnFlow = request.body.type === FlowOperationType.CHANGE_STATUS && request.body.request.status === FlowStatus.ENABLED
-        const publishDisabledFlow = request.body.type === FlowOperationType.LOCK_AND_PUBLISH && flow.status === FlowStatus.DISABLED
+        const turnOnFlow = body.type === FlowOperationType.CHANGE_STATUS && body.request.status === FlowStatus.ENABLED
+        const publishDisabledFlow = body.type === FlowOperationType.LOCK_AND_PUBLISH && flow.status === FlowStatus.DISABLED
         if (turnOnFlow || publishDisabledFlow) {
             if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
                 const { platformPlanService } = await import('../../ee/platform/platform-plan/platform-plan.service')
@@ -139,14 +142,13 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 )
             }
         }
-        // Only check if flow is being used for published flows (allow concurrent editing of drafts)
         if (flow.version.state !== FlowVersionState.DRAFT) {
             await assertThatFlowIsNotBeingUsed(flow, userId)
         }
         eventsHooks.get(request.log).sendUserEventFromRequest(request, {
             action: ApplicationEventName.FLOW_UPDATED,
             data: {
-                request: request.body,
+                request: body,
                 flowVersion: flow.version,
             },
         })
@@ -155,20 +157,18 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
             userId: request.principal.type === PrincipalType.SERVICE ? null : userId,
             platformId: request.principal.platform.id,
             projectId: request.principal.projectId,
-            operation: cleanOperation(request.body),
+            operation: cleanOperation(body),
         })
 
-        // Broadcast the change to all users editing this flow (only for draft flows to allow concurrent editing)
         if (updatedFlow.version.state === FlowVersionState.DRAFT && request.principal.type === PrincipalType.USER) {
             const { broadcastFlowOperation } = await import('./flow-websocket-handlers')
             await broadcastFlowOperation(
                 request.params.id,
-                request.body,
+                body,
                 updatedFlow.version.id,
                 userId,
                 request.log,
             ).catch((error) => {
-                // Don't fail the request if broadcast fails
                 request.log.warn({ error, flowId: request.params.id }, 'Failed to broadcast flow operation')
             })
         }
@@ -256,7 +256,9 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
 }
 
 /**
- * Normalize propertySettings to ensure all entries have the required 'type' field
+ * Normalize propertySettings to ensure all entries have the required 'type' field.
+ * Some pieces (e.g. Notion) send propertySettings entries without a 'type',
+ * which fails Fastify schema validation before the handler runs.
  */
 function normalizePropertySettings(
     propertySettings: Record<string, unknown> | undefined | null,
@@ -267,7 +269,6 @@ function normalizePropertySettings(
         for (const [key, value] of Object.entries(propertySettings)) {
             if (value && typeof value === 'object' && !Array.isArray(value)) {
                 const propSetting = value as Record<string, unknown>
-                // Ensure type field exists, defaulting to 'MANUAL' if missing or invalid
                 normalized[key] = {
                     type: (propSetting.type === PropertyExecutionType.DYNAMIC 
                         ? PropertyExecutionType.DYNAMIC 
@@ -275,13 +276,54 @@ function normalizePropertySettings(
                     ...(propSetting.schema !== undefined ? { schema: propSetting.schema } : {}),
                 }
             } else {
-                // If value is not an object, create a valid PropertySettings entry
                 normalized[key] = { type: PropertyExecutionType.MANUAL }
             }
         }
     }
     
     return normalized
+}
+
+function normalizeErrorHandlingOptions(settings: Record<string, unknown>): void {
+    const opts = settings.errorHandlingOptions as Record<string, unknown> | undefined
+    if (!opts || typeof opts !== 'object') return
+
+    for (const key of ['continueOnFailure', 'retryOnFailure']) {
+        const entry = opts[key]
+        if (entry && typeof entry === 'object' && !('value' in (entry as Record<string, unknown>))) {
+            opts[key] = { ...(entry as Record<string, unknown>), value: false }
+        }
+    }
+}
+
+function normalizeSettingsObject(settings: Record<string, unknown> | undefined | null): void {
+    if (!settings || typeof settings !== 'object') return
+
+    if (settings.propertySettings) {
+        settings.propertySettings = normalizePropertySettings(
+            settings.propertySettings as Record<string, unknown>,
+        )
+    }
+    normalizeErrorHandlingOptions(settings)
+}
+
+function normalizePropertySettingsInBody(body: Record<string, unknown>): void {
+    if (!body || typeof body !== 'object') return
+
+    const type = body.type as string
+    const request = body.request as Record<string, unknown> | undefined
+
+    if (!request || typeof request !== 'object') return
+
+    if (type === FlowOperationType.UPDATE_ACTION || type === FlowOperationType.UPDATE_TRIGGER) {
+        normalizeSettingsObject(request.settings as Record<string, unknown>)
+    }
+    else if (type === FlowOperationType.ADD_ACTION) {
+        const action = request.action as Record<string, unknown> | undefined
+        if (action && typeof action === 'object') {
+            normalizeSettingsObject(action.settings as Record<string, unknown>)
+        }
+    }
 }
 
 /**
