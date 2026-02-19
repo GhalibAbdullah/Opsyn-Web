@@ -1,9 +1,8 @@
-import { GitPushOperationType } from '@activepieces/ee-shared'
-import { ApId, CreateTableRequest, CreateTableWebhookRequest, ExportTableResponse, ListTablesRequest, Permission, PrincipalType, SeekPage, SERVICE_KEY_SECURITY_OPENAPI, Table, UpdateTableRequest } from '@activepieces/shared'
+import { ApEdition, ApId, CreateTableRequest, CreateTableWebhookRequest, ExportTableResponse, ListTablesRequest, Permission, PrincipalType, SeekPage, SERVICE_KEY_SECURITY_OPENAPI, Table, UpdateTableRequest } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
 import { assertProjectId } from '../../authentication/authentication-utils'
-import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
+import { system } from '../../helper/system/system'
 import { tableService } from './table.service'
 
 const DEFAULT_PAGE_SIZE = 10
@@ -45,14 +44,19 @@ export const tablesController: FastifyPluginAsyncTypebox = async (fastify) => {
             projectId: request.principal.projectId,
             id: request.params.id,
         })
-        await gitRepoService(request.log).onDeleted({
-            type: GitPushOperationType.DELETE_TABLE,
-            externalId: table.externalId,
-            userId: request.principal.id,
-            projectId: request.principal.projectId,
-            platformId: request.principal.platform.id,
-            log: request.log,
-        })
+        const edition = system.getEdition()
+        if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
+            const { gitRepoService } = await import('../../ee/projects/project-release/git-sync/git-sync.service')
+            const { GitPushOperationType } = await import('@activepieces/ee-shared')
+            await gitRepoService(request.log).onDeleted({
+                type: GitPushOperationType.DELETE_TABLE,
+                externalId: table.externalId,
+                userId: request.principal.id,
+                projectId: request.principal.projectId,
+                platformId: request.principal.platform.id,
+                log: request.log,
+            })
+        }
         await tableService.delete({
             projectId: request.principal.projectId,
             id: request.params.id,

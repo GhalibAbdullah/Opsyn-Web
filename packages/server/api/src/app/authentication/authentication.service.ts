@@ -1,8 +1,6 @@
-import { OtpType } from '@activepieces/ee-shared'
 import { cryptoUtils } from '@activepieces/server-shared'
 import { ActivepiecesError, ApEdition, ApFlagId, assertNotNullOrUndefined, AuthenticationResponse, ErrorCode, isNil, PlatformRole, PlatformWithoutSensitiveData, User, UserIdentity, UserIdentityProvider } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
-import { otpService } from '../ee/authentication/otp/otp-service'
 import { flagService } from '../flags/flag.service'
 import { system } from '../helper/system/system'
 import { platformService } from '../platform/platform.service'
@@ -323,13 +321,16 @@ async function createUserAndPlatform(userIdentity: UserIdentity, log: FastifyBas
     const cloudEdition = system.getEdition()
 
     switch (cloudEdition) {
-        case ApEdition.CLOUD:
+        case ApEdition.CLOUD: {
+            const { otpService } = await import('../ee/authentication/otp/otp-service')
+            const { OtpType } = await import('@activepieces/ee-shared')
             await otpService(log).createAndSend({
                 platformId: platform.id,
                 email: userIdentity.email,
                 type: OtpType.EMAIL_VERIFICATION,
             })
             break
+        }
         case ApEdition.COMMUNITY:
         case ApEdition.ENTERPRISE:
             await userIdentityService(log).verify(userIdentity.id)

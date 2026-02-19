@@ -1,4 +1,3 @@
-import { ApiKey } from '@activepieces/ee-shared'
 import {
     ActivepiecesError,
     assertNotNullOrUndefined,
@@ -16,14 +15,17 @@ import { nanoid } from 'nanoid'
 import { AppConnectionEntity } from '../../../app-connection/app-connection.entity'
 import { extractResourceName } from '../../../authentication/authorization'
 import { databaseConnection } from '../../../database/database-connection'
-import { apiKeyService } from '../../../ee/api-keys/api-key-service'
-import { ProjectMemberEntity } from '../../../ee/projects/project-members/project-member.entity'
 import { FlowEntity } from '../../../flows/flow/flow.entity'
 import { FlowRunEntity } from '../../../flows/flow-run/flow-run-entity'
 import { FolderEntity } from '../../../flows/folder/folder.entity'
 import { projectService } from '../../../project/project-service'
 import { requestUtils } from '../../request/request-utils'
 import { BaseSecurityHandler } from '../security-handler'
+
+type ApiKey = {
+    id: string
+    platformId: string
+}
 
 export class PlatformApiKeyAuthnHandler extends BaseSecurityHandler {
     private static readonly HEADER_NAME = 'authorization'
@@ -41,6 +43,7 @@ export class PlatformApiKeyAuthnHandler extends BaseSecurityHandler {
         const apiKeyValue = this.extractApiKeyValue(request)
         let apiKey: ApiKey | null = null
         try {
+            const { apiKeyService } = await import('../../../ee/api-keys/api-key-service')
             apiKey = await apiKeyService.getByValueOrThrow(apiKeyValue)
         }
         catch (e) {
@@ -199,7 +202,7 @@ export class PlatformApiKeyAuthnHandler extends BaseSecurityHandler {
             case 'app-connections':
                 return AppConnectionEntity.options.name
             case 'project-members':
-                return ProjectMemberEntity.options.name
+                return 'project_member'
             case 'folders':
                 return FolderEntity.options.name
         }

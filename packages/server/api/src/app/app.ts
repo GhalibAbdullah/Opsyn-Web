@@ -1,4 +1,4 @@
-import { ApplicationEventName, AuthenticationEvent, ConnectionEvent, FlowCreatedEvent, FlowDeletedEvent, FlowRunEvent, FolderEvent, GitRepoWithoutSensitiveData, ProjectMember, ProjectReleaseEvent, ProjectRoleEvent, SigningKeyEvent, SignUpEvent } from '@activepieces/ee-shared'
+import { ApplicationEventName } from './helper/application-events/application-event-names'
 import { PieceMetadata } from '@activepieces/pieces-framework'
 import { AppSystemProp, exceptionHandler, rejectedPromiseHandler } from '@activepieces/server-shared'
 import { ApEdition, ApEnvironment, AppConnectionWithoutSensitiveData, Flow, FlowRun, FlowTemplate, Folder, McpWithTools, ProjectRelease, ProjectWithLimits, spreadIfDefined, UserInvitation, UserWithMetaInformation } from '@activepieces/shared'
@@ -113,33 +113,15 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
                     },
                 },
                 schemas: {
-                    [ApplicationEventName.FLOW_CREATED]: FlowCreatedEvent,
-                    [ApplicationEventName.FLOW_DELETED]: FlowDeletedEvent,
-                    [ApplicationEventName.CONNECTION_UPSERTED]: ConnectionEvent,
-                    [ApplicationEventName.CONNECTION_DELETED]: ConnectionEvent,
-                    [ApplicationEventName.FOLDER_CREATED]: FolderEvent,
-                    [ApplicationEventName.FOLDER_UPDATED]: FolderEvent,
-                    [ApplicationEventName.FOLDER_DELETED]: FolderEvent,
-                    [ApplicationEventName.FLOW_RUN_STARTED]: FlowRunEvent,
-                    [ApplicationEventName.FLOW_RUN_FINISHED]: FlowRunEvent,
-                    [ApplicationEventName.USER_SIGNED_UP]: SignUpEvent,
-                    [ApplicationEventName.USER_SIGNED_IN]: AuthenticationEvent,
-                    [ApplicationEventName.USER_PASSWORD_RESET]: AuthenticationEvent,
-                    [ApplicationEventName.USER_EMAIL_VERIFIED]: AuthenticationEvent,
-                    [ApplicationEventName.SIGNING_KEY_CREATED]: SigningKeyEvent,
-                    [ApplicationEventName.PROJECT_ROLE_CREATED]: ProjectRoleEvent,
-                    [ApplicationEventName.PROJECT_RELEASE_CREATED]: ProjectReleaseEvent,
                     'flow-template': FlowTemplate,
                     'folder': Folder,
                     'user': UserWithMetaInformation,
                     'user-invitation': UserInvitation,
-                    'project-member': ProjectMember,
                     project: ProjectWithLimits,
                     flow: Flow,
                     'flow-run': FlowRun,
                     'app-connection': AppConnectionWithoutSensitiveData,
                     piece: PieceMetadata,
-                    'git-repo': GitRepoWithoutSensitiveData,
                     'project-release': ProjectRelease,
                     'global-connection': AppConnectionWithoutSensitiveData,
                     'mcp': McpWithTools,

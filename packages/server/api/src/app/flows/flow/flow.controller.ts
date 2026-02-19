@@ -1,7 +1,6 @@
-
-import { ApplicationEventName, GitPushOperationType } from '@activepieces/ee-shared'
 import {
     ActivepiecesError,
+    ApEdition,
     ApId,
     CountFlowsRequest,
     CreateFlowRequest,
@@ -23,7 +22,6 @@ import {
     Permission,
     PieceActionSettings,
     PieceTriggerSettings,
-    PlatformUsageMetric,
     PopulatedFlow,
     PrincipalType,
     PropertyExecutionType,
@@ -39,9 +37,8 @@ import { StatusCodes } from 'http-status-codes'
 import { assertProjectId, authenticationUtils } from '../../authentication/authentication-utils'
 import { entitiesMustBeOwnedByCurrentProject } from '../../authentication/authorization'
 import { assertCanEditFlow } from '../../authentication/permission-helpers'
-import { assertUserHasPermissionToFlow } from '../../ee/authentication/project-role/rbac-middleware'
-import { platformPlanService } from '../../ee/platform/platform-plan/platform-plan.service'
-import { gitRepoService } from '../../ee/projects/project-release/git-sync/git-sync.service'
+import { system } from '../../helper/system/system'
+import { ApplicationEventName } from '../../helper/application-events/application-event-names'
 import { eventsHooks } from '../../helper/application-events'
 import { flowMigrations } from '../flow-version/migrations'
 import { flowService } from './flow.service'
@@ -119,7 +116,11 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
         const userId = await authenticationUtils.extractUserIdFromPrincipal(request.principal)
         assertProjectId(request.principal)
         await assertCanEditFlow(request.principal.projectId!, userId, request.log)
-        await assertUserHasPermissionToFlow(request.principal, request.body.type, request.log)
+        const edition = system.getEdition()
+        if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
+            const { assertUserHasPermissionToFlow } = await import('../../ee/authentication/project-role/rbac-middleware')
+            await assertUserHasPermissionToFlow(request.principal, request.body.type, request.log)
+        }
 
         const flow = await flowService(request.log).getOnePopulatedOrThrow({
             id: request.params.id,
@@ -129,10 +130,14 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
         const turnOnFlow = request.body.type === FlowOperationType.CHANGE_STATUS && request.body.request.status === FlowStatus.ENABLED
         const publishDisabledFlow = request.body.type === FlowOperationType.LOCK_AND_PUBLISH && flow.status === FlowStatus.DISABLED
         if (turnOnFlow || publishDisabledFlow) {
-            await platformPlanService(request.log).checkActiveFlowsExceededLimit(
-                request.principal.platform.id,
-                PlatformUsageMetric.ACTIVE_FLOWS,
-            )
+            if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
+                const { platformPlanService } = await import('../../ee/platform/platform-plan/platform-plan.service')
+                const { PlatformUsageMetric } = await import('@activepieces/shared')
+                await platformPlanService(request.log).checkActiveFlowsExceededLimit(
+                    request.principal.platform.id,
+                    PlatformUsageMetric.ACTIVE_FLOWS,
+                )
+            }
         }
         // Only check if flow is being used for published flows (allow concurrent editing of drafts)
         if (flow.version.state !== FlowVersionState.DRAFT) {
@@ -228,14 +233,19 @@ export const flowController: FastifyPluginAsyncTypebox = async (app) => {
                 flowVersion: flow.version,
             },
         })
-        await gitRepoService(request.log).onDeleted({
-            type: GitPushOperationType.DELETE_FLOW,
-            externalId: flow.externalId,
-            userId: request.principal.id,
-            projectId: request.principal.projectId,
-            platformId: request.principal.platform.id,
-            log: request.log,
-        })
+        const deleteEdition = system.getEdition()
+        if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(deleteEdition)) {
+            const { gitRepoService } = await import('../../ee/projects/project-release/git-sync/git-sync.service')
+            const { GitPushOperationType } = await import('@activepieces/ee-shared')
+            await gitRepoService(request.log).onDeleted({
+                type: GitPushOperationType.DELETE_FLOW,
+                externalId: flow.externalId,
+                userId: request.principal.id,
+                projectId: request.principal.projectId,
+                platformId: request.principal.platform.id,
+                log: request.log,
+            })
+        }
         await flowService(request.log).delete({
             id: request.params.id,
             projectId: request.principal.projectId,

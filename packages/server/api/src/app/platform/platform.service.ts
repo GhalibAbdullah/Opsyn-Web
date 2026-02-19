@@ -1,6 +1,6 @@
-import { OPEN_SOURCE_PLAN } from '@activepieces/ee-shared'
 import {
     ActivepiecesError,
+    AiOverageState,
     ApEdition,
     apId,
     ErrorCode,
@@ -9,6 +9,7 @@ import {
     Platform,
     PlatformId,
     PlatformPlanLimits,
+    PlatformPlanWithOnlyLimits,
     PlatformUsage,
     PlatformWithoutSensitiveData,
     spreadIfDefined,
@@ -17,8 +18,6 @@ import {
     UserStatus,
 } from '@activepieces/shared'
 import { repoFactory } from '../core/db/repo-factory'
-import { platformPlanService } from '../ee/platform/platform-plan/platform-plan.service'
-import { platformUsageService } from '../ee/platform/platform-usage-service'
 import { defaultTheme } from '../flags/theme'
 import { system } from '../helper/system/system'
 import { projectService } from '../project/project-service'
@@ -131,10 +130,14 @@ export const platformService = {
             smtp: params.smtp,
         }
         if (!isNil(params.plan)) {
-            await platformPlanService(system.globalLogger()).update({
-                platformId: params.id,
-                ...params.plan,
-            })
+            const edition = system.getEdition()
+            if ([ApEdition.CLOUD, ApEdition.ENTERPRISE].includes(edition)) {
+                const { platformPlanService } = await import('../ee/platform/platform-plan/platform-plan.service')
+                await platformPlanService(system.globalLogger()).update({
+                    platformId: params.id,
+                    ...params.plan,
+                })
+            }
         }
         return platformRepo().save(updatedPlatform)
     },
@@ -189,11 +192,40 @@ export const platformService = {
     },
 }
 
+const OPEN_SOURCE_PLAN: PlatformPlanWithOnlyLimits = {
+    embeddingEnabled: false,
+    globalConnectionsEnabled: false,
+    customRolesEnabled: false,
+    mcpsEnabled: true,
+    tablesEnabled: true,
+    todosEnabled: true,
+    agentsEnabled: true,
+    includedAiCredits: 0,
+    aiCreditsOverageLimit: undefined,
+    aiCreditsOverageState: AiOverageState.NOT_ALLOWED,
+    environmentsEnabled: false,
+    analyticsEnabled: false,
+    showPoweredBy: false,
+    auditLogEnabled: false,
+    managePiecesEnabled: false,
+    manageTemplatesEnabled: false,
+    customAppearanceEnabled: false,
+    manageProjectsEnabled: false,
+    projectRolesEnabled: false,
+    customDomainsEnabled: false,
+    apiKeysEnabled: false,
+    ssoEnabled: false,
+    stripeCustomerId: undefined,
+    stripeSubscriptionId: undefined,
+    stripeSubscriptionStatus: undefined,
+}
+
 async function getUsage(platform: Platform): Promise<PlatformUsage | undefined> {
     const edition = system.getEdition()
     if (edition === ApEdition.COMMUNITY) {
         return undefined
     }
+    const { platformUsageService } = await import('../ee/platform/platform-usage-service')
     return platformUsageService(system.globalLogger()).getAllPlatformUsage(platform.id)
 }
 
@@ -206,6 +238,7 @@ async function getPlan(platform: Platform): Promise<PlatformPlanLimits> {
             stripeSubscriptionEndDate: 0,
         }
     }
+    const { platformPlanService } = await import('../ee/platform/platform-plan/platform-plan.service')
     return platformPlanService(system.globalLogger()).getOrCreateForPlatform(platform.id)
 }
 

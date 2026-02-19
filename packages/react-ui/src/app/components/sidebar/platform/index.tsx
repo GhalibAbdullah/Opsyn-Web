@@ -69,7 +69,7 @@ export function PlatformSidebar() {
       icon: LineChart,
       locked: !platform.plan.analyticsEnabled,
       isSubItem: false,
-      show: true,
+      show: edition !== ApEdition.COMMUNITY,
     },
     {
       type: 'link',

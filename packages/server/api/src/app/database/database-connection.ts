@@ -14,7 +14,7 @@ import { AIUsageEntity } from '../ai/ai-usage-entity'
 import { AppConnectionEntity } from '../app-connection/app-connection.entity'
 import { PasswordResetOtpEntity } from '../authentication/password-reset/password-reset-entity'
 import { UserIdentityEntity } from '../authentication/user-identity/user-identity-entity'
-import { AlertEntity } from '../ee/alerts/alerts-entity'
+import { AlertEntity } from './entity/alert-entity'
 import { PlatformAnalyticsReportEntity } from '../ee/analytics/platform-analytics-report.entity'
 import { ApiKeyEntity } from '../ee/api-keys/api-key-entity'
 import { AppCredentialEntity } from '../ee/app-credentials/app-credentials.entity'
@@ -31,7 +31,7 @@ import { ProjectMemberEntity as EEProjectMemberEntity } from '../ee/projects/pro
 // ProjectPlanEntity is imported conditionally based on edition
 import { GitRepoEntity } from '../ee/projects/project-release/git-sync/git-sync.entity'
 import { ProjectReleaseEntity } from '../ee/projects/project-release/project-release.entity'
-import { ProjectRoleEntity } from '../ee/projects/project-role/project-role.entity'
+import { ProjectRoleEntity } from './entity/project-role-entity'
 import { SigningKeyEntity } from '../ee/signing-key/signing-key-entity'
 import { FileEntity } from '../file/file.entity'
 import { FlagEntity } from '../flags/flag.entity'
@@ -91,11 +91,9 @@ function getEntities(): EntitySchema<unknown>[] {
         PlatformEntity,
         TagEntity,
         PieceTagEntity,
-        AlertEntity,
         UserInvitationEntity,
         WorkerMachineEntity,
         AIProviderEntity,
-        ProjectRoleEntity,
         TableEntity,
         FieldEntity,
         RecordEntity,
@@ -119,6 +117,8 @@ function getEntities(): EntitySchema<unknown>[] {
             entities.push(
                 EEProjectMemberEntity,
                 EEProjectPlanEntity,
+                AlertEntity,
+                ProjectRoleEntity,
                 CustomDomainEntity,
                 SigningKeyEntity,
                 OAuthAppEntity,
@@ -141,6 +141,8 @@ function getEntities(): EntitySchema<unknown>[] {
             entities.push(
                 CEProjectMemberEntity,
                 PasswordResetOtpEntity,
+                AlertEntity,
+                ProjectRoleEntity,
             )
             // Import CE version of ProjectPlanEntity (not EE version)
             const { ProjectPlanEntity: CEProjectPlanEntity } = require('../project/project-plan.entity')
