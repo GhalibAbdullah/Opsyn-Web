@@ -111,3 +111,9 @@ pipeline.ts
 opsyn-model-server/venv/
 opsyn-model-server/__pycache__/
 opsyn-model-server/qwen25_coder_7b_opsyn_lora_quality/
+
+# env files
+packages/server/api/.env
+.env
+.env.*
+
