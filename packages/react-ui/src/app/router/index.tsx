@@ -70,6 +70,8 @@ import { TodosPage } from '../routes/todos';
 import { TodoTestingPage } from '../routes/todos/id';
 import DashboardPage from '../routes/dashboard';
 
+import { LandingPage } from '../routes/marketing/landing-page';
+import { DocsPage } from '../routes/marketing/docs-page';
 import { AfterImportFlowRedirect } from './after-import-flow-redirect';
 import { DefaultRoute } from './default-route';
 import { RoutePermissionGuard } from './permission-guard';
@@ -677,6 +679,22 @@ const routes = [
       <TokenCheckerWrapper>
         <ProjectHomeRedirect />
       </TokenCheckerWrapper>
+    ),
+  },
+  {
+    path: '/',
+    element: (
+      <PageTitle title="Opsyn — Workflow Automation">
+        <LandingPage />
+      </PageTitle>
+    ),
+  },
+  {
+    path: '/docs',
+    element: (
+      <PageTitle title="Docs — Opsyn">
+        <DocsPage />
+      </PageTitle>
     ),
   },
   {
