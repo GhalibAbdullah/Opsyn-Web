@@ -117,3 +117,4 @@ packages/server/api/.env
 .env
 .env.*
 
+*:Zone.Identifier
