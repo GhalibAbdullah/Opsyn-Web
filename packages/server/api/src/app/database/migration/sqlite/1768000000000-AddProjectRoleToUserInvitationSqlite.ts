@@ -8,13 +8,12 @@ export class AddProjectRoleToUserInvitationSqlite1768000000000 implements Migrat
     name = 'AddProjectRoleToUserInvitationSqlite1768000000000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        // Check if column already exists
-        const table = await queryRunner.query(`
-            SELECT sql FROM sqlite_master 
-            WHERE type='table' AND name='user_invitation'
-        `)
+        // Check if column already exists using PRAGMA table_info for reliability
+        // SQLite's sqlite_master check was unreliable because projectRoleId contains projectRole
+        const columns = await queryRunner.query('PRAGMA table_info("user_invitation")')
+        const hasProjectRole = columns.some((column: any) => column.name === 'projectRole')
 
-        if (table.length > 0 && !table[0].sql.includes('projectRole')) {
+        if (!hasProjectRole) {
             await queryRunner.query(`
                 ALTER TABLE "user_invitation" 
                 ADD COLUMN "projectRole" varchar(20)

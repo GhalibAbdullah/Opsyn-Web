@@ -26,7 +26,6 @@ export class MigrateFlowsToDefaultProjectsSqlite1767000000000 implements Migrati
             SELECT u.id, u."platformId", ui.email, ui."firstName"
             FROM "user" u
             INNER JOIN "user_identity" ui ON u."identityId" = ui.id
-            WHERE u."deleted" IS NULL
         `)
 
         for (const user of users) {

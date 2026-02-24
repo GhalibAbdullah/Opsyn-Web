@@ -475,16 +475,14 @@ const enrichWithInvitationLink = async (platform: Platform, userInvitation: User
             link: invitationLink,
         }
     
-    if (getSmtpConfig(platform)) {
-        try {
-            await communityInvitationEmailService(log).sendInvitation({
-                userInvitation,
-                invitationLink,
-            })
-        }
-        catch (error) {
-            log.warn({ error }, 'Failed to send invitation email, but link is still available')
-        }
+    try {
+        await communityInvitationEmailService(log).sendInvitation({
+            userInvitation,
+            invitationLink,
+        })
+    }
+    catch (error) {
+        log.warn({ error }, 'Failed to send invitation email, but link is still available')
     }
     
     return invitationWithLink

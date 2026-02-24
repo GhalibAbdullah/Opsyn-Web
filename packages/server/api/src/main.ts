@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import './instrumentation'
 
 import dayjs from 'dayjs'

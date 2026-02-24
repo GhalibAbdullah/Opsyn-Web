@@ -102,9 +102,6 @@ export const projectHooks = {
       //added currentProjectId in case user switches project and goes back to the same project
       queryKey: ['switch-to-project', projectIdFromParams, projectIdFromToken],
       queryFn: async () => {
-        if (edition === ApEdition.COMMUNITY) {
-          return true;
-        }
         if (isNil(projectIdFromParams)) {
           return false;
         }

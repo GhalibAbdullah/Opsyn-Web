@@ -105,12 +105,8 @@ const SignUpForm = ({
   >({
     mutationFn: authenticationApi.signUp,
     onSuccess: (data) => {
-      if (data.verified) {
         authenticationSession.saveResponse(data, false);
         redirectAfterLogin();
-      } else {
-        setShowCheckYourEmailNote(true);
-      }
     },
     onError: (error) => {
       if (api.isError(error)) {
@@ -125,7 +121,6 @@ const SignUpForm = ({
         }
         switch (errorCode) {
           case ErrorCode.EMAIL_IS_NOT_VERIFIED: {
-            setShowCheckYourEmailNote(true);
             break;
           }
           case ErrorCode.INVITATION_ONLY_SIGN_UP: {
@@ -179,14 +174,7 @@ const SignUpForm = ({
   const [isPasswordFocused, setPasswordFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  return showCheckYourEmailNote ? (
-    <div className="pt-6">
-      <CheckEmailNote
-        email={form.getValues().email.trim().toLowerCase()}
-        type={OtpType.EMAIL_VERIFICATION}
-      />
-    </div>
-  ) : (
+  return (
     <>
       <Form {...form}>
         <form className="grid space-y-4">

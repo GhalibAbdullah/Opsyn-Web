@@ -6,7 +6,12 @@ export type ProjectHooks = {
 }
 
 export const projectHooks = hooksFactory.create<ProjectHooks>(_log => ({
-    postCreate: async (_project: Project) => {
-        return
+    postCreate: async (project: Project) => {
+        const { projectMemberService } = await import('../project-members/project-member.service')
+        await projectMemberService(_log).create({
+            projectId: project.id,
+            userId: project.ownerId,
+            role: 'OWNER',
+        })
     },
 }))

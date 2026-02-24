@@ -2,12 +2,14 @@ import {
     ApEdition,
     ProjectId,
     UserId,
+    PlatformRole,
 } from '@activepieces/shared'
 import { FastifyBaseLogger } from 'fastify'
 import { system } from '../helper/system/system'
 import { projectMemberService } from '../project-members/project-member.service'
 import { ProjectMemberRole } from '../project-members/project-member.entity'
 import { projectService } from '../project/project-service'
+import { userService } from '../user/user-service'
 
 /**
  * Centralized permission resolution service for Community Edition.
@@ -30,13 +32,19 @@ export const projectPermissionsService = (log: FastifyBaseLogger) => ({
         }
 
         const project = await projectService.getOneOrThrow(projectId)
+        const user = await userService.getOneOrFail({ id: userId })
 
-        // 1. Project owner always has OWNER role
+        // 1. Platform admins always have OWNER role on all projects in Community Edition
+        if (user.platformRole === PlatformRole.ADMIN) {
+            return 'OWNER'
+        }
+
+        // 2. Project owner always has OWNER role
         if (project.ownerId === userId) {
             return 'OWNER'
         }
 
-        // 2. Check explicit ProjectMember record
+        // 3. Check explicit ProjectMember record
         const member = await projectMemberService(log).getByProjectIdAndUserId(projectId, userId)
         if (member) {
             return member.role

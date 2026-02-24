@@ -209,7 +209,7 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     })
     const ownedProjectIds = ownedProjects.map(p => p.id)
 
-    const { ProjectMemberEntity } = await import('../ee/projects/project-members/project-member.entity')
+    const { ProjectMemberEntity } = await import('../project-members/project-member.entity')
     const memberRepo = repoFactory(ProjectMemberEntity)
     const memberRecords = await memberRepo().find({
         where: {

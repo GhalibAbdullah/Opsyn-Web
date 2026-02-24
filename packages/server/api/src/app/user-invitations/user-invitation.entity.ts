@@ -4,7 +4,7 @@ import { BaseColumnSchemaPart } from '../database/database-common'
 
 type UserInvitationSchema = UserInvitation & {
     project?: Project
-    projectRole?: ProjectRole
+    projectRoleRel?: ProjectRole
 }
 export const UserInvitationEntity = new EntitySchema<UserInvitationSchema>({
     name: 'user_invitation',
@@ -61,7 +61,7 @@ export const UserInvitationEntity = new EntitySchema<UserInvitationSchema>({
                 foreignKeyConstraintName: 'fk_user_invitation_project_id',
             },
         },
-        projectRole: {
+        projectRoleRel: {
             type: 'many-to-one',
             target: 'project_role',
             cascade: true,

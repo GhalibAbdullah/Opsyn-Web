@@ -12,7 +12,9 @@ export async function initializeDatabase({ runMigrations }: { runMigrations: boo
     }
     
     log.info('Initializing database connection...')
-    await dataSource.initialize()
+    if (!dataSource.isInitialized) {
+        await dataSource.initialize()
+    }
     log.info('Database connection initialized')
     
     if (runMigrations) {

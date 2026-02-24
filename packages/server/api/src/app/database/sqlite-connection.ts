@@ -163,6 +163,14 @@ import { DeleteLastChangelogDismissedAtSqlite1762018344394 } from './migration/s
 import { AddFailedStepDurationSqlite1762949199414 } from './migration/sqlite/1762949199414-AddFailedStepDurationSqlite'
 import { AddProjectRoleToUserInvitationSqlite1768000000000 } from './migration/sqlite/1768000000000-AddProjectRoleToUserInvitationSqlite'
 import { AddProjectIdToAIProviderSqlite1769000000000 } from './migration/sqlite/1769000000000-AddProjectIdToAIProviderSqlite'
+import { FixMissingProjectRoleInUserInvitationSqlite1770000000000 } from './migration/sqlite/1770000000000-FixMissingProjectRoleInUserInvitationSqlite'
+import { AddProjectMemberTableSqlite1765000000000 } from './migration/sqlite/1765000000000-AddProjectMemberTableSqlite'
+import { MigrateFlowsToDefaultProjectsSqlite1767000000000 } from './migration/sqlite/1767000000000-MigrateFlowsToDefaultProjectsSqlite'
+import { AddPasswordResetOtpEntitySQLITE1735000000001 } from './migration/sqlite/1735000000001-AddPasswordResetOtpEntitySQLITE'
+import { AddFlowCommentTableSqlite1764000000000 } from './migration/sqlite/1764000000000-AddFlowCommentTableSqlite'
+import { RemoveProjectRoleFKFromInvitationsCE1765100000000 } from './migration/sqlite/1765100000000-RemoveProjectRoleFKFromInvitationsCE'
+import { AddFlowTemplateTableSqlite1765200000000 } from './migration/sqlite/1765200000000-AddFlowTemplateTableSqlite'
+import { AddFlowActivityTableSqlite1766000000000 } from './migration/sqlite/1766000000000-AddFlowActivityTableSqlite'
 import { PiecesProjectLimitsSqlite1712279318441 } from './migration/sqlite/1712279318441-PiecesProjectLimitsSqlite'
 
 const getSqliteDatabaseFilePath = (): string => {
@@ -342,8 +350,16 @@ const getMigrations = (): (new () => MigrationInterface)[] => {
         RemoveTasksAndTasksLimitSqlite1761574814842,
         DeleteLastChangelogDismissedAtSqlite1762018344394,
         AddFailedStepDurationSqlite1762949199414,
+        AddPasswordResetOtpEntitySQLITE1735000000001,
+        AddFlowCommentTableSqlite1764000000000,
+        AddProjectMemberTableSqlite1765000000000,
+        RemoveProjectRoleFKFromInvitationsCE1765100000000,
+        AddFlowTemplateTableSqlite1765200000000,
+        AddFlowActivityTableSqlite1766000000000,
+        MigrateFlowsToDefaultProjectsSqlite1767000000000,
         AddProjectRoleToUserInvitationSqlite1768000000000,
         AddProjectIdToAIProviderSqlite1769000000000,
+        FixMissingProjectRoleInUserInvitationSqlite1770000000000,
     ]
     const edition = system.getEdition()
     if (edition !== ApEdition.COMMUNITY) {

@@ -36,18 +36,23 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
                 // Create main platform if it doesn't exist
                 const userIdentity = await userIdentityService(log).create({
                     ...params,
-                    verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
+                    verified: true,
                 })
                 return createUserAndPlatform(userIdentity, log)
             }
             // Use existing main platform
             const userIdentity = await userIdentityService(log).create({
                 ...params,
-                verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
+                verified: true,
             })
             const user = await userService.create({
                 identityId: userIdentity.id,
                 platformRole: PlatformRole.MEMBER,
+                platformId: mainPlatform.id,
+            })
+            const project = await projectService.create({
+                displayName: userIdentity.firstName + "'s Project",
+                ownerId: user.id,
                 platformId: mainPlatform.id,
             })
             await userInvitationsService(log).provisionUserInvitation({
@@ -56,7 +61,7 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             return authenticationUtils.getProjectAndToken({
                 userId: user.id,
                 platformId: mainPlatform.id,
-                projectId: null,
+                projectId: project.id,
             })
         }
 
@@ -77,6 +82,11 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             platformRole: PlatformRole.MEMBER,
             platformId,
         })
+        const project = await projectService.create({
+            displayName: userIdentity.firstName + "'s Project",
+            ownerId: user.id,
+            platformId,
+        })
         await userInvitationsService(log).provisionUserInvitation({
             email: params.email,
         })
@@ -84,7 +94,7 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
             platformId,
-            projectId: null,
+            projectId: project.id,
         })
     },
     async signInWithPassword(params: SignInWithPasswordParams): Promise<AuthenticationResponse> {
@@ -121,6 +131,12 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             user = await userService.create({
                 identityId: identity.id,
                 platformRole: PlatformRole.MEMBER,
+                platformId,
+            })
+            // Create a default project for the new user
+            await projectService.create({
+                displayName: identity.firstName + "'s Project",
+                ownerId: user.id,
                 platformId,
             })
         }
@@ -177,6 +193,12 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
                 user = await userService.create({
                     identityId: userIdentity.id,
                     platformRole: PlatformRole.MEMBER,
+                    platformId: mainPlatform.id,
+                })
+                // Create a default project for the new user
+                await projectService.create({
+                    displayName: userIdentity.firstName + "'s Project",
+                    ownerId: user.id,
                     platformId: mainPlatform.id,
                 })
             }

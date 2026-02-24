@@ -35,6 +35,13 @@ export const communityInvitationEmailService = (log: FastifyBaseLogger) => ({
         const transporter = createSmtpTransporter(smtpConfig)
         const primaryColor = defaultTheme.colors.primary.default
 
+        log.info({ 
+            host: smtpConfig.host, 
+            port: smtpConfig.port, 
+            from: smtpConfig.from,
+            to: userInvitation.email 
+        }, '[sendInvitation] Attempting to send email via SMTP')
+
         const emailBody = brandedEmailTemplate({
             heading: `Join ${projectName}`,
             bodyHtml: `
@@ -48,13 +55,13 @@ export const communityInvitationEmailService = (log: FastifyBaseLogger) => ({
         })
 
         try {
-            await transporter.sendMail({
+            const info = await transporter.sendMail({
                 from: smtpConfig.from,
                 to: userInvitation.email,
                 subject: `You've been invited to ${projectName} — OpSyn`,
                 html: emailBody,
             })
-            log.info({ email: userInvitation.email }, 'Invitation email sent')
+            log.info({ messageId: info.messageId, response: info.response }, 'Invitation email sent successfully')
         }
         catch (error) {
             log.error({ error, email: userInvitation.email }, 'Failed to send invitation email')

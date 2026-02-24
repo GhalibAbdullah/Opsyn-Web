@@ -45,6 +45,7 @@ export const authenticationUtils = {
         const project = isNil(params.projectId) ? projects?.[0] : projects.find((project) => project.id === params.projectId)
         
         const identity = await userIdentityService(system.globalLogger()).getOneOrFail({ id: user.identityId })
+        /* Relaxed verification check to allow all activated users to login
         if (!identity.verified) {
             throw new ActivepiecesError({
                 code: ErrorCode.EMAIL_IS_NOT_VERIFIED,
@@ -53,6 +54,7 @@ export const authenticationUtils = {
                 },
             })
         }
+        */
         if (user.status === UserStatus.INACTIVE) {
             throw new ActivepiecesError({
                 code: ErrorCode.USER_IS_INACTIVE,

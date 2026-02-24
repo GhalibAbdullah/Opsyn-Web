@@ -50,6 +50,7 @@ export const userIdentityService = (log: FastifyBaseLogger) => ({
                 params: null,
             })
         }
+        /* Relaxed verification check to allow all activated users to login
         if (!userIdentity.verified) {
             throw new ActivepiecesError({
                 code: ErrorCode.EMAIL_IS_NOT_VERIFIED,
@@ -58,6 +59,7 @@ export const userIdentityService = (log: FastifyBaseLogger) => ({
                 },
             })
         }
+        */
 
         const passwordMatches = await passwordHasher.compare(params.password, userIdentity.password)
         if (!passwordMatches) {

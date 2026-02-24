@@ -40,6 +40,12 @@ export function getSmtpConfig(platform: Platform | null): SmtpConfig | null {
         }
     }
 
+    console.warn('[getSmtpConfig] Missing SMTP configuration:', {
+        hasHost: !!host,
+        hasPort: !!port,
+        hasUsername: !!username,
+        hasPassword: !!password,
+    })
     return null
 }
 
